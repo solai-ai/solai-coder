@@ -4,6 +4,6 @@
 
 /**
  * Controls output length/detail on GPT-5 models via the Responses API.
- * Serialized with lowercase values to match the MidnightCoder API.
+ * Serialized with lowercase values to match the SolaiAgent API.
  */
 export type Verbosity = "low" | "medium" | "high";

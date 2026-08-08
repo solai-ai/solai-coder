@@ -57,7 +57,7 @@ use codex_core::personality_migration::PersonalityMigrationStatus;
 use codex_core::personality_migration::maybe_migrate_personality;
 pub use codex_exec_server::EnvironmentManager;
 pub use codex_exec_server::ExecServerRuntimePaths;
-use codex_feedback::MidnightCoderFeedback;
+use codex_feedback::SolaiAgentFeedback;
 use codex_protocol::protocol::SessionSource;
 use codex_utils_absolute_path::AbsolutePathBuf;
 use serde::de::DeserializeOwned;
@@ -331,7 +331,7 @@ pub struct InProcessClientStartArgs {
     /// Preloaded cloud config bundle provider.
     pub cloud_config_bundle: CloudConfigBundleLoader,
     /// Feedback sink used by app-server/core telemetry and logs.
-    pub feedback: MidnightCoderFeedback,
+    pub feedback: SolaiAgentFeedback,
     /// SQLite tracing layer used to flush recently emitted logs before feedback upload.
     pub log_db: Option<LogDbLayer>,
     /// Process-wide SQLite state handle shared with the embedded app-server.
@@ -1037,7 +1037,7 @@ mod tests {
             loader_overrides: LoaderOverrides::default(),
             strict_config: false,
             cloud_config_bundle: CloudConfigBundleLoader::default(),
-            feedback: MidnightCoderFeedback::new(),
+            feedback: SolaiAgentFeedback::new(),
             log_db: None,
             state_db: Some(state_db),
             environment_manager: Arc::new(EnvironmentManager::default_for_tests()),
@@ -2233,7 +2233,7 @@ mod tests {
             loader_overrides: LoaderOverrides::default(),
             strict_config: false,
             cloud_config_bundle: CloudConfigBundleLoader::default(),
-            feedback: MidnightCoderFeedback::new(),
+            feedback: SolaiAgentFeedback::new(),
             log_db: None,
             state_db: None,
             environment_manager: environment_manager.clone(),
@@ -2282,7 +2282,7 @@ mod tests {
             loader_overrides: LoaderOverrides::default(),
             strict_config: false,
             cloud_config_bundle: CloudConfigBundleLoader::default(),
-            feedback: MidnightCoderFeedback::new(),
+            feedback: SolaiAgentFeedback::new(),
             log_db: None,
             state_db: None,
             environment_manager: Arc::new(EnvironmentManager::default_for_tests()),

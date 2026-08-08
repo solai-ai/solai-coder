@@ -10,7 +10,7 @@ use tokio::process::ChildStdin;
 use tokio::process::ChildStdout;
 
 use anyhow::Context;
-use codex_mcp_server::MidnightCoderToolCallParam;
+use codex_mcp_server::SolaiAgentToolCallParam;
 use codex_terminal_detection::user_agent;
 
 use pretty_assertions::assert_eq;
@@ -166,7 +166,7 @@ impl McpProcess {
                 },
                 "serverInfo": {
                     "name": "codex-mcp-server",
-                    "title": "MidnightCoder",
+                    "title": "SolaiAgent",
                     "version": "0.0.0",
                     "user_agent": user_agent
                 },
@@ -188,7 +188,7 @@ impl McpProcess {
     /// correlating notifications.
     pub async fn send_codex_tool_call(
         &mut self,
-        params: MidnightCoderToolCallParam,
+        params: SolaiAgentToolCallParam,
     ) -> anyhow::Result<i64> {
         let codex_tool_call_params = CallToolRequestParams::new("codex").with_arguments(
             match serde_json::to_value(params)? {

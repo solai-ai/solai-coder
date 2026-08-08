@@ -182,20 +182,20 @@ impl AccountRequestProcessor {
         AccountUpdatedNotification {
             auth_mode: auth
                 .as_ref()
-                .map(MidnightCoderAuth::api_auth_mode)
+                .map(SolaiAgentAuth::api_auth_mode)
                 .map(auth_mode_to_api),
-            plan_type: auth.as_ref().and_then(MidnightCoderAuth::account_plan_type),
+            plan_type: auth.as_ref().and_then(SolaiAgentAuth::account_plan_type),
         }
     }
 
     async fn maybe_refresh_plugin_caches_for_current_config(
         config_manager: &ConfigManager,
         thread_manager: &Arc<ThreadManager>,
-        auth: Option<MidnightCoderAuth>,
+        auth: Option<SolaiAgentAuth>,
     ) {
         thread_manager
             .plugins_manager()
-            .set_auth_mode(auth.as_ref().map(MidnightCoderAuth::api_auth_mode));
+            .set_auth_mode(auth.as_ref().map(SolaiAgentAuth::api_auth_mode));
         thread_manager
             .plugins_manager()
             .clear_recommended_plugins_cache();
@@ -699,9 +699,9 @@ impl AccountRequestProcessor {
             let payload_v2 = AccountUpdatedNotification {
                 auth_mode: auth
                     .as_ref()
-                    .map(MidnightCoderAuth::api_auth_mode)
+                    .map(SolaiAgentAuth::api_auth_mode)
                     .map(auth_mode_to_api),
-                plan_type: auth.as_ref().and_then(MidnightCoderAuth::account_plan_type),
+                plan_type: auth.as_ref().and_then(SolaiAgentAuth::account_plan_type),
             };
             outgoing
                 .send_server_notification(ServerNotification::AccountUpdated(payload_v2))
@@ -737,7 +737,7 @@ impl AccountRequestProcessor {
             .auth_manager
             .auth_cached()
             .as_ref()
-            .map(MidnightCoderAuth::api_auth_mode)
+            .map(SolaiAgentAuth::api_auth_mode)
             .map(auth_mode_to_api))
     }
 
@@ -812,8 +812,8 @@ impl AccountRequestProcessor {
                     let auth_mode = auth_mode_to_api(auth.api_auth_mode());
                     let (reported_auth_method, token_opt) = if matches!(
                         auth,
-                        MidnightCoderAuth::AgentIdentity(_)
-                            | MidnightCoderAuth::PersonalAccessToken(_)
+                        SolaiAgentAuth::AgentIdentity(_)
+                            | SolaiAgentAuth::PersonalAccessToken(_)
                     ) || include_token
                         && permanent_refresh_failure
                     {

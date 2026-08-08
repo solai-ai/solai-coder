@@ -21,7 +21,7 @@ pub(crate) async fn resolve_agent_target(
         .resolve_agent_reference(session.thread_id, &turn.session_source, target)
         .await
         .map_err(|err| match err {
-            codex_protocol::error::MidnightCoderErr::UnsupportedOperation(message) => {
+            codex_protocol::error::SolaiAgentErr::UnsupportedOperation(message) => {
                 FunctionCallError::RespondToModel(message)
             }
             other => FunctionCallError::RespondToModel(other.to_string()),

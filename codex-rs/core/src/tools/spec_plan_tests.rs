@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use codex_features::Feature;
 use codex_login::AuthManager;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_mcp::ToolInfo;
 use codex_model_provider::create_model_provider;
 use codex_model_provider_info::AMAZON_BEDROCK_PROVIDER_ID;
@@ -260,7 +260,7 @@ fn set_web_search_mode(turn: &mut TurnContext, mode: WebSearchMode) {
 
 fn use_chatgpt_auth(turn: &mut TurnContext) {
     turn.auth_manager = Some(AuthManager::from_auth_for_testing(
-        MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing(),
+        SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing(),
     ));
     turn.provider = create_model_provider(
         turn.config.model_provider.clone(),

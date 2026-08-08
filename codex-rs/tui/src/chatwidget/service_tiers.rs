@@ -105,7 +105,7 @@ impl ChatWidget {
 
     fn set_service_tier_selection(&mut self, service_tier: Option<String>) {
         self.set_service_tier(service_tier.clone());
-        self.app_event_tx.send(AppEvent::MidnightCoderOp(
+        self.app_event_tx.send(AppEvent::SolaiAgentOp(
             AppCommand::override_turn_context(
                 /*cwd*/ None,
                 /*approval_policy*/ None,

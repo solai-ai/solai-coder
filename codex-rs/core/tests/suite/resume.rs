@@ -13,8 +13,8 @@ use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestMidnightCoder;
-use core_test_support::test_codex::TestMidnightCoderBuilder;
+use core_test_support::test_codex::TestSolaiAgent;
+use core_test_support::test_codex::TestSolaiAgentBuilder;
 use core_test_support::test_codex::test_codex;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
@@ -25,12 +25,12 @@ use tempfile::TempDir;
 use wiremock::MockServer;
 
 async fn resume_until_initial_messages(
-    builder: &mut TestMidnightCoderBuilder,
+    builder: &mut TestSolaiAgentBuilder,
     server: &MockServer,
     home: Arc<TempDir>,
     rollout_path: PathBuf,
     predicate: impl Fn(&[EventMsg]) -> bool,
-) -> Result<TestMidnightCoder> {
+) -> Result<TestSolaiAgent> {
     let deadline = tokio::time::Instant::now() + Duration::from_secs(2);
     let poll_interval = Duration::from_millis(10);
     let mut last_initial_messages = "<missing initial messages>".to_string();

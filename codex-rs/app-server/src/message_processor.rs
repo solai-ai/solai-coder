@@ -70,9 +70,9 @@ use codex_chatgpt::workspace_settings;
 use codex_core::ThreadManager;
 use codex_core::config::Config;
 use codex_exec_server::EnvironmentManager;
-use codex_feedback::MidnightCoderFeedback;
+use codex_feedback::SolaiAgentFeedback;
 use codex_goal_extension::GoalService;
-use codex_home::MidnightCoderHomeUserInstructionsProvider;
+use codex_home::SolaiAgentHomeUserInstructionsProvider;
 use codex_login::AuthManager;
 use codex_login::auth::ExternalAuth;
 use codex_login::auth::ExternalAuthRefreshContext;
@@ -293,7 +293,7 @@ pub(crate) struct MessageProcessorArgs {
     pub(crate) config: Arc<Config>,
     pub(crate) config_manager: ConfigManager,
     pub(crate) environment_manager: Arc<EnvironmentManager>,
-    pub(crate) feedback: MidnightCoderFeedback,
+    pub(crate) feedback: SolaiAgentFeedback,
     pub(crate) log_db: Option<LogDbLayer>,
     pub(crate) state_db: Option<StateDbHandle>,
     pub(crate) config_warnings: Vec<ConfigWarningNotification>,
@@ -368,7 +368,7 @@ impl MessageProcessor {
                         thread_store: Arc::clone(&thread_store),
                     },
                 ),
-                Arc::new(MidnightCoderHomeUserInstructionsProvider::new(
+                Arc::new(SolaiAgentHomeUserInstructionsProvider::new(
                     config.codex_home.clone(),
                 )),
                 Some(analytics_events_client.clone()),

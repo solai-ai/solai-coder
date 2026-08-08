@@ -1,7 +1,7 @@
 use crate::SkillsService;
 use crate::agent::AgentControl;
 use crate::attestation::AttestationProvider;
-use crate::codex_thread::MidnightCoderThread;
+use crate::codex_thread::SolaiAgentThread;
 use crate::config::Config;
 use crate::config::ThreadStoreConfig;
 use crate::current_time::TimeProvider;
@@ -10,9 +10,9 @@ use crate::environment_selection::default_thread_environment_selections;
 use crate::mcp::McpManager;
 use crate::rollout::truncation;
 use crate::session::INITIAL_SUBMIT_ID;
-use crate::session::MidnightCoder;
-use crate::session::MidnightCoderSpawnArgs;
-use crate::session::MidnightCoderSpawnOk;
+use crate::session::SolaiAgent;
+use crate::session::SolaiAgentSpawnArgs;
+use crate::session::SolaiAgentSpawnOk;
 use crate::session::resolve_multi_agent_version;
 use crate::tasks::InterruptedTurnHistoryMarker;
 use crate::tasks::interrupted_turn_history_marker;
@@ -33,7 +33,7 @@ use codex_extension_api::UserInstructionsProvider;
 use codex_extension_api::empty_extension_registry;
 use codex_features::Feature;
 use codex_login::AuthManager;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_login::default_client::CODEX_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR;
 use codex_login::default_client::originator;
 use codex_model_provider::create_model_provider;
@@ -43,8 +43,8 @@ use codex_models_manager::manager::RefreshStrategy;
 use codex_models_manager::manager::SharedModelsManager;
 use codex_protocol::ThreadId;
 use codex_protocol::config_types::CollaborationModeMask;
-use codex_protocol::error::MidnightCoderErr;
-use codex_protocol::error::Result as MidnightCoderResult;
+use codex_protocol::error::SolaiAgentErr;
+use codex_protocol::error::Result as SolaiAgentResult;
 use codex_protocol::openai_models::ModelPreset;
 use codex_protocol::protocol::Event;
 use codex_protocol::protocol::EventMsg;
@@ -107,21 +107,21 @@ fn should_use_test_thread_manager_behavior() -> bool {
     FORCE_TEST_THREAD_MANAGER_BEHAVIOR.load(Ordering::Relaxed)
 }
 
-struct TempMidnightCoderHomeGuard {
+struct TempSolaiAgentHomeGuard {
     path: PathBuf,
 }
 
-impl Drop for TempMidnightCoderHomeGuard {
+impl Drop for TempSolaiAgentHomeGuard {
     fn drop(&mut self) {
         let _ = std::fs::remove_dir_all(&self.path);
     }
 }
 
-/// Represents a newly created MidnightCoder thread (formerly called a conversation), including the first event
+/// Represents a newly created SolaiAgent thread (formerly called a conversation), including the first event
 /// (which is [`EventMsg::SessionConfigured`]).
 pub struct NewThread {
     pub thread_id: ThreadId,
-    pub thread: Arc<MidnightCoderThread>,
+    pub thread: Arc<SolaiAgentThread>,
     pub session_configured: SessionConfiguredEvent,
 }
 
@@ -181,7 +181,7 @@ enum ShutdownOutcome {
 /// them in memory.
 pub struct ThreadManager {
     state: Arc<ThreadManagerState>,
-    _test_codex_home_guard: Option<TempMidnightCoderHomeGuard>,
+    _test_codex_home_guard: Option<TempSolaiAgentHomeGuard>,
 }
 
 pub struct StartThreadOptions {
@@ -237,7 +237,7 @@ pub(crate) struct ResumeThreadWithHistoryOptions {
 /// `Arc` reference that can be downgraded to by `AgentControl` while preventing every single
 /// function to require an `Arc<&Self>`.
 pub(crate) struct ThreadManagerState {
-    threads: Arc<RwLock<HashMap<ThreadId, Arc<MidnightCoderThread>>>>,
+    threads: Arc<RwLock<HashMap<ThreadId, Arc<SolaiAgentThread>>>>,
     thread_created_tx: broadcast::Sender<ThreadId>,
     auth_manager: Arc<AuthManager>,
     models_manager: SharedModelsManager,
@@ -364,10 +364,10 @@ impl ThreadManager {
         }
     }
 
-    /// Construct with a dummy AuthManager containing the provided MidnightCoderAuth.
+    /// Construct with a dummy AuthManager containing the provided SolaiAgentAuth.
     /// Used for integration tests: should not be used by ordinary business logic.
     pub(crate) fn with_models_provider_for_tests(
-        auth: MidnightCoderAuth,
+        auth: SolaiAgentAuth,
         provider: ModelProviderInfo,
     ) -> Self {
         set_thread_manager_test_mode_for_tests(/*enabled*/ true);
@@ -383,14 +383,14 @@ impl ThreadManager {
             codex_home.clone(),
             Arc::new(EnvironmentManager::default_for_tests()),
         );
-        manager._test_codex_home_guard = Some(TempMidnightCoderHomeGuard { path: codex_home });
+        manager._test_codex_home_guard = Some(TempSolaiAgentHomeGuard { path: codex_home });
         manager
     }
 
-    /// Construct with a dummy AuthManager containing the provided MidnightCoderAuth and codex home.
+    /// Construct with a dummy AuthManager containing the provided SolaiAgentAuth and codex home.
     /// Used for integration tests: should not be used by ordinary business logic.
     pub(crate) fn with_models_provider_and_home_for_tests(
-        auth: MidnightCoderAuth,
+        auth: SolaiAgentAuth,
         provider: ModelProviderInfo,
         codex_home: PathBuf,
         environment_manager: Arc<EnvironmentManager>,
@@ -405,7 +405,7 @@ impl ThreadManager {
     }
 
     pub(crate) fn with_models_provider_home_and_state_for_tests(
-        auth: MidnightCoderAuth,
+        auth: SolaiAgentAuth,
         provider: ModelProviderInfo,
         codex_home: PathBuf,
         environment_manager: Arc<EnvironmentManager>,
@@ -506,11 +506,11 @@ impl ThreadManager {
     pub fn validate_environment_selections(
         &self,
         environments: &[TurnEnvironmentSelection],
-    ) -> MidnightCoderResult<()> {
+    ) -> SolaiAgentResult<()> {
         let mut environment_ids = HashSet::with_capacity(environments.len());
         for environment in environments {
             if !environment_ids.insert(environment.environment_id.as_str()) {
-                return Err(MidnightCoderErr::InvalidRequest(format!(
+                return Err(SolaiAgentErr::InvalidRequest(format!(
                     "duplicate turn environment id `{}`",
                     environment.environment_id
                 )));
@@ -519,7 +519,7 @@ impl ThreadManager {
                 .environment_manager
                 .get_environment(&environment.environment_id)
                 .ok_or_else(|| {
-                    MidnightCoderErr::InvalidRequest(format!(
+                    SolaiAgentErr::InvalidRequest(format!(
                         "unknown turn environment id `{}`",
                         environment.environment_id
                     ))
@@ -554,13 +554,13 @@ impl ThreadManager {
     pub async fn get_thread(
         &self,
         thread_id: ThreadId,
-    ) -> MidnightCoderResult<Arc<MidnightCoderThread>> {
+    ) -> SolaiAgentResult<Arc<SolaiAgentThread>> {
         self.state.get_thread(thread_id).await
     }
 
     /// Updates metadata for loaded and cold threads through one entrypoint.
     ///
-    /// Loaded threads route through `MidnightCoderThread`/`LiveThread`, so metadata changes stay ordered
+    /// Loaded threads route through `SolaiAgentThread`/`LiveThread`, so metadata changes stay ordered
     /// with live rollout writes. Cold threads go directly to the store, which owns unloaded JSONL
     /// compatibility and SQLite metadata updates.
     pub async fn update_thread_metadata(
@@ -568,10 +568,10 @@ impl ThreadManager {
         thread_id: ThreadId,
         patch: ThreadMetadataPatch,
         include_archived: bool,
-    ) -> MidnightCoderResult<StoredThread> {
+    ) -> SolaiAgentResult<StoredThread> {
         if let Ok(thread) = self.get_thread(thread_id).await {
             if thread.config_snapshot().await.ephemeral {
-                return Err(MidnightCoderErr::InvalidRequest(format!(
+                return Err(SolaiAgentErr::InvalidRequest(format!(
                     "ephemeral thread does not support metadata updates: {thread_id}"
                 )));
             }
@@ -590,7 +590,7 @@ impl ThreadManager {
             .await
             .map_err(|err| match err {
                 ThreadStoreError::ThreadNotFound { thread_id } => {
-                    MidnightCoderErr::ThreadNotFound(thread_id)
+                    SolaiAgentErr::ThreadNotFound(thread_id)
                 }
                 err => thread_store_metadata_update_error(thread_id, err),
             })
@@ -600,7 +600,7 @@ impl ThreadManager {
     pub async fn list_agent_subtree_thread_ids(
         &self,
         thread_id: ThreadId,
-    ) -> MidnightCoderResult<Vec<ThreadId>> {
+    ) -> SolaiAgentResult<Vec<ThreadId>> {
         let mut subtree_thread_ids = Vec::new();
         let mut seen_thread_ids = HashSet::new();
         subtree_thread_ids.push(thread_id);
@@ -611,7 +611,7 @@ impl ThreadManager {
                 .list_thread_spawn_descendants(thread_id, /*status_filter*/ None)
                 .await
                 .map_err(|err| {
-                    MidnightCoderErr::Fatal(format!(
+                    SolaiAgentErr::Fatal(format!(
                         "failed to load thread-spawn descendants: {err}"
                     ))
                 })?
@@ -635,7 +635,7 @@ impl ThreadManager {
         Ok(subtree_thread_ids)
     }
 
-    pub async fn start_thread(&self, config: Config) -> MidnightCoderResult<NewThread> {
+    pub async fn start_thread(&self, config: Config) -> SolaiAgentResult<NewThread> {
         // Box delegated thread-spawn futures so these convenience wrappers do
         // not inline the full spawn path into every caller's async state.
         Box::pin(self.start_thread_with_tools(config, Vec::new())).await
@@ -645,7 +645,7 @@ impl ThreadManager {
         &self,
         config: Config,
         dynamic_tools: Vec<codex_protocol::dynamic_tools::DynamicToolSpec>,
-    ) -> MidnightCoderResult<NewThread> {
+    ) -> SolaiAgentResult<NewThread> {
         let environments = default_thread_environment_selections(
             self.state.environment_manager.as_ref(),
             &config.cwd,
@@ -670,7 +670,7 @@ impl ThreadManager {
     pub async fn start_thread_with_options(
         &self,
         options: StartThreadOptions,
-    ) -> MidnightCoderResult<NewThread> {
+    ) -> SolaiAgentResult<NewThread> {
         self.start_thread_with_options_and_fork_source(options, /*forked_from_thread_id*/ None)
             .await
     }
@@ -679,7 +679,7 @@ impl ThreadManager {
         &self,
         options: StartThreadOptions,
         forked_from_thread_id: Option<ThreadId>,
-    ) -> MidnightCoderResult<NewThread> {
+    ) -> SolaiAgentResult<NewThread> {
         let agent_control = self.agent_control_for_config(&options.config);
         let (resumed_session_source, resumed_thread_source) = options
             .initial_history
@@ -717,7 +717,7 @@ impl ThreadManager {
         &self,
         forked_from_thread_id: ThreadId,
         mut options: StartThreadOptions,
-    ) -> MidnightCoderResult<NewThread> {
+    ) -> SolaiAgentResult<NewThread> {
         let fork_source = self.get_thread(forked_from_thread_id).await?;
         // Persist queued rollout updates before reading the fork snapshot.
         fork_source.ensure_rollout_materialized().await;
@@ -728,7 +728,7 @@ impl ThreadManager {
             )
             .await
             .map_err(|err| {
-                MidnightCoderErr::Fatal(format!(
+                SolaiAgentErr::Fatal(format!(
                     "failed to read subagent fork source {forked_from_thread_id}: {err}"
                 ))
             })?;
@@ -755,7 +755,7 @@ impl ThreadManager {
         auth_manager: Arc<AuthManager>,
         parent_trace: Option<W3cTraceContext>,
         supports_openai_form_elicitation: bool,
-    ) -> MidnightCoderResult<NewThread> {
+    ) -> SolaiAgentResult<NewThread> {
         let initial_history = self.initial_history_from_rollout_path(rollout_path).await?;
         Box::pin(self.resume_thread_with_history(
             config,
@@ -775,7 +775,7 @@ impl ThreadManager {
         auth_manager: Arc<AuthManager>,
         parent_trace: Option<W3cTraceContext>,
         supports_openai_form_elicitation: bool,
-    ) -> MidnightCoderResult<NewThread> {
+    ) -> SolaiAgentResult<NewThread> {
         let agent_control = self.agent_control_for_config(&config);
         let environments = default_thread_environment_selections(
             self.state.environment_manager.as_ref(),
@@ -813,7 +813,7 @@ impl ThreadManager {
         config: Config,
         user_shell_override: crate::shell::Shell,
         supports_openai_form_elicitation: bool,
-    ) -> MidnightCoderResult<NewThread> {
+    ) -> SolaiAgentResult<NewThread> {
         let agent_control = self.agent_control_for_config(&config);
         let environments = default_thread_environment_selections(
             self.state.environment_manager.as_ref(),
@@ -845,7 +845,7 @@ impl ThreadManager {
         auth_manager: Arc<AuthManager>,
         user_shell_override: crate::shell::Shell,
         supports_openai_form_elicitation: bool,
-    ) -> MidnightCoderResult<NewThread> {
+    ) -> SolaiAgentResult<NewThread> {
         let agent_control = self.agent_control_for_config(&config);
         let initial_history = self.initial_history_from_rollout_path(rollout_path).await?;
         let environments = default_thread_environment_selections(
@@ -880,9 +880,9 @@ impl ThreadManager {
     }
 
     /// Removes the thread from the manager's internal map, though the thread is stored
-    /// as `Arc<MidnightCoderThread>`, it is possible that other references to it exist elsewhere.
+    /// as `Arc<SolaiAgentThread>`, it is possible that other references to it exist elsewhere.
     /// Returns the thread if the thread was found and removed.
-    pub async fn remove_thread(&self, thread_id: &ThreadId) -> Option<Arc<MidnightCoderThread>> {
+    pub async fn remove_thread(&self, thread_id: &ThreadId) -> Option<Arc<SolaiAgentThread>> {
         self.state.threads.write().await.remove(thread_id)
     }
 
@@ -948,7 +948,7 @@ impl ThreadManager {
         path: PathBuf,
         thread_source: Option<ThreadSource>,
         parent_trace: Option<W3cTraceContext>,
-    ) -> MidnightCoderResult<NewThread>
+    ) -> SolaiAgentResult<NewThread>
     where
         S: Into<ForkSnapshot>,
     {
@@ -968,7 +968,7 @@ impl ThreadManager {
     async fn initial_history_from_rollout_path(
         &self,
         rollout_path: PathBuf,
-    ) -> MidnightCoderResult<InitialHistory> {
+    ) -> SolaiAgentResult<InitialHistory> {
         let requested_rollout_path = rollout_path.clone();
         let stored_thread = self
             .state
@@ -992,7 +992,7 @@ impl ThreadManager {
         thread_source: Option<ThreadSource>,
         parent_trace: Option<W3cTraceContext>,
         supports_openai_form_elicitation: bool,
-    ) -> MidnightCoderResult<NewThread>
+    ) -> SolaiAgentResult<NewThread>
     where
         S: Into<ForkSnapshot>,
     {
@@ -1015,7 +1015,7 @@ impl ThreadManager {
         thread_source: Option<ThreadSource>,
         parent_trace: Option<W3cTraceContext>,
         supports_openai_form_elicitation: bool,
-    ) -> MidnightCoderResult<NewThread> {
+    ) -> SolaiAgentResult<NewThread> {
         // `forked_from_id()` describes this history's existing lineage. When
         // forking a resumed thread, the child copies the resumed thread itself.
         let source_thread_id = match &history {
@@ -1119,41 +1119,41 @@ impl ThreadManagerState {
     pub(crate) async fn get_thread(
         &self,
         thread_id: ThreadId,
-    ) -> MidnightCoderResult<Arc<MidnightCoderThread>> {
+    ) -> SolaiAgentResult<Arc<SolaiAgentThread>> {
         let threads = self.threads.read().await;
         match threads.get(&thread_id) {
             Some(thread) if !thread.session_source.is_internal() => Ok(thread.clone()),
-            Some(_) | None => Err(MidnightCoderErr::ThreadNotFound(thread_id)),
+            Some(_) | None => Err(SolaiAgentErr::ThreadNotFound(thread_id)),
         }
     }
 
     pub(crate) async fn read_stored_thread(
         &self,
         params: ReadThreadParams,
-    ) -> MidnightCoderResult<StoredThread> {
+    ) -> SolaiAgentResult<StoredThread> {
         let thread_id = params.thread_id;
         self.thread_store
             .read_thread(params)
             .await
             .map_err(|err| match err {
                 ThreadStoreError::ThreadNotFound { thread_id } => {
-                    MidnightCoderErr::ThreadNotFound(thread_id)
+                    SolaiAgentErr::ThreadNotFound(thread_id)
                 }
                 ThreadStoreError::InvalidRequest { message } => {
                     if message.starts_with("no rollout found for thread id ") {
-                        MidnightCoderErr::ThreadNotFound(thread_id)
+                        SolaiAgentErr::ThreadNotFound(thread_id)
                     } else {
-                        MidnightCoderErr::Fatal(format!(
+                        SolaiAgentErr::Fatal(format!(
                             "failed to read stored thread {thread_id}: invalid thread-store request: {message}"
                         ))
                     }
                 }
-                err => MidnightCoderErr::Fatal(format!("failed to read stored thread {thread_id}: {err}")),
+                err => SolaiAgentErr::Fatal(format!("failed to read stored thread {thread_id}: {err}")),
             })
     }
 
     /// Send an operation to a thread by ID.
-    pub(crate) async fn send_op(&self, thread_id: ThreadId, op: Op) -> MidnightCoderResult<String> {
+    pub(crate) async fn send_op(&self, thread_id: ThreadId, op: Op) -> SolaiAgentResult<String> {
         let thread = self.get_thread(thread_id).await?;
         if let Some(ops_log) = &self.ops_log
             && let Ok(mut log) = ops_log.lock()
@@ -1167,7 +1167,7 @@ impl ThreadManagerState {
     pub(crate) async fn remove_thread(
         &self,
         thread_id: &ThreadId,
-    ) -> Option<Arc<MidnightCoderThread>> {
+    ) -> Option<Arc<SolaiAgentThread>> {
         self.threads.write().await.remove(thread_id)
     }
 
@@ -1330,7 +1330,7 @@ impl ThreadManagerState {
         &self,
         config: Config,
         agent_control: AgentControl,
-    ) -> MidnightCoderResult<NewThread> {
+    ) -> SolaiAgentResult<NewThread> {
         Box::pin(self.spawn_new_thread_with_source(
             config,
             agent_control,
@@ -1359,7 +1359,7 @@ impl ThreadManagerState {
         inherited_environments: Option<TurnEnvironmentSnapshot>,
         inherited_exec_policy: Option<Arc<crate::exec_policy::ExecPolicyManager>>,
         environments: Option<Vec<TurnEnvironmentSelection>>,
-    ) -> MidnightCoderResult<NewThread> {
+    ) -> SolaiAgentResult<NewThread> {
         let environments = environments.unwrap_or_else(|| {
             default_thread_environment_selections(self.environment_manager.as_ref(), &config.cwd)
         });
@@ -1390,7 +1390,7 @@ impl ThreadManagerState {
     pub(crate) async fn resume_thread_with_history_with_source(
         &self,
         options: ResumeThreadWithHistoryOptions,
-    ) -> MidnightCoderResult<NewThread> {
+    ) -> SolaiAgentResult<NewThread> {
         let ResumeThreadWithHistoryOptions {
             config,
             initial_history,
@@ -1441,7 +1441,7 @@ impl ThreadManagerState {
         inherited_exec_policy: Option<Arc<crate::exec_policy::ExecPolicyManager>>,
         environments: Option<Vec<TurnEnvironmentSelection>>,
         thread_extension_init: ExtensionDataInit,
-    ) -> MidnightCoderResult<NewThread> {
+    ) -> SolaiAgentResult<NewThread> {
         let environments = environments.unwrap_or_else(|| {
             default_thread_environment_selections(self.environment_manager.as_ref(), &config.cwd)
         });
@@ -1487,7 +1487,7 @@ impl ThreadManagerState {
         thread_extension_init: ExtensionDataInit,
         supports_openai_form_elicitation: bool,
         user_shell_override: Option<crate::shell::Shell>,
-    ) -> MidnightCoderResult<NewThread> {
+    ) -> SolaiAgentResult<NewThread> {
         Box::pin(self.spawn_thread_with_source(
             config,
             initial_history,
@@ -1534,7 +1534,7 @@ impl ThreadManagerState {
         thread_extension_init: ExtensionDataInit,
         supports_openai_form_elicitation: bool,
         user_shell_override: Option<crate::shell::Shell>,
-    ) -> MidnightCoderResult<NewThread> {
+    ) -> SolaiAgentResult<NewThread> {
         let is_resumed_thread = matches!(&initial_history, InitialHistory::Resumed(_));
         if let InitialHistory::Resumed(resumed) = &initial_history {
             let mut threads = self.threads.write().await;
@@ -1543,7 +1543,7 @@ impl ThreadManagerState {
                     if let Some(requested_rollout_path) = resumed.rollout_path.as_deref()
                         && thread.rollout_path().as_deref() != Some(requested_rollout_path)
                     {
-                        return Err(MidnightCoderErr::InvalidRequest(format!(
+                        return Err(SolaiAgentErr::InvalidRequest(format!(
                             "thread {} is already running with a different rollout path",
                             resumed.conversation_id
                         )));
@@ -1581,9 +1581,9 @@ impl ThreadManagerState {
                 forked_from_thread_id,
             )
             .await;
-        let MidnightCoderSpawnOk {
+        let SolaiAgentSpawnOk {
             codex, thread_id, ..
-        } = Box::pin(MidnightCoder::spawn(MidnightCoderSpawnArgs {
+        } = Box::pin(SolaiAgent::spawn(SolaiAgentSpawnArgs {
             config,
             allow_provider_model_fallback,
             user_instructions,
@@ -1632,10 +1632,10 @@ impl ThreadManagerState {
 
     async fn finalize_thread_spawn(
         &self,
-        codex: MidnightCoder,
+        codex: SolaiAgent,
         thread_id: ThreadId,
         session_source: SessionSource,
-    ) -> MidnightCoderResult<NewThread> {
+    ) -> SolaiAgentResult<NewThread> {
         let event = codex.next_event().await?;
         let session_configured = match event {
             Event {
@@ -1643,14 +1643,14 @@ impl ThreadManagerState {
                 msg: EventMsg::SessionConfigured(session_configured),
             } if id == INITIAL_SUBMIT_ID => session_configured,
             _ => {
-                return Err(MidnightCoderErr::SessionConfiguredNotFirstEvent);
+                return Err(SolaiAgentErr::SessionConfiguredNotFirstEvent);
             }
         };
 
         {
             let mut threads = self.threads.write().await;
             if let std::collections::hash_map::Entry::Vacant(e) = threads.entry(thread_id) {
-                let thread = Arc::new(MidnightCoderThread::new(
+                let thread = Arc::new(SolaiAgentThread::new(
                     codex,
                     session_configured.clone(),
                     session_configured.rollout_path.clone(),
@@ -1668,7 +1668,7 @@ impl ThreadManagerState {
         if let Err(err) = codex.shutdown_and_wait().await {
             warn!("failed to shut down duplicate thread {thread_id}: {err}");
         }
-        Err(MidnightCoderErr::InvalidRequest(format!(
+        Err(SolaiAgentErr::InvalidRequest(format!(
             "thread {thread_id} is already running"
         )))
     }
@@ -1711,10 +1711,10 @@ impl ThreadManagerState {
 fn stored_thread_to_initial_history(
     stored_thread: StoredThread,
     rollout_path: Option<PathBuf>,
-) -> MidnightCoderResult<InitialHistory> {
+) -> SolaiAgentResult<InitialHistory> {
     let thread_id = stored_thread.thread_id;
     let history = stored_thread.history.ok_or_else(|| {
-        MidnightCoderErr::Fatal(format!(
+        SolaiAgentErr::Fatal(format!(
             "thread {thread_id} did not include persisted history"
         ))
     })?;
@@ -1725,29 +1725,29 @@ fn stored_thread_to_initial_history(
     }))
 }
 
-fn thread_store_rollout_read_error(err: ThreadStoreError) -> MidnightCoderErr {
+fn thread_store_rollout_read_error(err: ThreadStoreError) -> SolaiAgentErr {
     match err {
         ThreadStoreError::ThreadNotFound { thread_id } => {
-            MidnightCoderErr::ThreadNotFound(thread_id)
+            SolaiAgentErr::ThreadNotFound(thread_id)
         }
-        ThreadStoreError::InvalidRequest { message } => MidnightCoderErr::InvalidRequest(message),
-        err => MidnightCoderErr::Fatal(format!("failed to read thread by rollout path: {err}")),
+        ThreadStoreError::InvalidRequest { message } => SolaiAgentErr::InvalidRequest(message),
+        err => SolaiAgentErr::Fatal(format!("failed to read thread by rollout path: {err}")),
     }
 }
 
 fn thread_store_metadata_update_error(
     thread_id: ThreadId,
     err: ThreadStoreError,
-) -> MidnightCoderErr {
+) -> SolaiAgentErr {
     match err {
         ThreadStoreError::ThreadNotFound { thread_id } => {
-            MidnightCoderErr::ThreadNotFound(thread_id)
+            SolaiAgentErr::ThreadNotFound(thread_id)
         }
-        ThreadStoreError::InvalidRequest { message } => MidnightCoderErr::InvalidRequest(message),
-        ThreadStoreError::Unsupported { operation } => MidnightCoderErr::UnsupportedOperation(
+        ThreadStoreError::InvalidRequest { message } => SolaiAgentErr::InvalidRequest(message),
+        ThreadStoreError::Unsupported { operation } => SolaiAgentErr::UnsupportedOperation(
             format!("thread metadata update is not supported by this store: {operation}"),
         ),
-        err => MidnightCoderErr::Fatal(format!(
+        err => SolaiAgentErr::Fatal(format!(
             "failed to update thread metadata {thread_id}: {err}"
         )),
     }

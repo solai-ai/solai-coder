@@ -1,6 +1,6 @@
 # codex-api
 
-Typed clients for Midnight Coder/Midnight Coder APIs built on top of the generic transport in `codex-client`.
+Typed clients for SOLAI Agent/SOLAI Agent APIs built on top of the generic transport in `codex-client`.
 
 - Hosts the request/response models and request builders for Responses and Compact APIs.
 - Owns provider configuration (base URLs, headers, query params), auth header injection, retry tuning, and stream idle settings.

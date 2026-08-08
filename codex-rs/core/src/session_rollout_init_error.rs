@@ -2,15 +2,15 @@ use std::io::ErrorKind;
 use std::path::Path;
 
 use crate::rollout::SESSIONS_SUBDIR;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_thread_store::ThreadStoreError;
 
-pub(crate) fn map_session_init_error(err: &anyhow::Error, codex_home: &Path) -> MidnightCoderErr {
+pub(crate) fn map_session_init_error(err: &anyhow::Error, codex_home: &Path) -> SolaiAgentErr {
     if let Some(ThreadStoreError::Unsupported { operation }) = err
         .chain()
         .find_map(|cause| cause.downcast_ref::<ThreadStoreError>())
     {
-        return MidnightCoderErr::UnsupportedOperation(format!("{operation} is not supported yet"));
+        return SolaiAgentErr::UnsupportedOperation(format!("{operation} is not supported yet"));
     }
 
     if let Some(mapped) = err
@@ -21,23 +21,23 @@ pub(crate) fn map_session_init_error(err: &anyhow::Error, codex_home: &Path) -> 
         return mapped;
     }
 
-    MidnightCoderErr::Fatal(format!("Failed to initialize session: {err:#}"))
+    SolaiAgentErr::Fatal(format!("Failed to initialize session: {err:#}"))
 }
 
-fn map_rollout_io_error(io_err: &std::io::Error, codex_home: &Path) -> Option<MidnightCoderErr> {
+fn map_rollout_io_error(io_err: &std::io::Error, codex_home: &Path) -> Option<SolaiAgentErr> {
     let sessions_dir = codex_home.join(SESSIONS_SUBDIR);
     let hint = match io_err.kind() {
         ErrorKind::PermissionDenied => format!(
-            "MidnightCoder cannot access session files at {} (permission denied). If sessions were created using sudo, fix ownership: sudo chown -R $(whoami) {}",
+            "SolaiAgent cannot access session files at {} (permission denied). If sessions were created using sudo, fix ownership: sudo chown -R $(whoami) {}",
             sessions_dir.display(),
             codex_home.display()
         ),
         ErrorKind::NotFound => format!(
-            "Session storage missing at {}. Create the directory or choose a different MidnightCoder home.",
+            "Session storage missing at {}. Create the directory or choose a different SolaiAgent home.",
             sessions_dir.display()
         ),
         ErrorKind::AlreadyExists => format!(
-            "Session storage path {} is blocked by an existing file. Remove or rename it so MidnightCoder can create sessions.",
+            "Session storage path {} is blocked by an existing file. Remove or rename it so SolaiAgent can create sessions.",
             sessions_dir.display()
         ),
         ErrorKind::InvalidData | ErrorKind::InvalidInput => format!(
@@ -45,13 +45,13 @@ fn map_rollout_io_error(io_err: &std::io::Error, codex_home: &Path) -> Option<Mi
             sessions_dir.display()
         ),
         ErrorKind::IsADirectory | ErrorKind::NotADirectory => format!(
-            "Session storage path {} has an unexpected type. Ensure it is a directory MidnightCoder can use for session files.",
+            "Session storage path {} has an unexpected type. Ensure it is a directory SolaiAgent can use for session files.",
             sessions_dir.display()
         ),
         _ => return None,
     };
 
-    Some(MidnightCoderErr::Fatal(format!(
+    Some(SolaiAgentErr::Fatal(format!(
         "{hint} (underlying error: {io_err})"
     )))
 }

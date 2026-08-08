@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
-from .async_client import AsyncMidnightCoderClient
-from .client import MidnightCoderClient
+from .async_client import AsyncSolaiAgentClient
+from .client import SolaiAgentClient
 from .generated.v2_all import (
     AccountLoginCompletedNotification,
     CancelLoginAccountResponse,
@@ -17,16 +17,16 @@ from .generated.v2_all import (
 
 
 class _AsyncLoginOwner(Protocol):
-    """Subset of AsyncMidnightCoder needed by async login handles."""
+    """Subset of AsyncSolaiAgent needed by async login handles."""
 
-    _client: AsyncMidnightCoderClient
+    _client: AsyncSolaiAgentClient
 
     async def _ensure_initialized(self) -> None:
-        """Ensure the owning SDK client has a live MidnightCoder connection."""
+        """Ensure the owning SDK client has a live SolaiAgent connection."""
         ...
 
 
-def start_chatgpt_login(client: MidnightCoderClient) -> ChatgptLoginHandle:
+def start_chatgpt_login(client: SolaiAgentClient) -> ChatgptLoginHandle:
     """Start browser ChatGPT login and return the handle for that attempt."""
     response = client.account_login_start(
         LoginAccountParams(
@@ -60,7 +60,7 @@ async def async_start_chatgpt_login(owner: _AsyncLoginOwner) -> AsyncChatgptLogi
     )
 
 
-def start_device_code_login(client: MidnightCoderClient) -> DeviceCodeLoginHandle:
+def start_device_code_login(client: SolaiAgentClient) -> DeviceCodeLoginHandle:
     """Start device-code ChatGPT login and return the handle for that attempt."""
     response = client.account_login_start(
         LoginAccountParams(
@@ -100,9 +100,9 @@ async def async_start_device_code_login(
 
 @dataclass(slots=True)
 class ChatgptLoginHandle:
-    """Live browser-login attempt returned by `MidnightCoder.login_chatgpt()`."""
+    """Live browser-login attempt returned by `SolaiAgent.login_chatgpt()`."""
 
-    _client: MidnightCoderClient
+    _client: SolaiAgentClient
     login_id: str
     auth_url: str
 
@@ -117,9 +117,9 @@ class ChatgptLoginHandle:
 
 @dataclass(slots=True)
 class DeviceCodeLoginHandle:
-    """Live device-code login attempt returned by `MidnightCoder.login_chatgpt_device_code()`."""
+    """Live device-code login attempt returned by `SolaiAgent.login_chatgpt_device_code()`."""
 
-    _client: MidnightCoderClient
+    _client: SolaiAgentClient
     login_id: str
     verification_url: str
     user_code: str
@@ -135,7 +135,7 @@ class DeviceCodeLoginHandle:
 
 @dataclass(slots=True)
 class AsyncChatgptLoginHandle:
-    """Live browser-login attempt returned by `AsyncMidnightCoder.login_chatgpt()`."""
+    """Live browser-login attempt returned by `AsyncSolaiAgent.login_chatgpt()`."""
 
     _codex: _AsyncLoginOwner
     login_id: str
@@ -154,7 +154,7 @@ class AsyncChatgptLoginHandle:
 
 @dataclass(slots=True)
 class AsyncDeviceCodeLoginHandle:
-    """Live device-code attempt returned by `AsyncMidnightCoder.login_chatgpt_device_code()`."""
+    """Live device-code attempt returned by `AsyncSolaiAgent.login_chatgpt_device_code()`."""
 
     _codex: _AsyncLoginOwner
     login_id: str

@@ -181,7 +181,7 @@ impl App {
             Some(RuntimePermissionProfileOverride::from_config(&self.config));
         self.sync_active_thread_permission_settings_to_cached_session()
             .await;
-        self.app_event_tx.send(AppEvent::MidnightCoderOp(
+        self.app_event_tx.send(AppEvent::SolaiAgentOp(
             AppCommand::override_turn_context(
                 /*cwd*/ None,
                 approval_policy,
@@ -241,7 +241,7 @@ impl App {
                     "failed to refresh effective config after an overridden write"
                 );
                 self.chat_widget.add_error_message(format!(
-                    "{setting} were saved, but MidnightCoder could not refresh the effective config: {err}"
+                    "{setting} were saved, but SolaiAgent could not refresh the effective config: {err}"
                 ));
                 None
             }
@@ -966,7 +966,7 @@ impl App {
         #[cfg(target_os = "windows")]
         {
             let windows_sandbox_level = crate::windows_sandbox::level_from_config(&self.config);
-            self.app_event_tx.send(AppEvent::MidnightCoderOp(
+            self.app_event_tx.send(AppEvent::SolaiAgentOp(
                 AppCommand::override_turn_context(
                     /*cwd*/ None,
                     /*approval_policy*/ None,

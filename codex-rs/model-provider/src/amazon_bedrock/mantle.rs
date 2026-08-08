@@ -1,7 +1,7 @@
 use codex_aws_auth::AwsAuthConfig;
 use codex_login::auth::BedrockApiKeyAuth;
 use codex_model_provider_info::ModelProviderAwsAuthInfo;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::error::Result;
 
 use super::auth::BedrockAuthMethod;
@@ -43,7 +43,7 @@ pub(super) fn base_url(region: &str) -> Result<String> {
     if BEDROCK_MANTLE_SUPPORTED_REGIONS.contains(&region) {
         Ok(format!("https://bedrock-mantle.{region}.api.aws/openai/v1"))
     } else {
-        Err(MidnightCoderErr::Fatal(format!(
+        Err(SolaiAgentErr::Fatal(format!(
             "Amazon Bedrock Mantle does not support region `{region}`"
         )))
     }

@@ -1,4 +1,4 @@
-//! Types used to define loaded and effective MidnightCoder configuration values.
+//! Types used to define loaded and effective SolaiAgent configuration values.
 
 // Note this file should generally be restricted to simple struct/enum
 // definitions that do not contain business logic.
@@ -84,7 +84,7 @@ impl fmt::Display for SessionPickerViewMode {
     }
 }
 
-/// Determine where MidnightCoder should store CLI auth credentials.
+/// Determine where SolaiAgent should store CLI auth credentials.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum AuthCredentialsStoreMode {
@@ -99,16 +99,16 @@ pub enum AuthCredentialsStoreMode {
     Ephemeral,
 }
 
-/// Determine where MidnightCoder should store and read MCP credentials.
+/// Determine where SolaiAgent should store and read MCP credentials.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum OAuthCredentialsStoreMode {
     /// `Keyring` when available; otherwise, `File`.
-    /// Credentials stored in the keyring will only be readable by MidnightCoder unless the user explicitly grants access via OS-level keyring access.
+    /// Credentials stored in the keyring will only be readable by SolaiAgent unless the user explicitly grants access via OS-level keyring access.
     #[default]
     Auto,
     /// MIDCODER_HOME/.credentials.json
-    /// This file will be readable to MidnightCoder and other applications running as the same user.
+    /// This file will be readable to SolaiAgent and other applications running as the same user.
     File,
     /// Keyring when available, otherwise fail.
     Keyring,
@@ -210,14 +210,14 @@ pub enum HistoryPersistence {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default, JsonSchema)]
 #[schemars(deny_unknown_fields)]
 pub struct AnalyticsConfigToml {
-    /// When `false`, disables analytics across MidnightCoder product surfaces in this profile.
+    /// When `false`, disables analytics across SolaiAgent product surfaces in this profile.
     pub enabled: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default, JsonSchema)]
 #[schemars(deny_unknown_fields)]
 pub struct FeedbackConfigToml {
-    /// When `false`, disables the feedback flow across MidnightCoder product surfaces.
+    /// When `false`, disables the feedback flow across SolaiAgent product surfaces.
     pub enabled: Option<bool>,
 }
 
@@ -302,7 +302,7 @@ pub struct MemoriesToml {
     pub max_rollouts_per_startup: Option<usize>,
     /// Minimum idle time between last thread activity and memory creation (hours). > 12h recommended.
     pub min_rollout_idle_hours: Option<i64>,
-    /// Minimum remaining percentage required in MidnightCoder rate-limit windows before memory startup runs.
+    /// Minimum remaining percentage required in SolaiAgent rate-limit windows before memory startup runs.
     #[schemars(range(min = 0, max = 100))]
     pub min_rate_limit_remaining_percent: Option<i64>,
     /// Model used for thread summarisation.
@@ -450,7 +450,7 @@ pub struct AppToolsConfig {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default, JsonSchema)]
 #[schemars(deny_unknown_fields)]
 pub struct AppConfig {
-    /// When `false`, MidnightCoder does not surface this app.
+    /// When `false`, SolaiAgent does not surface this app.
     #[serde(default = "default_enabled")]
     pub enabled: bool,
 
@@ -676,7 +676,7 @@ pub struct ModelAvailabilityNuxConfig {
     pub shown_count: HashMap<String, u32>,
 }
 
-/// Fallback resize-reflow row cap when MidnightCoder cannot identify a terminal-specific scrollback size.
+/// Fallback resize-reflow row cap when SolaiAgent cannot identify a terminal-specific scrollback size.
 pub const DEFAULT_TERMINAL_RESIZE_REFLOW_FALLBACK_MAX_ROWS: usize = 1_000;
 
 /// Collection of settings that are specific to the TUI.
@@ -782,7 +782,7 @@ pub struct Tui {
     pub model_availability_nux: ModelAvailabilityNuxConfig,
 
     /// Trim terminal resize-reflow replay to the most recent rendered terminal rows when the
-    /// transcript exceeds this cap. Omit to use MidnightCoder's terminal-specific default. Set to `0` to
+    /// transcript exceeds this cap. Omit to use SolaiAgent's terminal-specific default. Set to `0` to
     /// keep all rendered rows.
     #[serde(default)]
     #[schemars(range(min = 0))]
@@ -794,7 +794,7 @@ const fn default_true() -> bool {
 }
 
 /// Settings for notices we display to users via the tui and app-server clients
-/// (primarily the MidnightCoder IDE extension). NOTE: these are different from
+/// (primarily the SolaiAgent IDE extension). NOTE: these are different from
 /// notifications - notices are warnings, NUX screens, acknowledgements, etc.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default, JsonSchema)]
 #[schemars(deny_unknown_fields)]
@@ -818,7 +818,7 @@ pub struct Notice {
     pub hide_full_access_warning: Option<bool>,
     /// Tracks whether the user has acknowledged the Windows world-writable directories warning.
     pub hide_world_writable_warning: Option<bool>,
-    /// Tracks whether the user opted out of MidnightCoder-managed fast defaults.
+    /// Tracks whether the user opted out of SolaiAgent-managed fast defaults.
     pub fast_default_opt_out: Option<bool>,
     /// Tracks whether the user opted out of the rate limit model switch reminder.
     pub hide_rate_limit_model_nudge: Option<bool>,
@@ -857,7 +857,7 @@ pub struct PluginConfig {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, JsonSchema)]
 #[schemars(deny_unknown_fields)]
 pub struct PluginMcpServerConfig {
-    /// When `false`, MidnightCoder skips initializing this plugin MCP server.
+    /// When `false`, SolaiAgent skips initializing this plugin MCP server.
     #[serde(default = "default_enabled")]
     pub enabled: bool,
 
@@ -893,10 +893,10 @@ impl Default for PluginMcpServerConfig {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default, JsonSchema)]
 #[schemars(deny_unknown_fields)]
 pub struct MarketplaceConfig {
-    /// Last time MidnightCoder successfully added or refreshed this marketplace.
+    /// Last time SolaiAgent successfully added or refreshed this marketplace.
     #[serde(default)]
     pub last_updated: Option<String>,
-    /// Git revision MidnightCoder last successfully activated for this marketplace.
+    /// Git revision SolaiAgent last successfully activated for this marketplace.
     #[serde(default)]
     pub last_revision: Option<String>,
     /// Source kind used to install this marketplace.

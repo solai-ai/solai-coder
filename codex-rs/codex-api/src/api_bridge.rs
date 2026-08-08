@@ -7,7 +7,7 @@ use base64::Engine;
 use chrono::DateTime;
 use chrono::Utc;
 use codex_protocol::auth::PlanType;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::error::RetryLimitReachedError;
 use codex_protocol::error::UnexpectedResponseError;
 use codex_protocol::error::UsageLimitReachedError;
@@ -15,17 +15,17 @@ use http::HeaderMap;
 use serde::Deserialize;
 use serde_json::Value;
 
-pub fn map_api_error(err: ApiError) -> MidnightCoderErr {
+pub fn map_api_error(err: ApiError) -> SolaiAgentErr {
     match err {
-        ApiError::ContextWindowExceeded => MidnightCoderErr::ContextWindowExceeded,
-        ApiError::QuotaExceeded => MidnightCoderErr::QuotaExceeded,
-        ApiError::UsageNotIncluded => MidnightCoderErr::UsageNotIncluded,
-        ApiError::Retryable { message, delay } => MidnightCoderErr::Stream(message, delay),
-        ApiError::Stream(msg) => MidnightCoderErr::Stream(msg, None),
-        ApiError::ServerOverloaded => MidnightCoderErr::ServerOverloaded,
+        ApiError::ContextWindowExceeded => SolaiAgentErr::ContextWindowExceeded,
+        ApiError::QuotaExceeded => SolaiAgentErr::QuotaExceeded,
+        ApiError::UsageNotIncluded => SolaiAgentErr::UsageNotIncluded,
+        ApiError::Retryable { message, delay } => SolaiAgentErr::Stream(message, delay),
+        ApiError::Stream(msg) => SolaiAgentErr::Stream(msg, None),
+        ApiError::ServerOverloaded => SolaiAgentErr::ServerOverloaded,
         ApiError::Api { status, message } => {
             let user_message = api_error_user_message(status, &message);
-            MidnightCoderErr::UnexpectedStatus(UnexpectedResponseError {
+            SolaiAgentErr::UnexpectedStatus(UnexpectedResponseError {
                 status,
                 body: message,
                 user_message,
@@ -36,8 +36,8 @@ pub fn map_api_error(err: ApiError) -> MidnightCoderErr {
                 identity_error_code: None,
             })
         }
-        ApiError::InvalidRequest { message } => MidnightCoderErr::InvalidRequest(message),
-        ApiError::CyberPolicy { message } => MidnightCoderErr::CyberPolicy { message },
+        ApiError::InvalidRequest { message } => SolaiAgentErr::InvalidRequest(message),
+        ApiError::CyberPolicy { message } => SolaiAgentErr::CyberPolicy { message },
         ApiError::Transport(transport) => match transport {
             TransportError::Http {
                 status,
@@ -57,7 +57,7 @@ pub fn map_api_error(err: ApiError) -> MidnightCoderErr {
                         Some("server_is_overloaded" | "slow_down")
                     )
                 {
-                    return MidnightCoderErr::ServerOverloaded;
+                    return SolaiAgentErr::ServerOverloaded;
                 }
 
                 if status == http::StatusCode::BAD_REQUEST {
@@ -72,16 +72,16 @@ pub fn map_api_error(err: ApiError) -> MidnightCoderErr {
                             .filter(|message| !message.trim().is_empty())
                             .map(str::to_string)
                             .unwrap_or_else(|| CYBER_POLICY_FALLBACK_MESSAGE.to_string());
-                        MidnightCoderErr::CyberPolicy { message }
+                        SolaiAgentErr::CyberPolicy { message }
                     } else if body_text
                         .contains("The image data you provided does not represent a valid image")
                     {
-                        MidnightCoderErr::InvalidImageRequest()
+                        SolaiAgentErr::InvalidImageRequest()
                     } else {
-                        MidnightCoderErr::InvalidRequest(body_text)
+                        SolaiAgentErr::InvalidRequest(body_text)
                     }
                 } else if status == http::StatusCode::INTERNAL_SERVER_ERROR {
-                    MidnightCoderErr::InternalServerError
+                    SolaiAgentErr::InternalServerError
                 } else if status == http::StatusCode::TOO_MANY_REQUESTS {
                     if let Ok(err) = serde_json::from_str::<UsageErrorResponse>(&body_text) {
                         if err.error.error_type.as_deref() == Some("usage_limit_reached") {
@@ -96,7 +96,7 @@ pub fn map_api_error(err: ApiError) -> MidnightCoderErr {
                                 .error
                                 .resets_at
                                 .and_then(|seconds| DateTime::<Utc>::from_timestamp(seconds, 0));
-                            return MidnightCoderErr::UsageLimitReached(UsageLimitReachedError {
+                            return SolaiAgentErr::UsageLimitReached(UsageLimitReachedError {
                                 plan_type: err.error.plan_type,
                                 resets_at,
                                 rate_limits: rate_limits.map(Box::new),
@@ -104,16 +104,16 @@ pub fn map_api_error(err: ApiError) -> MidnightCoderErr {
                                 rate_limit_reached_type,
                             });
                         } else if err.error.error_type.as_deref() == Some("usage_not_included") {
-                            return MidnightCoderErr::UsageNotIncluded;
+                            return SolaiAgentErr::UsageNotIncluded;
                         }
                     }
 
-                    MidnightCoderErr::RetryLimit(RetryLimitReachedError {
+                    SolaiAgentErr::RetryLimit(RetryLimitReachedError {
                         status,
                         request_id: extract_request_tracking_id(headers.as_ref()),
                     })
                 } else {
-                    MidnightCoderErr::UnexpectedStatus(UnexpectedResponseError {
+                    SolaiAgentErr::UnexpectedStatus(UnexpectedResponseError {
                         status,
                         user_message: api_error_user_message(status, &body_text),
                         body: body_text,
@@ -128,16 +128,16 @@ pub fn map_api_error(err: ApiError) -> MidnightCoderErr {
                     })
                 }
             }
-            TransportError::RetryLimit => MidnightCoderErr::RetryLimit(RetryLimitReachedError {
+            TransportError::RetryLimit => SolaiAgentErr::RetryLimit(RetryLimitReachedError {
                 status: http::StatusCode::INTERNAL_SERVER_ERROR,
                 request_id: None,
             }),
-            TransportError::Timeout => MidnightCoderErr::RequestTimeout,
+            TransportError::Timeout => SolaiAgentErr::RequestTimeout,
             TransportError::Network(msg) | TransportError::Build(msg) => {
-                MidnightCoderErr::Stream(msg, None)
+                SolaiAgentErr::Stream(msg, None)
             }
         },
-        ApiError::RateLimit(msg) => MidnightCoderErr::Stream(msg, None),
+        ApiError::RateLimit(msg) => SolaiAgentErr::Stream(msg, None),
     }
 }
 

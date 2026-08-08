@@ -166,7 +166,7 @@ mod tests {
                     }])),
                     commands: Some(SearchCommands {
                         search_query: Some(vec![SearchQuery {
-                            q: "MidnightCoder news".to_string(),
+                            q: "SolaiAgent news".to_string(),
                             recency: Some(7),
                             domains: Some(vec!["openai.com".to_string()]),
                         }]),
@@ -241,7 +241,7 @@ mod tests {
                 }],
                 "commands": {
                     "search_query": [{
-                        "q": "MidnightCoder news",
+                        "q": "SolaiAgent news",
                         "recency": 7,
                         "domains": ["openai.com"]
                     }],

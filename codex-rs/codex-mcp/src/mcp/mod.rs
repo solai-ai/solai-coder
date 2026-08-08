@@ -28,7 +28,7 @@ use codex_config::types::AppToolApproval;
 use codex_config::types::AuthKeyringBackendKind;
 use codex_config::types::OAuthCredentialsStoreMode;
 use codex_connectors::ConnectorSnapshot;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_model_provider::CHATGPT_CODEX_BASE_URL;
 use codex_protocol::mcp::McpServerInfo;
 use codex_protocol::mcp::Resource;
@@ -44,7 +44,7 @@ use serde_json::Value;
 use tokio_util::sync::CancellationToken;
 
 use crate::ResolvedMcpCatalog;
-use crate::codex_apps_cache::MidnightCoderAppsToolsCache;
+use crate::codex_apps_cache::SolaiAgentAppsToolsCache;
 use crate::codex_apps_cache::codex_apps_tools_cache_key;
 use crate::connection_manager::McpConnectionManager;
 use crate::runtime::McpRuntimeContext;
@@ -117,7 +117,7 @@ pub struct McpConfig {
     pub chatgpt_base_url: String,
     /// Optional product SKU forwarded to the host-owned apps MCP server.
     pub apps_mcp_product_sku: Option<String>,
-    /// MidnightCoder home directory used for MCP OAuth state and app-tool cache files.
+    /// SolaiAgent home directory used for MCP OAuth state and app-tool cache files.
     pub codex_home: PathBuf,
     /// Preferred credential store for MCP OAuth tokens.
     pub mcp_oauth_credentials_store_mode: OAuthCredentialsStoreMode,
@@ -238,8 +238,8 @@ impl ToolPluginProvenance {
     }
 }
 
-pub fn host_owned_codex_apps_enabled(config: &McpConfig, auth: Option<&MidnightCoderAuth>) -> bool {
-    config.apps_enabled && auth.is_some_and(MidnightCoderAuth::uses_codex_backend)
+pub fn host_owned_codex_apps_enabled(config: &McpConfig, auth: Option<&SolaiAgentAuth>) -> bool {
+    config.apps_enabled && auth.is_some_and(SolaiAgentAuth::uses_codex_backend)
 }
 
 pub fn configured_mcp_servers(config: &McpConfig) -> HashMap<String, McpServerConfig> {
@@ -248,7 +248,7 @@ pub fn configured_mcp_servers(config: &McpConfig) -> HashMap<String, McpServerCo
 
 pub fn effective_mcp_servers(
     config: &McpConfig,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
 ) -> HashMap<String, EffectiveMcpServer> {
     effective_mcp_servers_from_configured(configured_mcp_servers(config), config, auth)
 }
@@ -260,7 +260,7 @@ pub fn effective_mcp_servers(
 pub fn effective_mcp_servers_from_configured(
     configured_servers: HashMap<String, McpServerConfig>,
     config: &McpConfig,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
 ) -> HashMap<String, EffectiveMcpServer> {
     let chatgpt_origin = url::Url::parse(CHATGPT_CODEX_BASE_URL)
         .ok()
@@ -300,9 +300,9 @@ pub fn tool_plugin_provenance(config: &McpConfig) -> ToolPluginProvenance {
 
 pub async fn read_mcp_resource(
     config: &McpConfig,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
     runtime_context: McpRuntimeContext,
-    codex_apps_tools_cache: MidnightCoderAppsToolsCache,
+    codex_apps_tools_cache: SolaiAgentAppsToolsCache,
     server: &str,
     uri: &str,
 ) -> anyhow::Result<ReadResourceResult> {
@@ -362,10 +362,10 @@ pub struct McpServerStatusSnapshot {
 
 pub async fn collect_mcp_server_status_snapshot_with_detail(
     config: &McpConfig,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
     submit_id: String,
     runtime_context: McpRuntimeContext,
-    codex_apps_tools_cache: MidnightCoderAppsToolsCache,
+    codex_apps_tools_cache: SolaiAgentAppsToolsCache,
     detail: McpSnapshotDetail,
 ) -> McpServerStatusSnapshot {
     let mcp_servers = effective_mcp_servers(config, auth);

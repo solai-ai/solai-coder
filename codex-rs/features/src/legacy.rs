@@ -43,7 +43,7 @@ const ALIASES: &[Alias] = &[
     },
     Alias {
         legacy_key: "codex_hooks",
-        feature: Feature::MidnightCoderHooks,
+        feature: Feature::SolaiAgentHooks,
     },
 ];
 

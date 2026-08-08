@@ -1,4 +1,4 @@
-"""MidnightCoder-built V8 artifact overrides for package Cargo builds."""
+"""SolaiAgent-built V8 artifact overrides for package Cargo builds."""
 
 from __future__ import annotations
 
@@ -61,7 +61,7 @@ def fetch_codex_v8_artifacts(
 ) -> RustyV8ArtifactPair:
     if spec.is_windows:
         raise RuntimeError(
-            f"No MidnightCoder-built V8 release artifacts for target: {spec.target}"
+            f"No SolaiAgent-built V8 release artifacts for target: {spec.target}"
         )
 
     version = version or resolved_v8_crate_version()
@@ -152,7 +152,7 @@ def ensure_valid_artifact(artifact: Path, checksum: str, url: str) -> None:
 
     artifact.unlink(missing_ok=True)
     raise RuntimeError(
-        f"MidnightCoder-built V8 artifact {artifact} failed checksum validation."
+        f"SolaiAgent-built V8 artifact {artifact} failed checksum validation."
     )
 
 

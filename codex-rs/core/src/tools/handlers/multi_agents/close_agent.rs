@@ -1,7 +1,7 @@
 use super::*;
 use crate::tools::handlers::multi_agents_spec::create_close_agent_tool_v1;
 use crate::turn_timing::now_unix_timestamp_ms;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_tools::ToolSpec;
 
 pub(crate) struct Handler;
@@ -62,7 +62,7 @@ async fn handle_close_agent(
         .await
     {
         Ok(mut status_rx) => status_rx.borrow_and_update().clone(),
-        Err(MidnightCoderErr::ThreadNotFound(_)) if known_agent => {
+        Err(SolaiAgentErr::ThreadNotFound(_)) if known_agent => {
             session.services.agent_control.get_status(agent_id).await
         }
         Err(err) => {

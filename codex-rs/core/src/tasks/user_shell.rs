@@ -146,12 +146,12 @@ pub(crate) async fn execute_user_shell_command(
     let use_login_shell = true;
     let display_command = environment_shell.derive_exec_args(&command, use_login_shell);
     // TODO(anp): Migrate user-shell events and execution plumbing to PathUri so this local-only
-    // feature does not need to project the selected environment cwd onto the MidnightCoder host.
+    // feature does not need to project the selected environment cwd onto the SolaiAgent host.
     let Ok(cwd) = turn_environment.cwd().to_abs_path() else {
         send_user_shell_error(
             &session,
             turn_context.as_ref(),
-            "shell working directory is not native to the MidnightCoder host",
+            "shell working directory is not native to the SolaiAgent host",
         )
         .await;
         return;

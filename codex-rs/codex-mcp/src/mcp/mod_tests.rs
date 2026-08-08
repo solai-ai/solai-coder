@@ -4,7 +4,7 @@ use crate::McpServerRegistration;
 use codex_config::Constrained;
 use codex_config::types::AppToolApproval;
 use codex_config::types::AuthKeyringBackendKind;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_plugin::AppConnectorId;
 use codex_plugin::PluginCapabilitySummary;
 use codex_protocol::models::ManagedFileSystemPermissions;
@@ -290,7 +290,7 @@ async fn effective_mcp_servers_preserve_runtime_servers() {
     let codex_home = tempfile::tempdir().expect("tempdir");
     let mut config = test_mcp_config(codex_home.path().to_path_buf());
     config.apps_enabled = true;
-    let auth = MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing();
 
     let mut catalog = ResolvedMcpCatalog::builder();
     catalog.register(McpServerRegistration::from_config(

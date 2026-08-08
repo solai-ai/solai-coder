@@ -2,7 +2,7 @@ use serde::Deserialize;
 use std::collections::HashMap;
 
 #[cfg(not(debug_assertions))]
-pub(crate) const PACKAGE_URL: &str = "https://registry.npmjs.org/midnight-coder";
+pub(crate) const PACKAGE_URL: &str = "https://registry.npmjs.org/solai";
 
 #[derive(Deserialize, Debug, Clone)]
 pub(crate) struct NpmPackageInfo {
@@ -77,7 +77,7 @@ mod tests {
             "dist": {
                 "integrity": format!("sha512-{version}"),
             "tarball": format!(
-                "https://registry.npmjs.org/midnight-coder/-/midnight-coder-{version}.tgz"
+                "https://registry.npmjs.org/solai/-/solai-{version}.tgz"
             ),
             }
         })

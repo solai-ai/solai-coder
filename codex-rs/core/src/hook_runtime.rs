@@ -32,7 +32,7 @@ use codex_protocol::protocol::HookRunStatus;
 use codex_protocol::protocol::HookRunSummary;
 use codex_protocol::protocol::HookSource;
 use codex_protocol::protocol::HookStartedEvent;
-use codex_protocol::protocol::MidnightCoderErrorInfo;
+use codex_protocol::protocol::SolaiAgentErrorInfo;
 use codex_protocol::protocol::SessionSource;
 use codex_protocol::protocol::SubAgentSource;
 use codex_thread_store::ReadThreadParams;
@@ -491,7 +491,7 @@ pub(crate) async fn run_legacy_after_agent_hook(
     };
     let event = EventMsg::Error(codex_protocol::protocol::ErrorEvent {
         message,
-        codex_error_info: Some(MidnightCoderErrorInfo::Other),
+        codex_error_info: Some(SolaiAgentErrorInfo::Other),
     });
     sess.send_event(turn_context, event).await;
     true

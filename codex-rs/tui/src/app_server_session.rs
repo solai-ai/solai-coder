@@ -162,7 +162,7 @@ pub(crate) struct AppServerBootstrap {
     pub(crate) auth_mode: Option<TelemetryAuthMode>,
     pub(crate) status_account_display: Option<StatusAccountDisplay>,
     pub(crate) plan_type: Option<codex_protocol::account::PlanType>,
-    /// Whether the configured model provider needs MidnightCoder-style auth. Combined
+    /// Whether the configured model provider needs SolaiAgent-style auth. Combined
     /// with `has_chatgpt_account` to decide if a startup rate-limit prefetch
     /// should be fired.
     pub(crate) requires_openai_auth: bool,

@@ -9,7 +9,7 @@ use codex_config::types::MemoriesConfig;
 use codex_core::Prompt;
 use codex_core::RolloutRecorder;
 use codex_core::config::Config;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::models::BaseInstructions;
 use codex_protocol::models::ContentItem;
 use codex_protocol::models::ResponseItem;
@@ -420,7 +420,7 @@ mod job {
             })
             .collect::<Vec<_>>();
         let serialized = serde_json::to_string(&filtered).map_err(|err| {
-            MidnightCoderErr::InvalidRequest(format!("failed to serialize rollout memory: {err}"))
+            SolaiAgentErr::InvalidRequest(format!("failed to serialize rollout memory: {err}"))
         })?;
         Ok(redact_secrets(serialized))
     }

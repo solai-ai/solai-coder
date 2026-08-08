@@ -8,13 +8,13 @@ use codex_api::ApiError;
 use codex_api::Provider;
 use codex_api::SharedAuthProvider;
 use codex_login::AuthManager;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_model_provider_info::ModelProviderInfo;
 use codex_models_manager::manager::OpenAiModelsManager;
 use codex_models_manager::manager::SharedModelsManager;
 use codex_models_manager::manager::StaticModelsManager;
 use codex_protocol::account::ProviderAccount;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::openai_models::ModelsResponse;
 
 use crate::amazon_bedrock::AmazonBedrockModelProvider;
@@ -25,7 +25,7 @@ use crate::auth::resolve_provider_auth;
 use crate::auth::resolve_provider_auth_for_scope;
 use crate::models_endpoint::OpenAiModelsEndpoint;
 
-/// Optional provider-backed features that MidnightCoder may expose at runtime.
+/// Optional provider-backed features that SolaiAgent may expose at runtime.
 ///
 /// These capabilities are a provider-owned upper bound. Callers can disable
 /// more functionality through normal config, but should not expose a feature
@@ -97,7 +97,7 @@ pub const DEFAULT_MEMORY_CONSOLIDATION_PREFERRED_MODEL: &str = "gpt-5.4";
 ///
 /// Implementations own provider-specific behavior for a model backend. The
 /// `ModelProviderInfo` returned by `info` is the serialized/configured provider
-/// metadata used by the default MidnightCoder-compatible implementation.
+/// metadata used by the default SolaiAgent-compatible implementation.
 pub trait ModelProvider: fmt::Debug + Send + Sync {
     /// Returns the configured provider metadata.
     fn info(&self) -> &ModelProviderInfo;
@@ -137,18 +137,18 @@ pub trait ModelProvider: fmt::Debug + Send + Sync {
     ///
     /// TODO(celia-oai): Make auth manager access internal to this crate so callers
     /// resolve provider-specific auth only through `ModelProvider`. We first need
-    /// to think through whether MidnightCoder should have a unified provider-specific auth
+    /// to think through whether SolaiAgent should have a unified provider-specific auth
     /// manager throughout the codebase; that is a larger refactor than this change.
     fn auth_manager(&self) -> Option<Arc<AuthManager>>;
 
     /// Returns the current provider-scoped auth value, if one is configured.
-    fn auth(&self) -> ModelProviderFuture<'_, Option<MidnightCoderAuth>>;
+    fn auth(&self) -> ModelProviderFuture<'_, Option<SolaiAgentAuth>>;
 
     /// Returns the current app-visible account state for this provider.
     fn account_state(&self) -> ProviderAccountResult;
 
     /// Maps an API client error into the provider's user-facing error representation.
-    fn map_api_error(&self, error: ApiError) -> MidnightCoderErr {
+    fn map_api_error(&self, error: ApiError) -> SolaiAgentErr {
         codex_api::map_api_error(error)
     }
 
@@ -157,7 +157,7 @@ pub trait ModelProvider: fmt::Debug + Send + Sync {
         Box::pin(async move {
             let auth = self.auth().await;
             self.info()
-                .to_api_provider(auth.as_ref().map(MidnightCoderAuth::auth_mode))
+                .to_api_provider(auth.as_ref().map(SolaiAgentAuth::auth_mode))
         })
     }
 
@@ -178,7 +178,7 @@ pub trait ModelProvider: fmt::Debug + Send + Sync {
         })
     }
 
-    /// Returns request credentials, optionally scoped to a MidnightCoder session task.
+    /// Returns request credentials, optionally scoped to a SolaiAgent session task.
     fn api_auth_for_scope(
         &self,
         scope: ProviderAuthScope,
@@ -259,7 +259,7 @@ impl ModelProvider for ConfiguredModelProvider {
             .is_some_and(|auth| auth.is_chatgpt_auth())
     }
 
-    fn auth(&self) -> ModelProviderFuture<'_, Option<MidnightCoderAuth>> {
+    fn auth(&self) -> ModelProviderFuture<'_, Option<SolaiAgentAuth>> {
         Box::pin(async move {
             match self.auth_manager.as_ref() {
                 Some(auth_manager) => auth_manager.auth().await,
@@ -280,14 +280,14 @@ impl ModelProvider for ConfiguredModelProvider {
                     Some(auth)
                 })
                 .map(|auth| match &auth {
-                    MidnightCoderAuth::ApiKey(_) => Ok(ProviderAccount::ApiKey),
-                    MidnightCoderAuth::BedrockApiKey(_) => {
+                    SolaiAgentAuth::ApiKey(_) => Ok(ProviderAccount::ApiKey),
+                    SolaiAgentAuth::BedrockApiKey(_) => {
                         Err(ProviderAccountError::UnsupportedBedrockApiKeyAuth)
                     }
-                    MidnightCoderAuth::Chatgpt(_)
-                    | MidnightCoderAuth::ChatgptAuthTokens(_)
-                    | MidnightCoderAuth::AgentIdentity(_)
-                    | MidnightCoderAuth::PersonalAccessToken(_) => {
+                    SolaiAgentAuth::Chatgpt(_)
+                    | SolaiAgentAuth::ChatgptAuthTokens(_)
+                    | SolaiAgentAuth::AgentIdentity(_)
+                    | SolaiAgentAuth::PersonalAccessToken(_) => {
                         let email = auth.get_account_email();
                         let plan_type = auth.account_plan_type();
 
@@ -429,8 +429,8 @@ mod tests {
         .expect("valid model")
     }
 
-    fn bedrock_api_key_auth() -> MidnightCoderAuth {
-        MidnightCoderAuth::BedrockApiKey(BedrockApiKeyAuth {
+    fn bedrock_api_key_auth() -> SolaiAgentAuth {
+        SolaiAgentAuth::BedrockApiKey(BedrockApiKeyAuth {
             api_key: "bedrock-api-key-test".to_string(),
             region: "us-east-1".to_string(),
         })
@@ -516,7 +516,7 @@ mod tests {
                 region: None,
             })),
             Some(AuthManager::from_auth_for_testing(
-                MidnightCoderAuth::from_api_key("openai-api-key"),
+                SolaiAgentAuth::from_api_key("openai-api-key"),
             )),
         );
 
@@ -555,7 +555,7 @@ mod tests {
         let provider = create_model_provider(
             ModelProviderInfo::create_openai_provider(/*base_url*/ None),
             Some(AuthManager::from_auth_for_testing(
-                MidnightCoderAuth::from_api_key("openai-api-key"),
+                SolaiAgentAuth::from_api_key("openai-api-key"),
             )),
         );
 
@@ -573,7 +573,7 @@ mod tests {
         let provider = create_model_provider(
             ModelProviderInfo::create_openai_provider(/*base_url*/ None),
             Some(AuthManager::from_auth_for_testing(
-                MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing(),
+                SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing(),
             )),
         );
 
@@ -738,7 +738,7 @@ mod tests {
         let provider = create_model_provider(
             provider_info,
             Some(AuthManager::from_auth_for_testing(
-                MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing(),
+                SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing(),
             )),
         );
 

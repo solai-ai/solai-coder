@@ -1,4 +1,4 @@
-//! Write-path implementation for MidnightCoder memories.
+//! Write-path implementation for SolaiAgent memories.
 //!
 //! This crate owns the startup memory pipeline, file-backed memory artifact
 //! helpers, Phase 1 and Phase 2 prompt rendering, extension pruning, and

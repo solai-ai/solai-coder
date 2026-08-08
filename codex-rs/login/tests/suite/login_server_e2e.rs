@@ -354,8 +354,8 @@ async fn oauth_access_denied_missing_entitlement_blocks_login_with_clear_error()
     assert!(resp.status().is_success());
     let body = resp.text().await?;
     assert!(
-        body.contains("You do not have access to MidnightCoder"),
-        "error body should clearly explain the MidnightCoder access denial"
+        body.contains("You do not have access to SolaiAgent"),
+        "error body should clearly explain the SolaiAgent access denial"
     );
     assert!(
         body.contains("Contact your workspace administrator"),
@@ -432,7 +432,7 @@ async fn oauth_access_denied_unknown_reason_uses_generic_error_page() -> Result<
         "generic oauth denial should preserve the oauth error details"
     );
     assert!(
-        body.contains("Return to MidnightCoder to retry"),
+        body.contains("Return to SolaiAgent to retry"),
         "generic oauth denial should keep the generic help text"
     );
     assert!(
@@ -444,11 +444,11 @@ async fn oauth_access_denied_unknown_reason_uses_generic_error_page() -> Result<
         "generic oauth denial should include the oauth error description"
     );
     assert!(
-        !body.contains("You do not have access to MidnightCoder"),
+        !body.contains("You do not have access to SolaiAgent"),
         "generic oauth denial should not show the entitlement-specific title"
     );
     assert!(
-        !body.contains("get access to MidnightCoder"),
+        !body.contains("get access to SolaiAgent"),
         "generic oauth denial should not show the entitlement-specific admin guidance"
     );
 

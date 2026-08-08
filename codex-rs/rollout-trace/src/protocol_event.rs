@@ -1,4 +1,4 @@
-//! Mapping from MidnightCoder protocol events into raw rollout-trace events.
+//! Mapping from SolaiAgent protocol events into raw rollout-trace events.
 //!
 //! The session layer already emits protocol events for turn lifecycle, terminal
 //! sessions, patch application, MCP calls, and collaboration tools. Rollout
@@ -28,11 +28,11 @@ use std::time::Duration;
 
 use crate::AgentThreadId;
 use crate::ExecutionStatus;
-use crate::MidnightCoderTurnId;
+use crate::SolaiAgentTurnId;
 use crate::RawTraceEventPayload;
 
-pub(crate) struct MidnightCoderTurnTraceEvent {
-    pub context_turn_id: MidnightCoderTurnId,
+pub(crate) struct SolaiAgentTurnTraceEvent {
+    pub context_turn_id: SolaiAgentTurnId,
     pub payload: RawTraceEventPayload,
 }
 
@@ -40,13 +40,13 @@ pub(crate) fn codex_turn_trace_event(
     thread_id: AgentThreadId,
     default_turn_id: &str,
     event: &EventMsg,
-) -> Option<MidnightCoderTurnTraceEvent> {
+) -> Option<SolaiAgentTurnTraceEvent> {
     match event {
         EventMsg::TurnStarted(event) => {
             let codex_turn_id = event.turn_id.clone();
-            Some(MidnightCoderTurnTraceEvent {
+            Some(SolaiAgentTurnTraceEvent {
                 context_turn_id: codex_turn_id.clone(),
-                payload: RawTraceEventPayload::MidnightCoderTurnStarted {
+                payload: RawTraceEventPayload::SolaiAgentTurnStarted {
                     codex_turn_id,
                     thread_id,
                 },
@@ -54,9 +54,9 @@ pub(crate) fn codex_turn_trace_event(
         }
         EventMsg::TurnComplete(event) => {
             let codex_turn_id = event.turn_id.clone();
-            Some(MidnightCoderTurnTraceEvent {
+            Some(SolaiAgentTurnTraceEvent {
                 context_turn_id: codex_turn_id.clone(),
-                payload: RawTraceEventPayload::MidnightCoderTurnEnded {
+                payload: RawTraceEventPayload::SolaiAgentTurnEnded {
                     codex_turn_id,
                     status: ExecutionStatus::Completed,
                 },
@@ -67,9 +67,9 @@ pub(crate) fn codex_turn_trace_event(
                 .turn_id
                 .clone()
                 .unwrap_or_else(|| default_turn_id.to_string());
-            Some(MidnightCoderTurnTraceEvent {
+            Some(SolaiAgentTurnTraceEvent {
                 context_turn_id: codex_turn_id.clone(),
-                payload: RawTraceEventPayload::MidnightCoderTurnEnded {
+                payload: RawTraceEventPayload::SolaiAgentTurnEnded {
                     codex_turn_id,
                     status: execution_status_for_abort_reason(&event.reason),
                 },

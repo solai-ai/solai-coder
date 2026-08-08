@@ -9,9 +9,9 @@ from _bootstrap import ensure_local_sdk_src, runtime_config
 
 ensure_local_sdk_src()
 
-from openai_codex import MidnightCoder
+from openai_codex import SolaiAgent
 
-with MidnightCoder(config=runtime_config()) as codex:
+with SolaiAgent(config=runtime_config()) as codex:
     # Browser login returns a live handle. Open `auth_url` and call `wait()`
     # in a real app; this example cancels immediately so it stays non-blocking.
     login = codex.login_chatgpt()

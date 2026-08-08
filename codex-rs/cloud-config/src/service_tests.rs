@@ -97,7 +97,7 @@ async fn auth_manager_with_plan(plan_type: &str) -> Arc<AuthManager> {
 async fn auth_manager_with_agent_identity_business_plan() -> Arc<AuthManager> {
     let key_material =
         codex_agent_identity::generate_agent_key_material().expect("generate agent key material");
-    AuthManager::from_auth_for_testing(MidnightCoderAuth::AgentIdentity(
+    AuthManager::from_auth_for_testing(SolaiAgentAuth::AgentIdentity(
         AgentIdentityAuth::from_record(
             AgentIdentityAuthRecord {
                 agent_runtime_id: "agent-runtime-123".to_string(),
@@ -254,7 +254,7 @@ impl StaticBundleClient {
 impl BundleClient for StaticBundleClient {
     async fn get_bundle(
         &self,
-        _auth: &MidnightCoderAuth,
+        _auth: &SolaiAgentAuth,
     ) -> Result<CloudConfigBundle, BundleRequestError> {
         self.request_count.fetch_add(1, Ordering::SeqCst);
         Ok(self.bundle.clone())
@@ -266,7 +266,7 @@ struct PendingBundleClient;
 impl BundleClient for PendingBundleClient {
     async fn get_bundle(
         &self,
-        _auth: &MidnightCoderAuth,
+        _auth: &SolaiAgentAuth,
     ) -> Result<CloudConfigBundle, BundleRequestError> {
         pending::<()>().await;
         Ok(CloudConfigBundle::default())
@@ -290,7 +290,7 @@ impl SequenceBundleClient {
 impl BundleClient for SequenceBundleClient {
     async fn get_bundle(
         &self,
-        _auth: &MidnightCoderAuth,
+        _auth: &SolaiAgentAuth,
     ) -> Result<CloudConfigBundle, BundleRequestError> {
         self.request_count.fetch_add(1, Ordering::SeqCst);
         let mut responses = self.responses.lock().await;
@@ -309,7 +309,7 @@ struct TokenBundleClient {
 impl BundleClient for TokenBundleClient {
     async fn get_bundle(
         &self,
-        auth: &MidnightCoderAuth,
+        auth: &SolaiAgentAuth,
     ) -> Result<CloudConfigBundle, BundleRequestError> {
         self.request_count.fetch_add(1, Ordering::SeqCst);
         if matches!(
@@ -334,7 +334,7 @@ struct UnauthorizedBundleClient {
 impl BundleClient for UnauthorizedBundleClient {
     async fn get_bundle(
         &self,
-        _auth: &MidnightCoderAuth,
+        _auth: &SolaiAgentAuth,
     ) -> Result<CloudConfigBundle, BundleRequestError> {
         self.request_count.fetch_add(1, Ordering::SeqCst);
         Err(BundleRequestError::Unauthorized {

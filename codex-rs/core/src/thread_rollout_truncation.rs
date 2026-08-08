@@ -7,8 +7,8 @@ use crate::context_manager::is_user_turn_boundary;
 use crate::event_mapping;
 use codex_app_server_protocol::TurnStatus;
 use codex_app_server_protocol::build_turns_from_rollout_items;
-use codex_protocol::error::MidnightCoderErr;
-use codex_protocol::error::Result as MidnightCoderResult;
+use codex_protocol::error::SolaiAgentErr;
+use codex_protocol::error::Result as SolaiAgentResult;
 use codex_protocol::items::TurnItem;
 use codex_protocol::models::ResponseItem;
 use codex_protocol::protocol::EventMsg;
@@ -162,13 +162,13 @@ pub(crate) fn truncate_rollout_before_nth_user_message_from_start(
 pub fn truncate_rollout_after_turn_id(
     items: &[RolloutItem],
     last_turn_id: &str,
-) -> MidnightCoderResult<Vec<RolloutItem>> {
+) -> SolaiAgentResult<Vec<RolloutItem>> {
     let turns = build_turns_from_rollout_items(items);
     let turn = turns
         .iter()
         .find(|turn| turn.id == last_turn_id)
         .ok_or_else(|| {
-            MidnightCoderErr::InvalidRequest(format!(
+            SolaiAgentErr::InvalidRequest(format!(
                 "lastTurnId '{last_turn_id}' was not found in the source thread"
             ))
         })?;
@@ -183,13 +183,13 @@ pub fn truncate_rollout_after_turn_id(
             )
         })
         .ok_or_else(|| {
-            MidnightCoderErr::InvalidRequest(format!(
+            SolaiAgentErr::InvalidRequest(format!(
                 "lastTurnId '{last_turn_id}' is not a persisted canonical turn in the source thread"
             ))
         })?;
 
     if matches!(turn.status, TurnStatus::InProgress) {
-        return Err(MidnightCoderErr::InvalidRequest(format!(
+        return Err(SolaiAgentErr::InvalidRequest(format!(
             "lastTurnId '{last_turn_id}' identifies an in-progress turn"
         )));
     }

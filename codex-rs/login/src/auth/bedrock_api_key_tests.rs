@@ -7,7 +7,7 @@ use tempfile::tempdir;
 use super::*;
 use crate::auth::AuthKeyringBackendKind;
 use crate::auth::AuthManager;
-use crate::auth::MidnightCoderAuth;
+use crate::auth::SolaiAgentAuth;
 use crate::auth::storage::AuthStorageBackend;
 use crate::auth::storage::FileAuthStorage;
 
@@ -81,12 +81,12 @@ async fn login_with_bedrock_api_key_replaces_openai_auth() -> anyhow::Result<()>
     assert_eq!(auth_manager.auth_mode(), Some(AuthMode::BedrockApiKey));
     assert_eq!(
         auth_manager.auth_cached().and_then(|auth| match auth {
-            MidnightCoderAuth::BedrockApiKey(auth) => Some(auth),
-            MidnightCoderAuth::ApiKey(_)
-            | MidnightCoderAuth::Chatgpt(_)
-            | MidnightCoderAuth::ChatgptAuthTokens(_)
-            | MidnightCoderAuth::AgentIdentity(_)
-            | MidnightCoderAuth::PersonalAccessToken(_) => None,
+            SolaiAgentAuth::BedrockApiKey(auth) => Some(auth),
+            SolaiAgentAuth::ApiKey(_)
+            | SolaiAgentAuth::Chatgpt(_)
+            | SolaiAgentAuth::ChatgptAuthTokens(_)
+            | SolaiAgentAuth::AgentIdentity(_)
+            | SolaiAgentAuth::PersonalAccessToken(_) => None,
         }),
         Some(bedrock_auth())
     );
@@ -144,12 +144,12 @@ async fn bedrock_only_auth_storage_creates_primary_auth() -> anyhow::Result<()> 
     assert_eq!(auth_manager.auth_mode(), Some(AuthMode::BedrockApiKey));
     assert_eq!(
         auth_manager.auth_cached().and_then(|auth| match auth {
-            MidnightCoderAuth::BedrockApiKey(auth) => Some(auth),
-            MidnightCoderAuth::ApiKey(_)
-            | MidnightCoderAuth::Chatgpt(_)
-            | MidnightCoderAuth::ChatgptAuthTokens(_)
-            | MidnightCoderAuth::AgentIdentity(_)
-            | MidnightCoderAuth::PersonalAccessToken(_) => None,
+            SolaiAgentAuth::BedrockApiKey(auth) => Some(auth),
+            SolaiAgentAuth::ApiKey(_)
+            | SolaiAgentAuth::Chatgpt(_)
+            | SolaiAgentAuth::ChatgptAuthTokens(_)
+            | SolaiAgentAuth::AgentIdentity(_)
+            | SolaiAgentAuth::PersonalAccessToken(_) => None,
         }),
         Some(bedrock_auth())
     );

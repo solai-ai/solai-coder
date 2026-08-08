@@ -11,7 +11,7 @@ use codex_client::RequestBody;
 use codex_client::RequestCompression;
 use codex_login::auth::BedrockApiKeyAuth;
 use codex_model_provider_info::ModelProviderAwsAuthInfo;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::error::Result;
 use http::HeaderMap;
 
@@ -88,7 +88,7 @@ fn bearer_token_region(
         .or_else(|| non_empty_env_var_from(AWS_REGION_ENV_VAR, env_var))
         .or_else(|| non_empty_env_var_from(AWS_DEFAULT_REGION_ENV_VAR, env_var))
         .ok_or_else(|| {
-            MidnightCoderErr::Fatal(
+            SolaiAgentErr::Fatal(
                 "Amazon Bedrock bearer token auth requires \
 `model_providers.amazon-bedrock.aws.region`, `AWS_REGION`, or `AWS_DEFAULT_REGION`"
                     .to_string(),
@@ -96,8 +96,8 @@ fn bearer_token_region(
         })
 }
 
-fn aws_auth_error_to_codex_error(error: AwsAuthError) -> MidnightCoderErr {
-    MidnightCoderErr::Fatal(format!("failed to resolve Amazon Bedrock auth: {error}"))
+fn aws_auth_error_to_codex_error(error: AwsAuthError) -> SolaiAgentErr {
+    SolaiAgentErr::Fatal(format!("failed to resolve Amazon Bedrock auth: {error}"))
 }
 
 fn aws_auth_error_to_auth_error(error: AwsAuthError) -> AuthError {
@@ -109,10 +109,10 @@ fn aws_auth_error_to_auth_error(error: AwsAuthError) -> AuthError {
 }
 
 fn remove_headers_not_preserved_by_bedrock_mantle(headers: &mut HeaderMap) {
-    // The Bedrock Mantle front door does not preserve legacy MidnightCoder
+    // The Bedrock Mantle front door does not preserve legacy SolaiAgent
     // compatibility headers that use snake_case, such as `session_id` and
     // `thread_id`, before SigV4 verification. Signing that header class makes
-    // richer MidnightCoder agent requests fail even though raw Responses requests work.
+    // richer SolaiAgent agent requests fail even though raw Responses requests work.
     let headers_to_remove = headers
         .keys()
         .filter(|name| name.as_str().contains('_'))
@@ -123,7 +123,7 @@ fn remove_headers_not_preserved_by_bedrock_mantle(headers: &mut HeaderMap) {
     }
 }
 
-/// AWS SigV4 auth provider for Bedrock Mantle MidnightCoder-compatible requests.
+/// AWS SigV4 auth provider for Bedrock Mantle SolaiAgent-compatible requests.
 #[derive(Debug)]
 struct BedrockMantleSigV4AuthProvider {
     context: AwsAuthContext,

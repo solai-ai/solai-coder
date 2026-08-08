@@ -11,9 +11,9 @@ use crate::facts::CompactionTrigger;
 use crate::facts::GoalEventKind;
 use crate::facts::HookRunFact;
 use crate::facts::InvocationType;
-use crate::facts::MidnightCoderCompactionEvent;
-use crate::facts::MidnightCoderErrKind;
-use crate::facts::MidnightCoderGoalEvent;
+use crate::facts::SolaiAgentCompactionEvent;
+use crate::facts::SolaiAgentErrKind;
+use crate::facts::SolaiAgentGoalEvent;
 use crate::facts::PluginInstallRequested;
 use crate::facts::PluginState;
 use crate::facts::SubAgentThreadStartedInput;
@@ -25,7 +25,7 @@ use crate::facts::TurnSteerResult;
 use crate::facts::TurnSubmissionType;
 use crate::now_unix_millis;
 use codex_app_server_protocol::CommandExecutionSource;
-use codex_app_server_protocol::MidnightCoderErrorInfo;
+use codex_app_server_protocol::SolaiAgentErrorInfo;
 use codex_login::default_client::originator;
 use codex_plugin::PluginId;
 use codex_plugin::PluginTelemetryMetadata;
@@ -63,34 +63,34 @@ pub(crate) enum TrackEventRequest {
     SkillInvocation(SkillInvocationEventRequest),
     ThreadInitialized(ThreadInitializedEvent),
     GuardianReview(Box<GuardianReviewEventRequest>),
-    AppMentioned(MidnightCoderAppMentionedEventRequest),
-    AppUsed(MidnightCoderAppUsedEventRequest),
-    HookRun(MidnightCoderHookRunEventRequest),
-    Compaction(Box<MidnightCoderCompactionEventRequest>),
-    Goal(Box<MidnightCoderGoalEventRequest>),
-    TurnEvent(Box<MidnightCoderTurnEventRequest>),
-    TurnSteer(MidnightCoderTurnSteerEventRequest),
-    CommandExecution(MidnightCoderCommandExecutionEventRequest),
-    FileChange(MidnightCoderFileChangeEventRequest),
-    McpToolCall(MidnightCoderMcpToolCallEventRequest),
-    DynamicToolCall(MidnightCoderDynamicToolCallEventRequest),
-    CollabAgentToolCall(MidnightCoderCollabAgentToolCallEventRequest),
-    WebSearch(MidnightCoderWebSearchEventRequest),
-    ImageGeneration(MidnightCoderImageGenerationEventRequest),
-    AcceptedLineFingerprints(Box<MidnightCoderAcceptedLineFingerprintsEventRequest>),
+    AppMentioned(SolaiAgentAppMentionedEventRequest),
+    AppUsed(SolaiAgentAppUsedEventRequest),
+    HookRun(SolaiAgentHookRunEventRequest),
+    Compaction(Box<SolaiAgentCompactionEventRequest>),
+    Goal(Box<SolaiAgentGoalEventRequest>),
+    TurnEvent(Box<SolaiAgentTurnEventRequest>),
+    TurnSteer(SolaiAgentTurnSteerEventRequest),
+    CommandExecution(SolaiAgentCommandExecutionEventRequest),
+    FileChange(SolaiAgentFileChangeEventRequest),
+    McpToolCall(SolaiAgentMcpToolCallEventRequest),
+    DynamicToolCall(SolaiAgentDynamicToolCallEventRequest),
+    CollabAgentToolCall(SolaiAgentCollabAgentToolCallEventRequest),
+    WebSearch(SolaiAgentWebSearchEventRequest),
+    ImageGeneration(SolaiAgentImageGenerationEventRequest),
+    AcceptedLineFingerprints(Box<SolaiAgentAcceptedLineFingerprintsEventRequest>),
     #[allow(dead_code)]
-    ReviewEvent(MidnightCoderReviewEventRequest),
-    PluginUsed(MidnightCoderPluginUsedEventRequest),
-    PluginInstallRequested(MidnightCoderPluginInstallRequestedEventRequest),
-    PluginInstalled(MidnightCoderPluginEventRequest),
-    PluginUninstalled(MidnightCoderPluginEventRequest),
-    PluginEnabled(MidnightCoderPluginEventRequest),
-    PluginDisabled(MidnightCoderPluginEventRequest),
-    PluginInstallFailed(MidnightCoderPluginInstallFailedEventRequest),
+    ReviewEvent(SolaiAgentReviewEventRequest),
+    PluginUsed(SolaiAgentPluginUsedEventRequest),
+    PluginInstallRequested(SolaiAgentPluginInstallRequestedEventRequest),
+    PluginInstalled(SolaiAgentPluginEventRequest),
+    PluginUninstalled(SolaiAgentPluginEventRequest),
+    PluginEnabled(SolaiAgentPluginEventRequest),
+    PluginDisabled(SolaiAgentPluginEventRequest),
+    PluginInstallFailed(SolaiAgentPluginInstallFailedEventRequest),
     ExternalAgentConfigImportCompleted(
-        MidnightCoderOnboardingExternalAgentImportCompleteEventRequest,
+        SolaiAgentOnboardingExternalAgentImportCompleteEventRequest,
     ),
-    ExternalAgentConfigImportFailure(MidnightCoderOnboardingExternalAgentImportFailureEventRequest),
+    ExternalAgentConfigImportFailure(SolaiAgentOnboardingExternalAgentImportFailureEventRequest),
 }
 
 impl TrackEventRequest {
@@ -100,7 +100,7 @@ impl TrackEventRequest {
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderAcceptedLineFingerprintsEventParams {
+pub(crate) struct SolaiAgentAcceptedLineFingerprintsEventParams {
     pub(crate) event_type: &'static str,
     pub(crate) turn_id: String,
     pub(crate) thread_id: String,
@@ -114,9 +114,9 @@ pub(crate) struct MidnightCoderAcceptedLineFingerprintsEventParams {
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderAcceptedLineFingerprintsEventRequest {
+pub(crate) struct SolaiAgentAcceptedLineFingerprintsEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: MidnightCoderAcceptedLineFingerprintsEventParams,
+    pub(crate) event_params: SolaiAgentAcceptedLineFingerprintsEventParams,
 }
 
 #[derive(Serialize)]
@@ -140,7 +140,7 @@ pub(crate) struct SkillInvocationEventParams {
 }
 
 #[derive(Clone, Serialize)]
-pub(crate) struct MidnightCoderAppServerClientMetadata {
+pub(crate) struct SolaiAgentAppServerClientMetadata {
     pub(crate) product_client_id: String,
     pub(crate) client_name: Option<String>,
     pub(crate) client_version: Option<String>,
@@ -149,7 +149,7 @@ pub(crate) struct MidnightCoderAppServerClientMetadata {
 }
 
 #[derive(Clone, Serialize)]
-pub(crate) struct MidnightCoderRuntimeMetadata {
+pub(crate) struct SolaiAgentRuntimeMetadata {
     pub(crate) codex_rs_version: String,
     pub(crate) runtime_os: String,
     pub(crate) runtime_os_version: String,
@@ -160,8 +160,8 @@ pub(crate) struct MidnightCoderRuntimeMetadata {
 pub(crate) struct ThreadInitializedEventParams {
     pub(crate) thread_id: String,
     pub(crate) session_id: String,
-    pub(crate) app_server_client: MidnightCoderAppServerClientMetadata,
-    pub(crate) runtime: MidnightCoderRuntimeMetadata,
+    pub(crate) app_server_client: SolaiAgentAppServerClientMetadata,
+    pub(crate) runtime: SolaiAgentRuntimeMetadata,
     pub(crate) model: String,
     pub(crate) ephemeral: bool,
     pub(crate) thread_source: Option<ThreadSource>,
@@ -223,7 +223,7 @@ pub enum GuardianReviewSessionKind {
 #[derive(Clone, Copy, Debug, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum GuardianApprovalRequestSource {
-    /// Approval requested directly by the main MidnightCoder turn.
+    /// Approval requested directly by the main SolaiAgent turn.
     MainTurn,
     /// Approval requested by a delegated subagent and routed through the parent
     /// session for guardian review.
@@ -473,8 +473,8 @@ pub struct GuardianReviewSessionAnalyticsParams {
 #[derive(Serialize)]
 pub(crate) struct GuardianReviewEventPayload {
     pub(crate) session_id: String,
-    pub(crate) app_server_client: MidnightCoderAppServerClientMetadata,
-    pub(crate) runtime: MidnightCoderRuntimeMetadata,
+    pub(crate) app_server_client: SolaiAgentAppServerClientMetadata,
+    pub(crate) runtime: SolaiAgentRuntimeMetadata,
     #[serde(flatten)]
     pub(crate) guardian_review: GuardianReviewEventParams,
 }
@@ -518,14 +518,14 @@ pub(crate) enum ToolItemFailureKind {
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderToolItemEventBase {
+pub(crate) struct SolaiAgentToolItemEventBase {
     pub(crate) thread_id: String,
     pub(crate) turn_id: String,
     /// App-server ThreadItem.id. For tool-originated items this generally
     /// corresponds to the originating core call_id.
     pub(crate) item_id: String,
-    pub(crate) app_server_client: MidnightCoderAppServerClientMetadata,
-    pub(crate) runtime: MidnightCoderRuntimeMetadata,
+    pub(crate) app_server_client: SolaiAgentAppServerClientMetadata,
+    pub(crate) runtime: SolaiAgentRuntimeMetadata,
     pub(crate) thread_source: Option<ThreadSource>,
     pub(crate) subagent_source: Option<String>,
     pub(crate) parent_thread_id: Option<String>,
@@ -596,13 +596,13 @@ pub(crate) enum ReviewResolution {
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderReviewEventParams {
+pub(crate) struct SolaiAgentReviewEventParams {
     pub(crate) thread_id: String,
     pub(crate) turn_id: String,
     pub(crate) item_id: Option<String>,
     pub(crate) review_id: String,
-    pub(crate) app_server_client: MidnightCoderAppServerClientMetadata,
-    pub(crate) runtime: MidnightCoderRuntimeMetadata,
+    pub(crate) app_server_client: SolaiAgentAppServerClientMetadata,
+    pub(crate) runtime: SolaiAgentRuntimeMetadata,
     pub(crate) thread_source: Option<ThreadSource>,
     pub(crate) subagent_source: Option<String>,
     pub(crate) parent_thread_id: Option<String>,
@@ -618,9 +618,9 @@ pub(crate) struct MidnightCoderReviewEventParams {
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderReviewEventRequest {
+pub(crate) struct SolaiAgentReviewEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: MidnightCoderReviewEventParams,
+    pub(crate) event_params: SolaiAgentReviewEventParams,
 }
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug, Serialize)]
@@ -633,9 +633,9 @@ pub(crate) enum WebSearchActionKind {
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderCommandExecutionEventParams {
+pub(crate) struct SolaiAgentCommandExecutionEventParams {
     #[serde(flatten)]
-    pub(crate) base: MidnightCoderToolItemEventBase,
+    pub(crate) base: SolaiAgentToolItemEventBase,
     pub(crate) command_execution_source: CommandExecutionSource,
     pub(crate) exit_code: Option<i32>,
     pub(crate) command_total_action_count: u64,
@@ -646,15 +646,15 @@ pub(crate) struct MidnightCoderCommandExecutionEventParams {
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderCommandExecutionEventRequest {
+pub(crate) struct SolaiAgentCommandExecutionEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: MidnightCoderCommandExecutionEventParams,
+    pub(crate) event_params: SolaiAgentCommandExecutionEventParams,
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderFileChangeEventParams {
+pub(crate) struct SolaiAgentFileChangeEventParams {
     #[serde(flatten)]
-    pub(crate) base: MidnightCoderToolItemEventBase,
+    pub(crate) base: SolaiAgentToolItemEventBase,
     pub(crate) file_change_count: u64,
     pub(crate) file_add_count: u64,
     pub(crate) file_update_count: u64,
@@ -663,15 +663,15 @@ pub(crate) struct MidnightCoderFileChangeEventParams {
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderFileChangeEventRequest {
+pub(crate) struct SolaiAgentFileChangeEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: MidnightCoderFileChangeEventParams,
+    pub(crate) event_params: SolaiAgentFileChangeEventParams,
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderMcpToolCallEventParams {
+pub(crate) struct SolaiAgentMcpToolCallEventParams {
     #[serde(flatten)]
-    pub(crate) base: MidnightCoderToolItemEventBase,
+    pub(crate) base: SolaiAgentToolItemEventBase,
     pub(crate) mcp_server_name: String,
     pub(crate) mcp_tool_name: String,
     pub(crate) mcp_error_present: bool,
@@ -679,15 +679,15 @@ pub(crate) struct MidnightCoderMcpToolCallEventParams {
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderMcpToolCallEventRequest {
+pub(crate) struct SolaiAgentMcpToolCallEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: MidnightCoderMcpToolCallEventParams,
+    pub(crate) event_params: SolaiAgentMcpToolCallEventParams,
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderDynamicToolCallEventParams {
+pub(crate) struct SolaiAgentDynamicToolCallEventParams {
     #[serde(flatten)]
-    pub(crate) base: MidnightCoderToolItemEventBase,
+    pub(crate) base: SolaiAgentToolItemEventBase,
     pub(crate) dynamic_tool_name: String,
     pub(crate) success: Option<bool>,
     pub(crate) output_content_item_count: Option<u64>,
@@ -696,15 +696,15 @@ pub(crate) struct MidnightCoderDynamicToolCallEventParams {
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderDynamicToolCallEventRequest {
+pub(crate) struct SolaiAgentDynamicToolCallEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: MidnightCoderDynamicToolCallEventParams,
+    pub(crate) event_params: SolaiAgentDynamicToolCallEventParams,
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderCollabAgentToolCallEventParams {
+pub(crate) struct SolaiAgentCollabAgentToolCallEventParams {
     #[serde(flatten)]
-    pub(crate) base: MidnightCoderToolItemEventBase,
+    pub(crate) base: SolaiAgentToolItemEventBase,
     pub(crate) sender_thread_id: String,
     pub(crate) receiver_thread_count: u64,
     pub(crate) receiver_thread_ids: Option<Vec<String>>,
@@ -716,42 +716,42 @@ pub(crate) struct MidnightCoderCollabAgentToolCallEventParams {
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderCollabAgentToolCallEventRequest {
+pub(crate) struct SolaiAgentCollabAgentToolCallEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: MidnightCoderCollabAgentToolCallEventParams,
+    pub(crate) event_params: SolaiAgentCollabAgentToolCallEventParams,
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderWebSearchEventParams {
+pub(crate) struct SolaiAgentWebSearchEventParams {
     #[serde(flatten)]
-    pub(crate) base: MidnightCoderToolItemEventBase,
+    pub(crate) base: SolaiAgentToolItemEventBase,
     pub(crate) web_search_action: Option<WebSearchActionKind>,
     pub(crate) query_present: bool,
     pub(crate) query_count: Option<u64>,
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderWebSearchEventRequest {
+pub(crate) struct SolaiAgentWebSearchEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: MidnightCoderWebSearchEventParams,
+    pub(crate) event_params: SolaiAgentWebSearchEventParams,
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderImageGenerationEventParams {
+pub(crate) struct SolaiAgentImageGenerationEventParams {
     #[serde(flatten)]
-    pub(crate) base: MidnightCoderToolItemEventBase,
+    pub(crate) base: SolaiAgentToolItemEventBase,
     pub(crate) revised_prompt_present: bool,
     pub(crate) saved_path_present: bool,
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderImageGenerationEventRequest {
+pub(crate) struct SolaiAgentImageGenerationEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: MidnightCoderImageGenerationEventParams,
+    pub(crate) event_params: SolaiAgentImageGenerationEventParams,
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderAppMetadata {
+pub(crate) struct SolaiAgentAppMetadata {
     pub(crate) connector_id: Option<String>,
     pub(crate) thread_id: Option<String>,
     pub(crate) turn_id: Option<String>,
@@ -762,19 +762,19 @@ pub(crate) struct MidnightCoderAppMetadata {
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderAppMentionedEventRequest {
+pub(crate) struct SolaiAgentAppMentionedEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: MidnightCoderAppMetadata,
+    pub(crate) event_params: SolaiAgentAppMetadata,
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderAppUsedEventRequest {
+pub(crate) struct SolaiAgentAppUsedEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: MidnightCoderAppMetadata,
+    pub(crate) event_params: SolaiAgentAppMetadata,
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderHookRunMetadata {
+pub(crate) struct SolaiAgentHookRunMetadata {
     pub(crate) thread_id: Option<String>,
     pub(crate) turn_id: Option<String>,
     pub(crate) product_client_id: Option<String>,
@@ -785,18 +785,18 @@ pub(crate) struct MidnightCoderHookRunMetadata {
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderHookRunEventRequest {
+pub(crate) struct SolaiAgentHookRunEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: MidnightCoderHookRunMetadata,
+    pub(crate) event_params: SolaiAgentHookRunMetadata,
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderCompactionEventParams {
+pub(crate) struct SolaiAgentCompactionEventParams {
     pub(crate) thread_id: String,
     pub(crate) session_id: String,
     pub(crate) turn_id: String,
-    pub(crate) app_server_client: MidnightCoderAppServerClientMetadata,
-    pub(crate) runtime: MidnightCoderRuntimeMetadata,
+    pub(crate) app_server_client: SolaiAgentAppServerClientMetadata,
+    pub(crate) runtime: SolaiAgentRuntimeMetadata,
     pub(crate) thread_source: Option<ThreadSource>,
     pub(crate) subagent_source: Option<String>,
     pub(crate) parent_thread_id: Option<String>,
@@ -806,7 +806,7 @@ pub(crate) struct MidnightCoderCompactionEventParams {
     pub(crate) phase: CompactionPhase,
     pub(crate) strategy: CompactionStrategy,
     pub(crate) status: CompactionStatus,
-    pub(crate) codex_error_kind: Option<MidnightCoderErrKind>,
+    pub(crate) codex_error_kind: Option<SolaiAgentErrKind>,
     pub(crate) codex_error_http_status_code: Option<u16>,
     pub(crate) active_context_tokens_before: i64,
     pub(crate) active_context_tokens_after: i64,
@@ -819,18 +819,18 @@ pub(crate) struct MidnightCoderCompactionEventParams {
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderCompactionEventRequest {
+pub(crate) struct SolaiAgentCompactionEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: MidnightCoderCompactionEventParams,
+    pub(crate) event_params: SolaiAgentCompactionEventParams,
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderGoalEventParams {
+pub(crate) struct SolaiAgentGoalEventParams {
     pub(crate) thread_id: String,
     pub(crate) session_id: String,
     pub(crate) turn_id: Option<String>,
-    pub(crate) app_server_client: MidnightCoderAppServerClientMetadata,
-    pub(crate) runtime: MidnightCoderRuntimeMetadata,
+    pub(crate) app_server_client: SolaiAgentAppServerClientMetadata,
+    pub(crate) runtime: SolaiAgentRuntimeMetadata,
     pub(crate) thread_source: Option<ThreadSource>,
     pub(crate) subagent_source: Option<String>,
     pub(crate) parent_thread_id: Option<String>,
@@ -843,21 +843,21 @@ pub(crate) struct MidnightCoderGoalEventParams {
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderGoalEventRequest {
+pub(crate) struct SolaiAgentGoalEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: MidnightCoderGoalEventParams,
+    pub(crate) event_params: SolaiAgentGoalEventParams,
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderTurnEventParams {
+pub(crate) struct SolaiAgentTurnEventParams {
     pub(crate) thread_id: String,
     pub(crate) session_id: String,
     pub(crate) turn_id: String,
     // TODO(rhan-oai): Populate once queued/default submission type is plumbed from
     // the turn/start callsites instead of always being reported as None.
     pub(crate) submission_type: Option<TurnSubmissionType>,
-    pub(crate) app_server_client: MidnightCoderAppServerClientMetadata,
-    pub(crate) runtime: MidnightCoderRuntimeMetadata,
+    pub(crate) app_server_client: SolaiAgentAppServerClientMetadata,
+    pub(crate) runtime: SolaiAgentRuntimeMetadata,
     pub(crate) ephemeral: bool,
     pub(crate) thread_source: Option<ThreadSource>,
     pub(crate) initialization_mode: ThreadInitializationMode,
@@ -878,8 +878,8 @@ pub(crate) struct MidnightCoderTurnEventParams {
     pub(crate) num_input_images: usize,
     pub(crate) is_first_turn: bool,
     pub(crate) status: Option<TurnStatus>,
-    pub(crate) turn_error: Option<MidnightCoderErrorInfo>,
-    pub(crate) codex_error_kind: Option<MidnightCoderErrKind>,
+    pub(crate) turn_error: Option<SolaiAgentErrorInfo>,
+    pub(crate) codex_error_kind: Option<SolaiAgentErrKind>,
     pub(crate) codex_error_http_status_code: Option<u16>,
     pub(crate) steer_count: Option<usize>,
     pub(crate) total_tool_call_count: Option<usize>,
@@ -908,19 +908,19 @@ pub(crate) struct MidnightCoderTurnEventParams {
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderTurnEventRequest {
+pub(crate) struct SolaiAgentTurnEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: MidnightCoderTurnEventParams,
+    pub(crate) event_params: SolaiAgentTurnEventParams,
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderTurnSteerEventParams {
+pub(crate) struct SolaiAgentTurnSteerEventParams {
     pub(crate) thread_id: String,
     pub(crate) session_id: String,
     pub(crate) expected_turn_id: Option<String>,
     pub(crate) accepted_turn_id: Option<String>,
-    pub(crate) app_server_client: MidnightCoderAppServerClientMetadata,
-    pub(crate) runtime: MidnightCoderRuntimeMetadata,
+    pub(crate) app_server_client: SolaiAgentAppServerClientMetadata,
+    pub(crate) runtime: SolaiAgentRuntimeMetadata,
     pub(crate) thread_source: Option<ThreadSource>,
     pub(crate) subagent_source: Option<String>,
     pub(crate) parent_thread_id: Option<String>,
@@ -931,13 +931,13 @@ pub(crate) struct MidnightCoderTurnSteerEventParams {
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderTurnSteerEventRequest {
+pub(crate) struct SolaiAgentTurnSteerEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: MidnightCoderTurnSteerEventParams,
+    pub(crate) event_params: SolaiAgentTurnSteerEventParams,
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderPluginMetadata {
+pub(crate) struct SolaiAgentPluginMetadata {
     pub(crate) plugin_id: Option<String>,
     pub(crate) remote_plugin_id: Option<String>,
     pub(crate) plugin_name: Option<String>,
@@ -949,9 +949,9 @@ pub(crate) struct MidnightCoderPluginMetadata {
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderPluginUsedMetadata {
+pub(crate) struct SolaiAgentPluginUsedMetadata {
     #[serde(flatten)]
-    pub(crate) plugin: MidnightCoderPluginMetadata,
+    pub(crate) plugin: SolaiAgentPluginMetadata,
     pub(crate) mcp_server_names: Option<Vec<String>>,
     pub(crate) thread_id: Option<String>,
     pub(crate) turn_id: Option<String>,
@@ -959,7 +959,7 @@ pub(crate) struct MidnightCoderPluginUsedMetadata {
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderPluginInstallRequestedPluginMetadata {
+pub(crate) struct SolaiAgentPluginInstallRequestedPluginMetadata {
     pub(crate) plugin_id: String,
     pub(crate) remote_plugin_id: Option<String>,
     pub(crate) plugin_name: String,
@@ -967,9 +967,9 @@ pub(crate) struct MidnightCoderPluginInstallRequestedPluginMetadata {
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderPluginInstallRequestedMetadata {
+pub(crate) struct SolaiAgentPluginInstallRequestedMetadata {
     pub(crate) suggestion_id: String,
-    pub(crate) plugins: Vec<MidnightCoderPluginInstallRequestedPluginMetadata>,
+    pub(crate) plugins: Vec<SolaiAgentPluginInstallRequestedPluginMetadata>,
     pub(crate) source: crate::facts::PluginInstallRequestSource,
     pub(crate) thread_id: String,
     pub(crate) turn_id: String,
@@ -978,32 +978,32 @@ pub(crate) struct MidnightCoderPluginInstallRequestedMetadata {
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderPluginInstallRequestedEventRequest {
+pub(crate) struct SolaiAgentPluginInstallRequestedEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: MidnightCoderPluginInstallRequestedMetadata,
+    pub(crate) event_params: SolaiAgentPluginInstallRequestedMetadata,
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderPluginEventRequest {
+pub(crate) struct SolaiAgentPluginEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: MidnightCoderPluginMetadata,
+    pub(crate) event_params: SolaiAgentPluginMetadata,
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderPluginInstallFailedMetadata {
+pub(crate) struct SolaiAgentPluginInstallFailedMetadata {
     #[serde(flatten)]
-    pub(crate) plugin: MidnightCoderPluginMetadata,
+    pub(crate) plugin: SolaiAgentPluginMetadata,
     pub(crate) error_type: String,
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderPluginInstallFailedEventRequest {
+pub(crate) struct SolaiAgentPluginInstallFailedEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: MidnightCoderPluginInstallFailedMetadata,
+    pub(crate) event_params: SolaiAgentPluginInstallFailedMetadata,
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderOnboardingExternalAgentImportCompleteMetadata {
+pub(crate) struct SolaiAgentOnboardingExternalAgentImportCompleteMetadata {
     pub(crate) import_id: String,
     pub(crate) source: String,
     #[serde(rename = "type")]
@@ -1014,13 +1014,13 @@ pub(crate) struct MidnightCoderOnboardingExternalAgentImportCompleteMetadata {
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderOnboardingExternalAgentImportCompleteEventRequest {
+pub(crate) struct SolaiAgentOnboardingExternalAgentImportCompleteEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: MidnightCoderOnboardingExternalAgentImportCompleteMetadata,
+    pub(crate) event_params: SolaiAgentOnboardingExternalAgentImportCompleteMetadata,
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderOnboardingExternalAgentImportFailureMetadata {
+pub(crate) struct SolaiAgentOnboardingExternalAgentImportFailureMetadata {
     pub(crate) import_id: String,
     pub(crate) source: String,
     #[serde(rename = "type")]
@@ -1031,15 +1031,15 @@ pub(crate) struct MidnightCoderOnboardingExternalAgentImportFailureMetadata {
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderOnboardingExternalAgentImportFailureEventRequest {
+pub(crate) struct SolaiAgentOnboardingExternalAgentImportFailureEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: MidnightCoderOnboardingExternalAgentImportFailureMetadata,
+    pub(crate) event_params: SolaiAgentOnboardingExternalAgentImportFailureMetadata,
 }
 
 #[derive(Serialize)]
-pub(crate) struct MidnightCoderPluginUsedEventRequest {
+pub(crate) struct SolaiAgentPluginUsedEventRequest {
     pub(crate) event_type: &'static str,
-    pub(crate) event_params: MidnightCoderPluginUsedMetadata,
+    pub(crate) event_params: SolaiAgentPluginUsedMetadata,
 }
 
 pub(crate) fn plugin_state_event_type(state: PluginState) -> &'static str {
@@ -1054,8 +1054,8 @@ pub(crate) fn plugin_state_event_type(state: PluginState) -> &'static str {
 pub(crate) fn codex_app_metadata(
     tracking: &TrackEventsContext,
     app: AppInvocation,
-) -> MidnightCoderAppMetadata {
-    MidnightCoderAppMetadata {
+) -> SolaiAgentAppMetadata {
+    SolaiAgentAppMetadata {
         connector_id: app.connector_id,
         thread_id: Some(tracking.thread_id.clone()),
         turn_id: Some(tracking.turn_id.clone()),
@@ -1068,20 +1068,20 @@ pub(crate) fn codex_app_metadata(
 
 pub(crate) fn codex_plugin_metadata(
     plugin: PluginTelemetryMetadata,
-) -> MidnightCoderPluginMetadata {
+) -> SolaiAgentPluginMetadata {
     codex_plugin_metadata_with_product_client_id(plugin, originator().value)
 }
 
 fn codex_plugin_metadata_with_product_client_id(
     plugin: PluginTelemetryMetadata,
     product_client_id: String,
-) -> MidnightCoderPluginMetadata {
+) -> SolaiAgentPluginMetadata {
     let PluginTelemetryMetadata {
         plugin_id,
         remote_plugin_id,
         capability_summary,
     } = plugin;
-    MidnightCoderPluginMetadata {
+    SolaiAgentPluginMetadata {
         plugin_id: plugin_id.as_ref().map(PluginId::as_key),
         remote_plugin_id,
         plugin_name: plugin_id
@@ -1108,13 +1108,13 @@ fn codex_plugin_metadata_with_product_client_id(
 pub(crate) fn codex_plugin_install_requested_metadata(
     tracking: &TrackEventsContext,
     request: PluginInstallRequested,
-) -> MidnightCoderPluginInstallRequestedMetadata {
-    MidnightCoderPluginInstallRequestedMetadata {
+) -> SolaiAgentPluginInstallRequestedMetadata {
+    SolaiAgentPluginInstallRequestedMetadata {
         suggestion_id: request.suggestion_id,
         plugins: request
             .plugins
             .into_iter()
-            .map(|plugin| MidnightCoderPluginInstallRequestedPluginMetadata {
+            .map(|plugin| SolaiAgentPluginInstallRequestedPluginMetadata {
                 plugin_id: plugin.plugin_id,
                 remote_plugin_id: plugin.remote_plugin_id,
                 plugin_name: plugin.plugin_name,
@@ -1130,15 +1130,15 @@ pub(crate) fn codex_plugin_install_requested_metadata(
 }
 
 pub(crate) fn codex_compaction_event_params(
-    input: MidnightCoderCompactionEvent,
+    input: SolaiAgentCompactionEvent,
     session_id: String,
-    app_server_client: MidnightCoderAppServerClientMetadata,
-    runtime: MidnightCoderRuntimeMetadata,
+    app_server_client: SolaiAgentAppServerClientMetadata,
+    runtime: SolaiAgentRuntimeMetadata,
     thread_source: Option<ThreadSource>,
     subagent_source: Option<String>,
     parent_thread_id: Option<String>,
-) -> MidnightCoderCompactionEventParams {
-    MidnightCoderCompactionEventParams {
+) -> SolaiAgentCompactionEventParams {
+    SolaiAgentCompactionEventParams {
         thread_id: input.thread_id,
         session_id,
         turn_id: input.turn_id,
@@ -1167,15 +1167,15 @@ pub(crate) fn codex_compaction_event_params(
 }
 
 pub(crate) fn codex_goal_event_params(
-    input: MidnightCoderGoalEvent,
+    input: SolaiAgentGoalEvent,
     session_id: String,
-    app_server_client: MidnightCoderAppServerClientMetadata,
-    runtime: MidnightCoderRuntimeMetadata,
+    app_server_client: SolaiAgentAppServerClientMetadata,
+    runtime: SolaiAgentRuntimeMetadata,
     thread_source: Option<ThreadSource>,
     subagent_source: Option<String>,
     parent_thread_id: Option<String>,
-) -> MidnightCoderGoalEventParams {
-    MidnightCoderGoalEventParams {
+) -> SolaiAgentGoalEventParams {
+    SolaiAgentGoalEventParams {
         thread_id: input.thread_id,
         session_id,
         turn_id: input.turn_id,
@@ -1196,12 +1196,12 @@ pub(crate) fn codex_goal_event_params(
 pub(crate) fn codex_plugin_used_metadata(
     tracking: &TrackEventsContext,
     plugin: PluginTelemetryMetadata,
-) -> MidnightCoderPluginUsedMetadata {
+) -> SolaiAgentPluginUsedMetadata {
     let mcp_server_names = plugin
         .capability_summary
         .as_ref()
         .map(|summary| summary.mcp_server_names.clone());
-    MidnightCoderPluginUsedMetadata {
+    SolaiAgentPluginUsedMetadata {
         plugin: codex_plugin_metadata_with_product_client_id(
             plugin,
             tracking.product_client_id.clone(),
@@ -1216,8 +1216,8 @@ pub(crate) fn codex_plugin_used_metadata(
 pub(crate) fn codex_hook_run_metadata(
     tracking: &TrackEventsContext,
     hook: HookRunFact,
-) -> MidnightCoderHookRunMetadata {
-    MidnightCoderHookRunMetadata {
+) -> SolaiAgentHookRunMetadata {
+    SolaiAgentHookRunMetadata {
         thread_id: Some(tracking.thread_id.clone()),
         turn_id: Some(tracking.turn_id.clone()),
         product_client_id: Some(tracking.product_client_id.clone()),
@@ -1259,9 +1259,9 @@ fn analytics_hook_source(source: HookSource) -> &'static str {
     }
 }
 
-pub(crate) fn current_runtime_metadata() -> MidnightCoderRuntimeMetadata {
+pub(crate) fn current_runtime_metadata() -> SolaiAgentRuntimeMetadata {
     let os_info = os_info::get();
-    MidnightCoderRuntimeMetadata {
+    SolaiAgentRuntimeMetadata {
         codex_rs_version: env!("CARGO_PKG_VERSION").to_string(),
         runtime_os: std::env::consts::OS.to_string(),
         runtime_os_version: os_info.version().to_string(),
@@ -1275,7 +1275,7 @@ pub(crate) fn subagent_thread_started_event_request(
     let event_params = ThreadInitializedEventParams {
         thread_id: input.thread_id,
         session_id: input.session_id,
-        app_server_client: MidnightCoderAppServerClientMetadata {
+        app_server_client: SolaiAgentAppServerClientMetadata {
             product_client_id: input.product_client_id,
             client_name: Some(input.client_name),
             client_version: Some(input.client_version),

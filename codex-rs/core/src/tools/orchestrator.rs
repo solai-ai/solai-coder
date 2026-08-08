@@ -31,7 +31,7 @@ use crate::tools::sandboxing::sandbox_override_for_first_attempt;
 use crate::tools::sandboxing::unsandboxed_execution_allowed;
 use codex_hooks::PermissionRequestDecision;
 use codex_otel::ToolDecisionSource;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::error::SandboxErr;
 use codex_protocol::exec_output::ExecToolCallOutput;
 use codex_protocol::protocol::AskForApproval;
@@ -294,7 +294,7 @@ impl ToolOrchestrator {
                     deferred_network_approval: first_deferred_network_approval,
                 })
             }
-            Err(ToolError::MidnightCoder(MidnightCoderErr::Sandbox(SandboxErr::Denied {
+            Err(ToolError::SolaiAgent(SolaiAgentErr::Sandbox(SandboxErr::Denied {
                 output,
                 network_policy_decision,
             }))) => {
@@ -313,7 +313,7 @@ impl ToolOrchestrator {
                         initial_duration,
                         /*escalated_duration*/ None,
                     );
-                    return Err(ToolError::MidnightCoder(MidnightCoderErr::Sandbox(
+                    return Err(ToolError::SolaiAgent(SolaiAgentErr::Sandbox(
                         SandboxErr::Denied {
                             output,
                             network_policy_decision,
@@ -328,7 +328,7 @@ impl ToolOrchestrator {
                         initial_duration,
                         /*escalated_duration*/ None,
                     );
-                    return Err(ToolError::MidnightCoder(MidnightCoderErr::Sandbox(
+                    return Err(ToolError::SolaiAgent(SolaiAgentErr::Sandbox(
                         SandboxErr::Denied {
                             output,
                             network_policy_decision,
@@ -359,7 +359,7 @@ impl ToolOrchestrator {
                             initial_duration,
                             /*escalated_duration*/ None,
                         );
-                        return Err(ToolError::MidnightCoder(MidnightCoderErr::Sandbox(
+                        return Err(ToolError::SolaiAgent(SolaiAgentErr::Sandbox(
                             SandboxErr::Denied {
                                 output,
                                 network_policy_decision,
@@ -375,7 +375,7 @@ impl ToolOrchestrator {
                         initial_duration,
                         /*escalated_duration*/ None,
                     );
-                    return Err(ToolError::MidnightCoder(MidnightCoderErr::Sandbox(
+                    return Err(ToolError::SolaiAgent(SolaiAgentErr::Sandbox(
                         SandboxErr::Denied {
                             output,
                             network_policy_decision,
@@ -614,16 +614,16 @@ impl ToolOrchestrator {
 
 fn sandbox_outcome_from_tool_error(err: &ToolError) -> Option<&'static str> {
     match err {
-        ToolError::MidnightCoder(MidnightCoderErr::Sandbox(SandboxErr::Denied { .. })) => {
+        ToolError::SolaiAgent(SolaiAgentErr::Sandbox(SandboxErr::Denied { .. })) => {
             Some("denied")
         }
-        ToolError::MidnightCoder(MidnightCoderErr::Sandbox(SandboxErr::Timeout { .. })) => {
+        ToolError::SolaiAgent(SolaiAgentErr::Sandbox(SandboxErr::Timeout { .. })) => {
             Some("timed_out")
         }
-        ToolError::MidnightCoder(MidnightCoderErr::Sandbox(SandboxErr::Signal(_))) => {
+        ToolError::SolaiAgent(SolaiAgentErr::Sandbox(SandboxErr::Signal(_))) => {
             Some("signal")
         }
-        ToolError::Rejected(_) | ToolError::MidnightCoder(_) => None,
+        ToolError::Rejected(_) | ToolError::SolaiAgent(_) => None,
     }
 }
 

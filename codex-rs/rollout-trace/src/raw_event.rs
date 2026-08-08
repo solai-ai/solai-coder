@@ -8,7 +8,7 @@ use crate::model::EdgeId;
 use crate::model::ExecutionStatus;
 use crate::model::InferenceCallId;
 use crate::model::McpCallId;
-use crate::model::MidnightCoderTurnId;
+use crate::model::SolaiAgentTurnId;
 use crate::model::ModelVisibleCallId;
 use crate::model::RolloutStatus;
 use crate::model::ToolCallId;
@@ -38,7 +38,7 @@ pub struct RawTraceEvent {
     pub wall_time_unix_ms: i64,
     pub rollout_id: String,
     pub thread_id: Option<AgentThreadId>,
-    pub codex_turn_id: Option<MidnightCoderTurnId>,
+    pub codex_turn_id: Option<SolaiAgentTurnId>,
     pub payload: RawTraceEventPayload,
 }
 
@@ -46,7 +46,7 @@ pub struct RawTraceEvent {
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct RawTraceEventContext {
     pub thread_id: Option<AgentThreadId>,
-    pub codex_turn_id: Option<MidnightCoderTurnId>,
+    pub codex_turn_id: Option<SolaiAgentTurnId>,
 }
 
 /// Runtime requester as observed at the raw tool boundary.
@@ -84,18 +84,18 @@ pub enum RawTraceEventPayload {
         thread_id: AgentThreadId,
         status: RolloutStatus,
     },
-    MidnightCoderTurnStarted {
-        codex_turn_id: MidnightCoderTurnId,
+    SolaiAgentTurnStarted {
+        codex_turn_id: SolaiAgentTurnId,
         thread_id: AgentThreadId,
     },
-    MidnightCoderTurnEnded {
-        codex_turn_id: MidnightCoderTurnId,
+    SolaiAgentTurnEnded {
+        codex_turn_id: SolaiAgentTurnId,
         status: ExecutionStatus,
     },
     InferenceStarted {
         inference_call_id: InferenceCallId,
         thread_id: AgentThreadId,
-        codex_turn_id: MidnightCoderTurnId,
+        codex_turn_id: SolaiAgentTurnId,
         model: String,
         provider_name: String,
         request_payload: RawPayloadRef,
@@ -120,9 +120,9 @@ pub enum RawTraceEventPayload {
     InferenceCancelled {
         inference_call_id: InferenceCallId,
         /// Provider transport request id, such as `x-request-id`, when observed
-        /// before MidnightCoder stopped consuming the stream.
+        /// before SolaiAgent stopped consuming the stream.
         upstream_request_id: Option<String>,
-        /// Why MidnightCoder stopped consuming the provider stream before a terminal response event.
+        /// Why SolaiAgent stopped consuming the provider stream before a terminal response event.
         reason: String,
         /// Completed output items observed before cancellation, if any.
         partial_response_payload: Option<RawPayloadRef>,
@@ -146,13 +146,13 @@ pub enum RawTraceEventPayload {
     },
     ToolCallRuntimeStarted {
         tool_call_id: ToolCallId,
-        /// Runtime/protocol observation for how MidnightCoder began executing the tool.
+        /// Runtime/protocol observation for how SolaiAgent began executing the tool.
         runtime_payload: RawPayloadRef,
     },
     ToolCallRuntimeEnded {
         tool_call_id: ToolCallId,
         status: ExecutionStatus,
-        /// Runtime/protocol observation for how MidnightCoder finished executing the tool.
+        /// Runtime/protocol observation for how SolaiAgent finished executing the tool.
         runtime_payload: RawPayloadRef,
     },
     ToolCallEnded {
@@ -184,7 +184,7 @@ pub enum RawTraceEventPayload {
         compaction_id: CompactionId,
         compaction_request_id: CompactionRequestId,
         thread_id: AgentThreadId,
-        codex_turn_id: MidnightCoderTurnId,
+        codex_turn_id: SolaiAgentTurnId,
         model: String,
         provider_name: String,
         request_payload: RawPayloadRef,
@@ -209,7 +209,7 @@ pub enum RawTraceEventPayload {
     AgentResultObserved {
         edge_id: EdgeId,
         child_thread_id: AgentThreadId,
-        child_codex_turn_id: MidnightCoderTurnId,
+        child_codex_turn_id: SolaiAgentTurnId,
         parent_thread_id: AgentThreadId,
         message: String,
         /// Raw notification payload. This is evidence for the runtime delivery,
@@ -238,8 +238,8 @@ impl RawTraceEventPayload {
             RawTraceEventPayload::RolloutStarted { .. }
             | RawTraceEventPayload::RolloutEnded { .. }
             | RawTraceEventPayload::ThreadEnded { .. }
-            | RawTraceEventPayload::MidnightCoderTurnStarted { .. }
-            | RawTraceEventPayload::MidnightCoderTurnEnded { .. }
+            | RawTraceEventPayload::SolaiAgentTurnStarted { .. }
+            | RawTraceEventPayload::SolaiAgentTurnEnded { .. }
             | RawTraceEventPayload::CompactionRequestFailed { .. }
             | RawTraceEventPayload::CodeCellStarted { .. }
             | RawTraceEventPayload::McpToolCallCorrelationAssigned { .. }

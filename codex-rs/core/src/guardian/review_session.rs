@@ -21,7 +21,7 @@ use codex_protocol::protocol::ErrorEvent;
 use codex_protocol::protocol::Event;
 use codex_protocol::protocol::EventMsg;
 use codex_protocol::protocol::InitialHistory;
-use codex_protocol::protocol::MidnightCoderErrorInfo;
+use codex_protocol::protocol::SolaiAgentErrorInfo;
 use codex_protocol::protocol::Op;
 use codex_protocol::protocol::RolloutItem;
 use codex_protocol::protocol::SessionSource;
@@ -42,7 +42,7 @@ use crate::config::NetworkProxySpec;
 use crate::config::Permissions;
 use crate::context::ContextualUserFragment;
 use crate::context::GuardianFollowupReviewReminder;
-use crate::session::MidnightCoder;
+use crate::session::SolaiAgent;
 use crate::session::session::Session;
 use crate::session::turn_context::TurnContext;
 use codex_config::types::McpServerConfig;
@@ -66,7 +66,7 @@ pub(crate) enum GuardianReviewSessionOutcome {
     PromptBuildFailed(anyhow::Error),
     SessionFailed {
         error: anyhow::Error,
-        error_info: Option<MidnightCoderErrorInfo>,
+        error_info: Option<SolaiAgentErrorInfo>,
     },
     TimedOut,
     Aborted,
@@ -104,7 +104,7 @@ struct GuardianReviewSessionState {
 }
 
 struct GuardianReviewSession {
-    codex: MidnightCoder,
+    codex: SolaiAgent,
     cancel_token: CancellationToken,
     reuse_key: GuardianReviewSessionReuseKey,
     review_lock: Semaphore,
@@ -490,7 +490,7 @@ impl GuardianReviewSessionManager {
     }
 
     #[cfg(test)]
-    pub(crate) async fn cache_for_test(&self, codex: MidnightCoder) {
+    pub(crate) async fn cache_for_test(&self, codex: SolaiAgent) {
         let reuse_key = GuardianReviewSessionReuseKey::from_spawn_config(
             codex.session.get_config().await.as_ref(),
             codex.session.user_instructions().await,
@@ -509,7 +509,7 @@ impl GuardianReviewSessionManager {
     }
 
     #[cfg(test)]
-    pub(crate) async fn register_ephemeral_for_test(&self, codex: MidnightCoder) {
+    pub(crate) async fn register_ephemeral_for_test(&self, codex: SolaiAgent) {
         let reuse_key = GuardianReviewSessionReuseKey::from_spawn_config(
             codex.session.get_config().await.as_ref(),
             codex.session.user_instructions().await,
@@ -1046,7 +1046,7 @@ pub(crate) fn build_guardian_review_session_config(
         Feature::SpawnCsv,
         Feature::Collab,
         Feature::MultiAgentV2,
-        Feature::MidnightCoderHooks,
+        Feature::SolaiAgentHooks,
         Feature::Apps,
         Feature::Plugins,
         Feature::WebSearchRequest,
@@ -1100,7 +1100,7 @@ async fn run_before_review_deadline_with_cancel<T>(
 }
 
 async fn interrupt_and_drain_turn(
-    codex: &MidnightCoder,
+    codex: &SolaiAgent,
     expected_turn_id: &str,
 ) -> anyhow::Result<()> {
     let _ = codex.submit(Op::Interrupt).await;
@@ -1151,7 +1151,7 @@ mod tests {
 
         (
             GuardianReviewSession {
-                codex: MidnightCoder {
+                codex: SolaiAgent {
                     tx_sub,
                     rx_event,
                     agent_status,
@@ -1362,7 +1362,7 @@ mod tests {
         let mut parent_config = crate::config::test_config().await;
         parent_config
             .features
-            .enable(Feature::MidnightCoderHooks)
+            .enable(Feature::SolaiAgentHooks)
             .expect("enable hooks on parent config");
 
         let guardian_config = build_guardian_review_session_config(
@@ -1376,7 +1376,7 @@ mod tests {
         assert!(
             !guardian_config
                 .features
-                .enabled(Feature::MidnightCoderHooks)
+                .enabled(Feature::SolaiAgentHooks)
         );
     }
 
@@ -1689,7 +1689,7 @@ mod tests {
                 id: "current-turn".to_string(),
                 msg: EventMsg::Error(ErrorEvent {
                     message: "temporary failure".to_string(),
-                    codex_error_info: Some(MidnightCoderErrorInfo::ServerOverloaded),
+                    codex_error_info: Some(SolaiAgentErrorInfo::ServerOverloaded),
                 }),
             })
             .await
@@ -1717,7 +1717,7 @@ mod tests {
             panic!("expected structured session failure");
         };
         assert_eq!(error.to_string(), "temporary failure");
-        assert_eq!(error_info, Some(MidnightCoderErrorInfo::ServerOverloaded));
+        assert_eq!(error_info, Some(SolaiAgentErrorInfo::ServerOverloaded));
         assert!(keep_review_session);
         assert!(capture_token_usage);
     }

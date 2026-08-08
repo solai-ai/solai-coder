@@ -3,11 +3,11 @@ from __future__ import annotations
 from typing import Any
 
 
-class MidnightCoderError(Exception):
+class SolaiAgentError(Exception):
     """Base exception for SDK errors."""
 
 
-class JsonRpcError(MidnightCoderError):
+class JsonRpcError(SolaiAgentError):
     """Raw JSON-RPC error wrapper from the server."""
 
     def __init__(self, code: int, message: str, data: Any = None):
@@ -17,35 +17,35 @@ class JsonRpcError(MidnightCoderError):
         self.data = data
 
 
-class TransportClosedError(MidnightCoderError):
-    """Raised when the MidnightCoder transport closes unexpectedly."""
+class TransportClosedError(SolaiAgentError):
+    """Raised when the SolaiAgent transport closes unexpectedly."""
 
 
-class MidnightCoderRpcError(JsonRpcError):
+class SolaiAgentRpcError(JsonRpcError):
     """Base typed error for JSON-RPC failures."""
 
 
-class ParseError(MidnightCoderRpcError):
+class ParseError(SolaiAgentRpcError):
     """Raised when a request or response cannot be parsed."""
 
 
-class InvalidRequestError(MidnightCoderRpcError):
+class InvalidRequestError(SolaiAgentRpcError):
     """Raised when the runtime rejects the request shape."""
 
 
-class MethodNotFoundError(MidnightCoderRpcError):
+class MethodNotFoundError(SolaiAgentRpcError):
     """Raised when the requested operation is unavailable."""
 
 
-class InvalidParamsError(MidnightCoderRpcError):
+class InvalidParamsError(SolaiAgentRpcError):
     """Raised when an operation receives invalid parameters."""
 
 
-class InternalRpcError(MidnightCoderRpcError):
+class InternalRpcError(SolaiAgentRpcError):
     """Raised when the runtime reports an internal RPC failure."""
 
 
-class ServerBusyError(MidnightCoderRpcError):
+class ServerBusyError(SolaiAgentRpcError):
     """Server is overloaded / unavailable and caller should retry."""
 
 
@@ -104,7 +104,7 @@ def map_jsonrpc_error(code: int, message: str, data: Any = None) -> JsonRpcError
             return ServerBusyError(code, message, data)
         if _contains_retry_limit_text(message):
             return RetryLimitExceededError(code, message, data)
-        return MidnightCoderRpcError(code, message, data)
+        return SolaiAgentRpcError(code, message, data)
 
     return JsonRpcError(code, message, data)
 

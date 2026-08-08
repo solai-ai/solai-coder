@@ -1,5 +1,5 @@
-use crate::default_client::MidnightCoderHttpClient;
-use crate::default_client::MidnightCoderRequestBuilder;
+use crate::default_client::SolaiAgentHttpClient;
+use crate::default_client::SolaiAgentRequestBuilder;
 use crate::error::TransportError;
 use crate::request::Request;
 use crate::request::RequestBody;
@@ -35,17 +35,17 @@ pub trait HttpTransport: Send + Sync {
 
 #[derive(Clone, Debug)]
 pub struct ReqwestTransport {
-    client: MidnightCoderHttpClient,
+    client: SolaiAgentHttpClient,
 }
 
 impl ReqwestTransport {
     pub fn new(client: reqwest::Client) -> Self {
         Self {
-            client: MidnightCoderHttpClient::new(client),
+            client: SolaiAgentHttpClient::new(client),
         }
     }
 
-    fn build(&self, req: Request) -> Result<MidnightCoderRequestBuilder, TransportError> {
+    fn build(&self, req: Request) -> Result<SolaiAgentRequestBuilder, TransportError> {
         let prepared = req.prepare_body_for_send().map_err(TransportError::Build)?;
 
         let Request {

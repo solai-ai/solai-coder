@@ -6,7 +6,7 @@ use codex_protocol::protocol::DeprecationNoticeEvent;
 use codex_protocol::protocol::EventMsg;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestMidnightCoder;
+use core_test_support::test_codex::TestSolaiAgent;
 use core_test_support::test_codex::test_codex;
 use core_test_support::wait_for_event_match;
 use pretty_assertions::assert_eq;
@@ -30,7 +30,7 @@ async fn emits_deprecation_notice_for_legacy_feature_flag() -> anyhow::Result<()
         config.use_experimental_unified_exec_tool = true;
     });
 
-    let TestMidnightCoder { codex, .. } = builder.build(&server).await?;
+    let TestSolaiAgent { codex, .. } = builder.build(&server).await?;
 
     let notice = wait_for_event_match(&codex, |event| match event {
         EventMsg::DeprecationNotice(ev) => Some(ev.clone()),
@@ -71,7 +71,7 @@ async fn emits_deprecation_notice_for_web_search_feature_flag_values() -> anyhow
                 .expect("test config should allow managed feature map updates");
         });
 
-        let TestMidnightCoder { codex, .. } = builder.build(&server).await?;
+        let TestSolaiAgent { codex, .. } = builder.build(&server).await?;
 
         let notice = wait_for_event_match(&codex, |event| match event {
             EventMsg::DeprecationNotice(ev)
@@ -117,7 +117,7 @@ async fn emits_deprecation_notice_for_use_legacy_landlock() -> anyhow::Result<()
             .expect("test config should allow managed feature map updates");
     });
 
-    let TestMidnightCoder { codex, .. } = builder.build(&server).await?;
+    let TestSolaiAgent { codex, .. } = builder.build(&server).await?;
 
     let notice = wait_for_event_match(&codex, |event| match event {
         EventMsg::DeprecationNotice(ev)

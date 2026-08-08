@@ -1,7 +1,7 @@
 use super::*;
 use crate::tools::handlers::multi_agents_spec::create_interrupt_agent_tool_v2;
 use crate::turn_timing::now_unix_timestamp_ms;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_tools::ToolSpec;
 
 pub(crate) struct Handler;
@@ -68,8 +68,8 @@ async fn handle_interrupt_agent(
         .await
     {
         Ok(_)
-        | Err(MidnightCoderErr::ThreadNotFound(_))
-        | Err(MidnightCoderErr::InternalAgentDied) => Ok(()),
+        | Err(SolaiAgentErr::ThreadNotFound(_))
+        | Err(SolaiAgentErr::InternalAgentDied) => Ok(()),
         Err(err) => Err(collab_agent_error(agent_id, err)),
     };
     result?;

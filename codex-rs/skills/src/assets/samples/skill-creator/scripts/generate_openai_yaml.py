@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-MidnightCoder YAML Generator - Creates agents/openai.yaml for a skill folder.
+SolaiAgent YAML Generator - Creates agents/openai.yaml for a skill folder.
 
 Usage:
     generate_openai_yaml.py <skill_dir> [--name <skill_name>] [--interface key=value]
@@ -26,7 +26,7 @@ ACRONYMS = {
 }
 
 BRANDS = {
-    "openai": "MidnightCoder",
+    "openai": "SolaiAgent",
     "openapi": "OpenAPI",
     "github": "GitHub",
     "pagerduty": "PagerDuty",

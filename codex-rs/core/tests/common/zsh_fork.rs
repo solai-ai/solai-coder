@@ -9,8 +9,8 @@ use codex_protocol::models::PermissionProfile;
 use codex_protocol::permissions::NetworkSandboxPolicy;
 use codex_protocol::protocol::AskForApproval;
 
-use crate::test_codex::TestMidnightCoder;
-use crate::test_codex::TestMidnightCoderBuilder;
+use crate::test_codex::TestSolaiAgent;
+use crate::test_codex::TestSolaiAgentBuilder;
 use crate::test_codex::test_codex;
 
 #[derive(Clone)]
@@ -74,7 +74,7 @@ pub async fn build_zsh_fork_test<F>(
     approval_policy: AskForApproval,
     permission_profile: PermissionProfile,
     pre_build_hook: F,
-) -> Result<TestMidnightCoder>
+) -> Result<TestSolaiAgent>
 where
     F: FnOnce(&Path) + Send + 'static,
 {
@@ -95,7 +95,7 @@ pub async fn build_unified_exec_zsh_fork_test<F>(
     approval_policy: AskForApproval,
     permission_profile: PermissionProfile,
     pre_build_hook: F,
-) -> Result<TestMidnightCoder>
+) -> Result<TestSolaiAgent>
 where
     F: FnOnce(&Path) + Send + 'static,
 {
@@ -122,7 +122,7 @@ where
 pub fn zsh_fork_test_builder(
     runtime: ZshForkRuntime,
     approval_policy: AskForApproval,
-) -> TestMidnightCoderBuilder {
+) -> TestSolaiAgentBuilder {
     test_codex().with_config(move |config| {
         runtime.apply_to_config(config, approval_policy);
     })

@@ -4,7 +4,7 @@ use codex_core::compact::SUMMARIZATION_PROMPT;
 use codex_core::compact::SUMMARY_PREFIX;
 use codex_core::config::Config;
 use codex_features::Feature;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_model_provider_info::ModelProviderInfo;
 use codex_model_provider_info::built_in_model_providers;
 use codex_models_manager::bundled_models_response;
@@ -268,7 +268,7 @@ with Path(r"{manual_post_log_path}").open("a", encoding="utf-8") as handle:
 fn non_openai_model_provider(server: &MockServer) -> ModelProviderInfo {
     let mut provider =
         built_in_model_providers(/* openai_base_url */ /*openai_base_url*/ None)["openai"].clone();
-    provider.name = "MidnightCoder (test)".into();
+    provider.name = "SolaiAgent (test)".into();
     provider.base_url = Some(format!("{}/v1", server.uri()));
     provider.supports_websockets = false;
     provider
@@ -353,7 +353,7 @@ fn remote_v2_compaction_response() -> String {
 
 fn local_compaction_provider(server: &wiremock::MockServer) -> ModelProviderInfo {
     let mut provider = built_in_model_providers(/*openai_base_url*/ None)["openai"].clone();
-    provider.name = "MidnightCoder-compatible test provider".to_string();
+    provider.name = "SolaiAgent-compatible test provider".to_string();
     provider.base_url = Some(format!("{}/v1", server.uri()));
     provider.supports_websockets = false;
     provider
@@ -404,7 +404,7 @@ fn assert_pre_sampling_switch_compaction_requests(
 }
 
 async fn assert_compaction_uses_turn_lifecycle_id(
-    codex: &std::sync::Arc<codex_core::MidnightCoderThread>,
+    codex: &std::sync::Arc<codex_core::SolaiAgentThread>,
 ) {
     let mut turn_started_id = None;
     let mut turn_completed_id = None;
@@ -489,7 +489,7 @@ async fn summarize_context_three_requests_and_instructions() {
     // inspect them without relying on specific prompt markers.
     let request_log = mount_sse_sequence(&server, vec![sse1, sse2, sse3]).await;
 
-    // Build config pointing to the mock server and spawn MidnightCoder.
+    // Build config pointing to the mock server and spawn SolaiAgent.
     let model_provider = non_openai_model_provider(&server);
     let mut builder = test_codex().with_config(move |config| {
         config.model_provider = model_provider;
@@ -632,7 +632,7 @@ async fn summarize_context_three_requests_and_instructions() {
         "third request should not include the summarize trigger"
     );
 
-    // Shut down MidnightCoder to flush rollout entries before inspecting the file.
+    // Shut down SolaiAgent to flush rollout entries before inspecting the file.
     codex.submit(Op::Shutdown).await.unwrap();
     wait_for_event(&codex, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
 
@@ -2129,7 +2129,7 @@ async fn pre_sampling_compact_runs_on_switch_to_smaller_context_model() {
 
     let model_provider = non_openai_model_provider(&server);
     let mut builder = test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model(previous_model)
         .with_config(move |config| {
             config.model_provider = model_provider;
@@ -2231,7 +2231,7 @@ async fn pre_sampling_compact_runs_when_comp_hash_changes() {
 
     let model_provider = non_openai_model_provider(&server);
     let mut builder = test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model(previous_model)
         .with_config(move |config| {
             config.model_provider = model_provider;
@@ -2323,7 +2323,7 @@ async fn pre_sampling_compact_skips_when_either_comp_hash_is_missing() {
 
     let model_provider = non_openai_model_provider(&server);
     let mut builder = test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model(model_without_hash)
         .with_config(move |config| {
             config.model_provider = model_provider;
@@ -2428,7 +2428,7 @@ async fn body_after_prefix_model_switch_budget_compacts_with_next_model() {
 
     let model_provider = non_openai_model_provider(&server);
     let mut builder = test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model(previous_model)
         .with_config(move |config| {
             config.model_provider = model_provider;
@@ -2522,7 +2522,7 @@ async fn pre_sampling_compact_runs_after_resume_and_switch_to_smaller_model() {
 
     let model_provider = non_openai_model_provider(&server);
     let mut initial_builder = test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model(previous_model)
         .with_config(move |config| {
             config.model_provider = model_provider;
@@ -2565,7 +2565,7 @@ async fn pre_sampling_compact_runs_after_resume_and_switch_to_smaller_model() {
 
     let model_provider = non_openai_model_provider(&server);
     let mut resumed_builder = test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model(previous_model)
         .with_config(move |config| {
             config.model_provider = model_provider;
@@ -2643,7 +2643,7 @@ async fn pre_sampling_compact_recovers_comp_hash_after_resume() {
 
     let model_provider = non_openai_model_provider(&server);
     let mut initial_builder = test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model(previous_model)
         .with_config(move |config| {
             config.model_provider = model_provider;
@@ -2696,7 +2696,7 @@ async fn pre_sampling_compact_recovers_comp_hash_after_resume() {
 
     let model_provider = non_openai_model_provider(&server);
     let mut resumed_builder = test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model(previous_model)
         .with_config(move |config| {
             config.model_provider = model_provider;
@@ -2770,7 +2770,7 @@ async fn pre_sampling_compact_skips_missing_comp_hash_after_resume() {
 
     let model_provider = non_openai_model_provider(&server);
     let mut initial_builder = test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model(previous_model)
         .with_config(move |config| {
             config.model_provider = model_provider;
@@ -2821,7 +2821,7 @@ async fn pre_sampling_compact_skips_missing_comp_hash_after_resume() {
 
     let model_provider = non_openai_model_provider(&server);
     let mut resumed_builder = test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model(previous_model)
         .with_config(move |config| {
             config.model_provider = model_provider;
@@ -4008,7 +4008,7 @@ async fn auto_compact_counts_encrypted_reasoning_before_last_user() {
     let chatgpt_base_url = format!("{}/backend-api", server.uri());
 
     let codex = test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(move |config| {
             config.chatgpt_base_url = chatgpt_base_url;
             set_test_compact_prompt(config);
@@ -4135,7 +4135,7 @@ async fn auto_compact_runs_when_reasoning_header_clears_between_turns() {
         mount_compact_json_once(&server, serde_json::json!({ "output": compacted_history })).await;
 
     let codex = test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             set_test_compact_prompt(config);
             config.model_auto_compact_token_limit = Some(300);
@@ -4323,7 +4323,7 @@ async fn snapshot_request_shape_pre_turn_compaction_strips_incoming_model_switch
 
     let model_provider = non_openai_model_provider(&server);
     let test = test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model(previous_model)
         .with_config(move |config| {
             config.model_provider = model_provider;
@@ -4739,7 +4739,7 @@ async fn remote_v2_compaction_keeps_creation_time_instructions_after_same_path_m
     )?;
     let mut builder = test_codex()
         .with_home(Arc::clone(&home))
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             let _ = config.features.enable(Feature::RemoteCompactionV2);
         });
@@ -4801,7 +4801,7 @@ async fn remote_v2_compaction_keeps_creation_time_instructions_after_same_path_m
     let resumed_cwd = test.config.cwd.clone();
     let mut resume_builder = test_codex()
         .with_home(Arc::clone(&home))
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(move |config| {
             config.cwd = resumed_cwd;
             let _ = config.features.enable(Feature::RemoteCompactionV2);

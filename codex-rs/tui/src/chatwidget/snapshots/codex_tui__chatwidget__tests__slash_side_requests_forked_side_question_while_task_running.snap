@@ -6,6 +6,6 @@ expression: normalized_backend_snapshot(terminal.backend())
 "• Working (0s • esc to interrupt) · read -- tok/s · write -- tok/s              "
 "                                                                                "
 "                                                                                "
-"› Ask MidnightCoder to do anything                                              "
+"› Ask SolaiAgent to do anything                                              "
 "                                                                                "
 "  gpt-5.5 default                                             Side starting...  "

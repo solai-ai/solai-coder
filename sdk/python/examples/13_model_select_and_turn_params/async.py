@@ -12,7 +12,7 @@ ensure_local_sdk_src()
 import asyncio
 
 from openai_codex import (
-    AsyncMidnightCoder,
+    AsyncSolaiAgent,
     Sandbox,
 )
 from openai_codex.types import (
@@ -69,7 +69,7 @@ OUTPUT_SCHEMA = {
 
 
 async def main() -> None:
-    async with AsyncMidnightCoder(config=runtime_config()) as codex:
+    async with AsyncSolaiAgent(config=runtime_config()) as codex:
         models = await codex.models(include_hidden=True)
         selected_model = _pick_highest_model(models.data)
         selected_effort = _pick_highest_turn_effort(selected_model)

@@ -1,12 +1,12 @@
-"""Python SDK for running MidnightCoder workflows.
+"""Python SDK for running SolaiAgent workflows.
 
-Start with :class:`MidnightCoder` for synchronous applications or
-:class:`AsyncMidnightCoder` for async applications. Most programs create a thread and
+Start with :class:`SolaiAgent` for synchronous applications or
+:class:`AsyncSolaiAgent` for async applications. Most programs create a thread and
 run a turn::
 
-    from openai_codex import MidnightCoder, Sandbox
+    from openai_codex import SolaiAgent, Sandbox
 
-    with MidnightCoder() as codex:
+    with SolaiAgent() as codex:
         thread = codex.thread_start(sandbox=Sandbox.workspace_write)
         result = thread.run("Describe this project.")
         print(result.final_response)
@@ -17,7 +17,7 @@ from .api import (
     ApprovalMode,
     AsyncChatgptLoginHandle,
     AsyncDeviceCodeLoginHandle,
-    AsyncMidnightCoder,
+    AsyncSolaiAgent,
     AsyncThread,
     AsyncTurnHandle,
     ChatgptLoginHandle,
@@ -27,7 +27,7 @@ from .api import (
     InputItem,
     LocalImageInput,
     MentionInput,
-    MidnightCoder,
+    SolaiAgent,
     RunInput,
     Sandbox,
     SkillInput,
@@ -36,15 +36,15 @@ from .api import (
     TurnHandle,
     TurnResult,
 )
-from .client import MidnightCoderConfig
+from .client import SolaiAgentConfig
 from .errors import (
     InternalRpcError,
     InvalidParamsError,
     InvalidRequestError,
     JsonRpcError,
     MethodNotFoundError,
-    MidnightCoderError,
-    MidnightCoderRpcError,
+    SolaiAgentError,
+    SolaiAgentRpcError,
     ParseError,
     RetryLimitExceededError,
     ServerBusyError,
@@ -55,9 +55,9 @@ from .retry import retry_on_overload
 
 __all__ = [
     "__version__",
-    "MidnightCoderConfig",
-    "MidnightCoder",
-    "AsyncMidnightCoder",
+    "SolaiAgentConfig",
+    "SolaiAgent",
+    "AsyncSolaiAgent",
     "ApprovalMode",
     "Sandbox",
     "ChatgptLoginHandle",
@@ -78,10 +78,10 @@ __all__ = [
     "SkillInput",
     "MentionInput",
     "retry_on_overload",
-    "MidnightCoderError",
+    "SolaiAgentError",
     "TransportClosedError",
     "JsonRpcError",
-    "MidnightCoderRpcError",
+    "SolaiAgentRpcError",
     "ParseError",
     "InvalidRequestError",
     "MethodNotFoundError",

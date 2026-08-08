@@ -187,7 +187,7 @@ async fn stored_agent_identity_jwt_keeps_auth_json_unchanged() -> anyhow::Result
     .await?
     .expect("auth should load");
 
-    let MidnightCoderAuth::AgentIdentity(agent_identity_auth) = auth else {
+    let SolaiAgentAuth::AgentIdentity(agent_identity_auth) = auth else {
         panic!("stored JWT should load as agent identity auth");
     };
     assert_eq!(agent_identity_auth.run_task_id(), "task-id");
@@ -733,7 +733,7 @@ async fn agent_identity_jwt_task_registration_retry_exhaustion_is_strict() -> an
     let authapi_base_url = server.uri();
     let chatgpt_base_url = format!("{authapi_base_url}/backend-api");
 
-    let err = MidnightCoderAuth::from_agent_identity_jwt_with_authapi_base_url(
+    let err = SolaiAgentAuth::from_agent_identity_jwt_with_authapi_base_url(
         &agent_identity,
         Some(&chatgpt_base_url),
         &authapi_base_url,
@@ -785,7 +785,7 @@ async fn login_with_access_token_rejects_unsigned_jwt() {
 async fn missing_auth_json_returns_none() {
     let dir = tempdir().unwrap();
     let _access_token_guard = remove_access_token_env_var();
-    let auth = MidnightCoderAuth::from_auth_storage(
+    let auth = SolaiAgentAuth::from_auth_storage(
         dir.path(),
         AuthCredentialsStoreMode::File,
         /*chatgpt_base_url*/ None,
@@ -992,7 +992,7 @@ async fn refresh_failure_is_scoped_to_the_matching_auth_snapshot() {
         .expect("tokens should exist");
     updated_tokens.access_token = "new-access-token".to_string();
     updated_tokens.refresh_token = "new-refresh-token".to_string();
-    let updated_auth = MidnightCoderAuth::from_auth_dot_json(
+    let updated_auth = SolaiAgentAuth::from_auth_dot_json(
         codex_home.path(),
         updated_auth_dot_json,
         AuthCredentialsStoreMode::File,
@@ -1394,7 +1394,7 @@ async fn load_auth_reads_access_token_from_env() {
     .expect("env auth should load")
     .expect("env auth should be present");
 
-    let MidnightCoderAuth::AgentIdentity(agent_identity) = auth else {
+    let SolaiAgentAuth::AgentIdentity(agent_identity) = auth else {
         panic!("env auth should load as agent identity");
     };
     assert_eq!(agent_identity.record(), &expected_record);
@@ -2091,7 +2091,7 @@ async fn assert_agent_identity_plan_alias(
         .await;
     let authapi_base_url = server.uri();
     let chatgpt_base_url = format!("{authapi_base_url}/backend-api");
-    let auth = MidnightCoderAuth::from_agent_identity_jwt_with_authapi_base_url(
+    let auth = SolaiAgentAuth::from_agent_identity_jwt_with_authapi_base_url(
         &jwt,
         Some(&chatgpt_base_url),
         &authapi_base_url,

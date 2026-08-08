@@ -72,7 +72,7 @@ function Assert-ValidReleaseVersion {
     )
 
     if ($Version -cne "latest" -and $Version -cnotmatch "^[0-9]+\.[0-9]+\.[0-9]+(?:-(?:alpha|beta)(?:\.[0-9]+)?)?$") {
-        throw "Invalid MidnightCoder release version: $Version. Expected latest or x.y.z[-alpha[.N]|-beta[.N]]."
+        throw "Invalid SolaiAgent release version: $Version. Expected latest or x.y.z[-alpha[.N]|-beta[.N]]."
     }
 }
 
@@ -82,7 +82,7 @@ function Find-ReleaseAssetMetadata {
         [string]$ResolvedVersion
     )
 
-    $release = Invoke-RestMethod -Uri "https://api.github.com/repos/midnightcoderagent/Midnight-Coder/releases/tags/rust-v$ResolvedVersion"
+    $release = Invoke-RestMethod -Uri "https://api.github.com/repos/solai-ai/solai-agent/releases/tags/rust-v$ResolvedVersion"
     $asset = $release.assets | Where-Object { $_.name -eq $AssetName } | Select-Object -First 1
     if ($null -eq $asset) {
         return $null
@@ -107,7 +107,7 @@ function Get-ReleaseAssetMetadata {
 
     $metadata = Find-ReleaseAssetMetadata -AssetName $AssetName -ResolvedVersion $ResolvedVersion
     if ($null -eq $metadata) {
-        throw "Could not find release asset $AssetName for MidnightCoder $ResolvedVersion."
+        throw "Could not find release asset $AssetName for SolaiAgent $ResolvedVersion."
     }
 
     return $metadata
@@ -121,7 +121,7 @@ function Test-ArchiveDigest {
 
     $actualDigest = (Get-FileHash -LiteralPath $ArchivePath -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($actualDigest -ne $ExpectedDigest) {
-        throw "Downloaded MidnightCoder archive checksum did not match expected digest. Expected $ExpectedDigest but got $actualDigest."
+        throw "Downloaded SolaiAgent archive checksum did not match expected digest. Expected $ExpectedDigest but got $actualDigest."
     }
 }
 
@@ -223,9 +223,9 @@ function Resolve-Version {
         return $normalizedVersion
     }
 
-    $release = Invoke-RestMethod -Uri "https://api.github.com/repos/midnightcoderagent/Midnight-Coder/releases/latest"
+    $release = Invoke-RestMethod -Uri "https://api.github.com/repos/solai-ai/solai-agent/releases/latest"
     if (-not $release.tag_name) {
-        Write-Error "Failed to resolve the latest MidnightCoder release version."
+        Write-Error "Failed to resolve the latest SolaiAgent release version."
         exit 1
     }
 
@@ -236,15 +236,15 @@ function Resolve-Version {
 
 function Get-VersionFromBinary {
     param(
-        [string]$MidnightCoderPath
+        [string]$SolaiAgentPath
     )
 
-    if (-not (Test-Path -LiteralPath $MidnightCoderPath -PathType Leaf)) {
+    if (-not (Test-Path -LiteralPath $SolaiAgentPath -PathType Leaf)) {
         return $null
     }
 
     try {
-        $versionOutput = & $MidnightCoderPath --version 2>$null
+        $versionOutput = & $SolaiAgentPath --version 2>$null
     } catch {
         return $null
     }
@@ -261,12 +261,12 @@ function Get-CurrentInstalledVersion {
         [string]$StandaloneCurrentDir
     )
 
-    $standaloneVersion = Get-VersionFromBinary -MidnightCoderPath (Join-Path $StandaloneCurrentDir "bin\codex.exe")
+    $standaloneVersion = Get-VersionFromBinary -SolaiAgentPath (Join-Path $StandaloneCurrentDir "bin\codex.exe")
     if (-not [string]::IsNullOrWhiteSpace($standaloneVersion)) {
         return $standaloneVersion
     }
 
-    $standaloneVersion = Get-VersionFromBinary -MidnightCoderPath (Join-Path $StandaloneCurrentDir "codex.exe")
+    $standaloneVersion = Get-VersionFromBinary -SolaiAgentPath (Join-Path $StandaloneCurrentDir "codex.exe")
     if (-not [string]::IsNullOrWhiteSpace($standaloneVersion)) {
         return $standaloneVersion
     }
@@ -328,9 +328,9 @@ function Move-OldStandaloneBinIfApproved {
         return $null
     }
 
-    Write-Step "We found an older MidnightCoder install at $VisibleBinDir"
-    Write-WarningStep "To continue, MidnightCoder needs to update the install at this path."
-    if (-not (Prompt-YesNo "Replace it with the current MidnightCoder setup now?")) {
+    Write-Step "We found an older SolaiAgent install at $VisibleBinDir"
+    Write-WarningStep "To continue, SolaiAgent needs to update the install at this path."
+    if (-not (Prompt-YesNo "Replace it with the current SolaiAgent setup now?")) {
         throw "Cannot replace older standalone install without confirmation: $VisibleBinDir"
     }
 
@@ -341,7 +341,7 @@ function Move-OldStandaloneBinIfApproved {
 }
 
 function Add-JunctionSupportType {
-    if (([System.Management.Automation.PSTypeName]'MidnightCoderInstaller.Junction').Type) {
+    if (([System.Management.Automation.PSTypeName]'SolaiAgentInstaller.Junction').Type) {
         return
     }
 
@@ -353,7 +353,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Win32.SafeHandles;
 
-namespace MidnightCoderInstaller
+namespace SolaiAgentInstaller
 {
     public static class Junction
     {
@@ -460,7 +460,7 @@ function Set-JunctionTarget {
     )
 
     Add-JunctionSupportType
-    [MidnightCoderInstaller.Junction]::SetTarget($LinkPath, $TargetPath)
+    [SolaiAgentInstaller.Junction]::SetTarget($LinkPath, $TargetPath)
 }
 
 function Test-IsJunction {
@@ -594,14 +594,14 @@ function Test-ReleaseIsComplete {
             }
         }
         default {
-            throw "Unknown MidnightCoder installer layout: $Layout"
+            throw "Unknown SolaiAgent installer layout: $Layout"
         }
     }
 
     return (Split-Path -Leaf $ReleaseDir) -eq "$ExpectedVersion-$ExpectedTarget"
 }
 
-function Get-ExistingMidnightCoderCommand {
+function Get-ExistingSolaiAgentCommand {
     $existing = Get-Command codex -ErrorAction SilentlyContinue
     if ($null -eq $existing) {
         return $null
@@ -610,7 +610,7 @@ function Get-ExistingMidnightCoderCommand {
     return $existing.Source
 }
 
-function Get-ExistingMidnightCoderManager {
+function Get-ExistingSolaiAgentManager {
     param(
         [string]$ExistingPath,
         [string]$VisibleBinDir
@@ -640,14 +640,14 @@ function Get-ConflictingInstall {
         [string]$VisibleBinDir
     )
 
-    $existingPath = Get-ExistingMidnightCoderCommand
-    $manager = Get-ExistingMidnightCoderManager -ExistingPath $existingPath -VisibleBinDir $VisibleBinDir
+    $existingPath = Get-ExistingSolaiAgentCommand
+    $manager = Get-ExistingSolaiAgentManager -ExistingPath $existingPath -VisibleBinDir $VisibleBinDir
     if ($null -eq $manager) {
         return $null
     }
 
-    Write-Step "Detected existing $manager-managed MidnightCoder at $existingPath"
-    Write-WarningStep "Multiple managed MidnightCoder installs can be ambiguous because PATH order decides which one runs."
+    Write-Step "Detected existing $manager-managed SolaiAgent at $existingPath"
+    Write-WarningStep "Multiple managed SolaiAgent installs can be ambiguous because PATH order decides which one runs."
 
     return [PSCustomObject]@{
         Manager = $manager
@@ -667,25 +667,25 @@ function Maybe-HandleConflictingInstall {
     $manager = $Conflict.Manager
 
     $uninstallArgs = if ($manager -eq "bun") {
-        @("remove", "-g", "midnight-coder")
+        @("remove", "-g", "solai")
     } else {
-        @("uninstall", "-g", "midnight-coder")
+        @("uninstall", "-g", "solai")
     }
     $uninstallCommand = if ($manager -eq "bun") { "bun" } else { "npm" }
 
-    if (Prompt-YesNo "Uninstall the existing $manager-managed MidnightCoder now?") {
+    if (Prompt-YesNo "Uninstall the existing $manager-managed SolaiAgent now?") {
         Write-Step "Running: $uninstallCommand $($uninstallArgs -join ' ')"
         try {
             & $uninstallCommand @uninstallArgs
         } catch {
-            Write-WarningStep "Failed to uninstall the existing $manager-managed MidnightCoder. Continuing with the standalone install."
+            Write-WarningStep "Failed to uninstall the existing $manager-managed SolaiAgent. Continuing with the standalone install."
         }
     } else {
-        Write-WarningStep "Leaving the existing $manager-managed MidnightCoder installed. PATH order will determine which codex runs."
+        Write-WarningStep "Leaving the existing $manager-managed SolaiAgent installed. PATH order will determine which codex runs."
     }
 }
 
-function Test-VisibleMidnightCoderCommand {
+function Test-VisibleSolaiAgentCommand {
     param(
         [string]$VisibleBinDir
     )
@@ -693,7 +693,7 @@ function Test-VisibleMidnightCoderCommand {
     $codexCommand = Join-Path $VisibleBinDir "codex.exe"
     & $codexCommand --version *> $null
     if ($LASTEXITCODE -ne 0) {
-        throw "Installed MidnightCoder command failed verification: $codexCommand --version"
+        throw "Installed SolaiAgent command failed verification: $codexCommand --version"
     }
 }
 
@@ -703,7 +703,7 @@ if ($env:OS -ne "Windows_NT") {
 }
 
 if (-not [Environment]::Is64BitOperatingSystem) {
-    Write-Error "MidnightCoder requires a 64-bit version of Windows."
+    Write-Error "SolaiAgent requires a 64-bit version of Windows."
     exit 1
 }
 
@@ -738,7 +738,7 @@ $releasesDir = Join-Path $standaloneRoot "releases"
 $currentDir = Join-Path $standaloneRoot "current"
 $lockPath = Join-Path $standaloneRoot "install.lock"
 
-$defaultVisibleBinDir = Join-Path $env:LOCALAPPDATA "Programs\OpenAI\MidnightCoder\bin"
+$defaultVisibleBinDir = Join-Path $env:LOCALAPPDATA "Programs\OpenAI\SolaiAgent\bin"
 if ([string]::IsNullOrWhiteSpace($env:CODEX_INSTALL_DIR)) {
     $visibleBinDir = $defaultVisibleBinDir
 } else {
@@ -751,11 +751,11 @@ $releaseName = "$resolvedVersion-$target"
 $releaseDir = Join-Path $releasesDir $releaseName
 
 if (-not [string]::IsNullOrWhiteSpace($currentVersion) -and $currentVersion -ne $resolvedVersion) {
-    Write-Step "Updating MidnightCoder from $currentVersion to $resolvedVersion"
+    Write-Step "Updating SolaiAgent from $currentVersion to $resolvedVersion"
 } elseif (-not [string]::IsNullOrWhiteSpace($currentVersion)) {
-    Write-Step "Updating MidnightCoder"
+    Write-Step "Updating SolaiAgent"
 } else {
-    Write-Step "Installing MidnightCoder"
+    Write-Step "Installing SolaiAgent"
 }
 Write-Step "Detected platform: $platformLabel"
 Write-Step "Resolved version: $resolvedVersion"
@@ -769,7 +769,7 @@ $packageMetadata = Find-ReleaseAssetMetadata -AssetName $packageAsset -ResolvedV
 $checksumMetadata = Find-ReleaseAssetMetadata -AssetName $checksumAsset -ResolvedVersion $resolvedVersion
 $installLayout = "Package"
 if ($null -eq $packageMetadata -or $null -eq $checksumMetadata) {
-    $packageAsset = "midnight-coder-$npmTag-$resolvedVersion.tgz"
+    $packageAsset = "solai-$npmTag-$resolvedVersion.tgz"
     $packageMetadata = Find-ReleaseAssetMetadata -AssetName $packageAsset -ResolvedVersion $resolvedVersion
     if ($null -eq $packageMetadata) {
         $packageAsset = "codex-npm-$npmTag-$resolvedVersion.tgz"
@@ -778,7 +778,7 @@ if ($null -eq $packageMetadata -or $null -eq $checksumMetadata) {
     if ($null -ne $packageMetadata) {
         $installLayout = "LegacyPlatformNpm"
     } else {
-        throw "Could not find MidnightCoder package or platform npm release assets for MidnightCoder $resolvedVersion."
+        throw "Could not find SolaiAgent package or platform npm release assets for SolaiAgent $resolvedVersion."
     }
     $checksumMetadata = $null
 }
@@ -798,7 +798,7 @@ try {
             $checksumPath = Join-Path $tempDir $checksumAsset
             $stagingDir = Join-Path $releasesDir ".staging.$releaseName.$PID"
 
-            Write-Step "Downloading MidnightCoder"
+            Write-Step "Downloading SolaiAgent"
             if ($installLayout -eq "Package") {
                 Invoke-WebRequest -Uri $checksumMetadata.Url -OutFile $checksumPath
                 Test-ArchiveDigest -ArchivePath $checksumPath -ExpectedDigest $checksumMetadata.Sha256
@@ -817,7 +817,7 @@ try {
             if ($installLayout -eq "Package") {
                 tar -xzf $archivePath -C $stagingDir
                 if (-not (Test-PackageContentsAreComplete -PackageDir $stagingDir)) {
-                    throw "Downloaded MidnightCoder package archive did not contain the expected package layout."
+                    throw "Downloaded SolaiAgent package archive did not contain the expected package layout."
                 }
             } else {
                 $extractDir = Join-Path $tempDir "extract"
@@ -839,7 +839,7 @@ try {
                 }
 
                 if (-not (Test-LegacyPlatformNpmContentsAreComplete -PackageDir $stagingDir)) {
-                    throw "Downloaded MidnightCoder npm archive did not contain the expected legacy platform package layout."
+                    throw "Downloaded SolaiAgent npm archive did not contain the expected legacy platform package layout."
                 }
             }
 
@@ -862,7 +862,7 @@ try {
         $oldStandaloneBackup = Move-OldStandaloneBinIfApproved -VisibleBinDir $visibleBinDir -DefaultVisibleBinDir $defaultVisibleBinDir
         try {
             Ensure-Junction -LinkPath $visibleBinDir -TargetPath $currentBinDir -InstallerOwnedTargetPrefix $standaloneRoot
-            Test-VisibleMidnightCoderCommand -VisibleBinDir $visibleBinDir
+            Test-VisibleSolaiAgentCommand -VisibleBinDir $visibleBinDir
         } catch {
             if ($null -ne $oldStandaloneBackup -and (Test-Path -LiteralPath $oldStandaloneBackup)) {
                 if (Test-Path -LiteralPath $visibleBinDir) {
@@ -919,10 +919,10 @@ if ($prioritizeVisibleBin) {
 
 Write-Step "Current PowerShell session: codex"
 Write-Step "Future PowerShell windows: open a new PowerShell window and run: codex"
-Write-Host "MidnightCoder $resolvedVersion installed successfully."
+Write-Host "SolaiAgent $resolvedVersion installed successfully."
 
 $codexCommand = Join-Path $visibleBinDir "codex.exe"
-if (Prompt-YesNo "Start MidnightCoder now?") {
-    Write-Step "Launching MidnightCoder"
+if (Prompt-YesNo "Start SolaiAgent now?") {
+    Write-Step "Launching SolaiAgent"
     & $codexCommand
 }

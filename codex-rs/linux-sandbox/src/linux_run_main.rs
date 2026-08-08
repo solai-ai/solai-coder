@@ -25,7 +25,7 @@ use crate::launcher::exec_bwrap;
 use crate::launcher::preferred_bwrap_supports_argv0;
 use crate::proxy_routing::activate_proxy_routes_in_netns;
 use crate::proxy_routing::prepare_host_proxy_route_spec;
-use codex_protocol::error::Result as MidnightCoderResult;
+use codex_protocol::error::Result as SolaiAgentResult;
 use codex_protocol::models::PermissionProfile;
 use codex_protocol::protocol::FileSystemSandboxPolicy;
 use codex_protocol::protocol::NetworkSandboxPolicy;
@@ -377,7 +377,7 @@ fn build_bwrap_argv(
     sandbox_policy_cwd: &Path,
     command_cwd: &Path,
     options: BwrapOptions,
-) -> MidnightCoderResult<crate::bwrap::BwrapArgs> {
+) -> SolaiAgentResult<crate::bwrap::BwrapArgs> {
     let bwrap_args = create_bwrap_command_args(
         inner,
         file_system_sandbox_policy,
@@ -396,7 +396,7 @@ fn build_bwrap_argv(
     })
 }
 
-fn exit_with_bwrap_build_error(err: codex_protocol::error::MidnightCoderErr) -> ! {
+fn exit_with_bwrap_build_error(err: codex_protocol::error::SolaiAgentErr) -> ! {
     eprintln!("error building bubblewrap command: {err}");
     std::process::exit(1);
 }
@@ -446,7 +446,7 @@ fn preflight_proc_mount_support(
     command_cwd: &Path,
     file_system_sandbox_policy: &FileSystemSandboxPolicy,
     network_mode: BwrapNetworkMode,
-) -> MidnightCoderResult<bool> {
+) -> SolaiAgentResult<bool> {
     let preflight_argv = build_preflight_bwrap_argv(
         sandbox_policy_cwd,
         command_cwd,
@@ -462,7 +462,7 @@ fn build_preflight_bwrap_argv(
     command_cwd: &Path,
     file_system_sandbox_policy: &FileSystemSandboxPolicy,
     network_mode: BwrapNetworkMode,
-) -> MidnightCoderResult<crate::bwrap::BwrapArgs> {
+) -> SolaiAgentResult<crate::bwrap::BwrapArgs> {
     let preflight_command = vec![resolve_true_command()];
     build_bwrap_argv(
         preflight_command,

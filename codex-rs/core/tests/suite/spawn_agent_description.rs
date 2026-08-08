@@ -3,7 +3,7 @@
 
 use anyhow::Result;
 use codex_features::Feature;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_models_manager::manager::RefreshStrategy;
 use codex_models_manager::manager::SharedModelsManager;
 use codex_protocol::config_types::ReasoningSummary;
@@ -160,7 +160,7 @@ async fn spawn_agent_description_lists_visible_models_and_reasoning_efforts() ->
     .await;
 
     let mut builder = test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model("visible-model")
         .with_config(|config| {
             config

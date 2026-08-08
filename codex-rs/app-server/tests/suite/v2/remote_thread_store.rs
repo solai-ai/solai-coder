@@ -44,7 +44,7 @@ use codex_config::NoopThreadConfigLoader;
 use codex_core::config::Config;
 use codex_core::config::ConfigBuilder;
 use codex_exec_server::EnvironmentManager;
-use codex_feedback::MidnightCoderFeedback;
+use codex_feedback::SolaiAgentFeedback;
 use codex_protocol::ThreadId;
 use codex_protocol::models::BaseInstructions;
 use codex_protocol::protocol::SessionSource;
@@ -306,7 +306,7 @@ async fn start_in_process_client(
         strict_config: false,
         cloud_config_bundle: CloudConfigBundleLoader::default(),
         thread_config_loader: Arc::new(NoopThreadConfigLoader),
-        feedback: MidnightCoderFeedback::new(),
+        feedback: SolaiAgentFeedback::new(),
         log_db: None,
         state_db: None,
         environment_manager: Arc::new(EnvironmentManager::default_for_tests()),

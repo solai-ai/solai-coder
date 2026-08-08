@@ -1,6 +1,6 @@
 //! Session- and turn-scoped helpers for talking to model provider APIs.
 //!
-//! `ModelClient` is intended to live for the lifetime of a MidnightCoder session and holds the stable
+//! `ModelClient` is intended to live for the lifetime of a SolaiAgent session and holds the stable
 //! configuration and state needed to talk to a provider (auth, provider selection, conversation id,
 //! and transport fallback state).
 //!
@@ -64,7 +64,7 @@ use codex_api::build_session_headers;
 use codex_api::create_text_param_for_request;
 use codex_api::response_create_client_metadata;
 use codex_login::AuthManager;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_login::RefreshTokenError;
 use codex_login::UnauthorizedRecovery;
 use codex_login::default_client::build_reqwest_client;
@@ -120,7 +120,7 @@ use crate::client_common::Prompt;
 use crate::client_common::ResponseEvent;
 use crate::client_common::ResponseStream;
 use crate::feedback_tags;
-use crate::responses_metadata::MidnightCoderResponsesMetadata;
+use crate::responses_metadata::SolaiAgentResponsesMetadata;
 use crate::responses_metadata::subagent_header_value;
 use crate::util::emit_feedback_auth_recovery_tags;
 use codex_feedback::FeedbackRequestTags;
@@ -129,9 +129,9 @@ use codex_login::auth::AgentIdentityAuthPolicy;
 
 const OLLAMA_COMPACT_CONTEXT_THRESHOLD: i64 = 8_192;
 const OLLAMA_CUSTOM_INSTRUCTIONS_MAX_CHARS: usize = 2_000;
-const OLLAMA_COMPACT_BASE_INSTRUCTIONS: &str = "You are MidnightCoder, a concise coding agent in a terminal. Follow user and repository instructions. Use tools when needed, explain actions briefly, edit carefully, preserve user changes, and verify with focused commands. On Windows, prefer PowerShell-safe commands. Do not download models unless explicitly asked.";
+const OLLAMA_COMPACT_BASE_INSTRUCTIONS: &str = "You are SolaiAgent, a concise coding agent in a terminal. Follow user and repository instructions. Use tools when needed, explain actions briefly, edit carefully, preserve user changes, and verify with focused commands. On Windows, prefer PowerShell-safe commands. Do not download models unless explicitly asked.";
 const EMBEDDED_MODEL_INSTRUCTIONS_STUB: &str = "\
-Follow the instructions embedded in the selected MidnightCoder model.
+Follow the instructions embedded in the selected SolaiAgent model.
 Use the supplied tools, current conversation context, repository instructions, and runtime state.
 For coding tasks, keep working autonomously until the requested deliverable is complete: inspect relevant files, make the necessary edits, verify them with focused commands, and report the result.
 When the user asks to fix, correct, implement, or update code, treat diagnosis as an intermediate step, not the final answer.
@@ -147,14 +147,14 @@ use codex_model_provider::create_model_provider;
 use codex_model_provider_info::DEFAULT_WEBSOCKET_CONNECT_TIMEOUT_MS;
 use codex_model_provider_info::ModelProviderInfo;
 use codex_model_provider_info::WireApi;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::error::Result;
 use codex_response_debug_context::extract_response_debug_context;
 use codex_response_debug_context::extract_response_debug_context_from_api_error;
 use codex_response_debug_context::telemetry_api_error_message;
 use codex_response_debug_context::telemetry_transport_error_message;
 
-pub const OPENAI_BETA_HEADER: &str = "MidnightCoder-Beta";
+pub const OPENAI_BETA_HEADER: &str = "SolaiAgent-Beta";
 pub const X_CODEX_INSTALLATION_ID_HEADER: &str = "x-codex-installation-id";
 pub const X_CODEX_TURN_STATE_HEADER: &str = "x-codex-turn-state";
 pub const X_CODEX_TURN_METADATA_HEADER: &str = "x-codex-turn-metadata";
@@ -312,7 +312,7 @@ struct ModelClientState {
 /// Keeping this as a single bundle ensures prewarm and normal request paths
 /// share the same auth/provider setup flow.
 struct CurrentClientSetup {
-    auth: Option<MidnightCoderAuth>,
+    auth: Option<SolaiAgentAuth>,
     api_provider: ApiProvider,
     api_auth: SharedAuthProvider,
     agent_identity_telemetry: Option<AgentIdentityTelemetry>,
@@ -331,7 +331,7 @@ impl RequestRouteTelemetry {
 
 /// A session-scoped client for model-provider API calls.
 ///
-/// This holds configuration and state that should be shared across turns within a MidnightCoder session
+/// This holds configuration and state that should be shared across turns within a SolaiAgent session
 /// (auth, provider selection, thread id, and transport fallback state).
 ///
 /// WebSocket fallback is session-scoped: once a turn activates the HTTP fallback, subsequent turns
@@ -357,7 +357,7 @@ pub struct ModelClient {
 /// - The `x-codex-turn-state` sticky-routing token, which must be replayed for all requests within
 ///   the same turn.
 ///
-/// Create a fresh `ModelClientSession` for each MidnightCoder turn. Reusing it across turns would replay
+/// Create a fresh `ModelClientSession` for each SolaiAgent turn. Reusing it across turns would replay
 /// the previous turn's sticky-routing token into the next turn, which violates the client/server
 /// contract and can cause routing bugs.
 pub struct ModelClientSession {
@@ -495,7 +495,7 @@ impl ModelClient {
     #[allow(clippy::too_many_arguments)]
     /// Creates a new session-scoped `ModelClient`.
     ///
-    /// All arguments are expected to be stable for the lifetime of a MidnightCoder session. Per-turn values
+    /// All arguments are expected to be stable for the lifetime of a SolaiAgent session. Per-turn values
     /// are passed to [`ModelClientSession::stream`] (and other turn-scoped methods) explicitly.
     pub fn new(
         auth_manager: Option<Arc<AuthManager>>,
@@ -626,7 +626,7 @@ impl ModelClient {
         settings: CompactConversationRequestSettings,
         session_telemetry: &SessionTelemetry,
         compaction_trace: &CompactionTraceContext,
-        responses_metadata: &MidnightCoderResponsesMetadata,
+        responses_metadata: &SolaiAgentResponsesMetadata,
     ) -> Result<Vec<ResponseItem>> {
         if prompt.input.is_empty() {
             return Ok(Vec::new());
@@ -636,7 +636,7 @@ impl ModelClient {
         let request_telemetry = Self::build_request_telemetry(
             session_telemetry,
             AuthRequestTelemetryContext::new(
-                client_setup.auth.as_ref().map(MidnightCoderAuth::auth_mode),
+                client_setup.auth.as_ref().map(SolaiAgentAuth::auth_mode),
                 client_setup.api_auth.as_ref(),
                 client_setup.agent_identity_telemetry.clone(),
                 PendingUnauthorizedRetry::default(),
@@ -771,7 +771,7 @@ impl ModelClient {
         let request_telemetry = Self::build_request_telemetry(
             session_telemetry,
             AuthRequestTelemetryContext::new(
-                client_setup.auth.as_ref().map(MidnightCoderAuth::auth_mode),
+                client_setup.auth.as_ref().map(SolaiAgentAuth::auth_mode),
                 client_setup.api_auth.as_ref(),
                 client_setup.agent_identity_telemetry.clone(),
                 PendingUnauthorizedRetry::default(),
@@ -823,7 +823,7 @@ impl ModelClient {
 
     fn build_responses_compatibility_headers(
         &self,
-        responses_metadata: &MidnightCoderResponsesMetadata,
+        responses_metadata: &SolaiAgentResponsesMetadata,
     ) -> ApiHeaderMap {
         let mut extra_headers = responses_metadata.compatibility_headers();
         if matches!(
@@ -840,7 +840,7 @@ impl ModelClient {
 
     fn build_ws_client_metadata(
         &self,
-        responses_metadata: &MidnightCoderResponsesMetadata,
+        responses_metadata: &SolaiAgentResponsesMetadata,
         use_responses_lite: bool,
     ) -> HashMap<String, String> {
         let mut client_metadata = responses_metadata.client_metadata();
@@ -920,7 +920,7 @@ impl ModelClient {
         summary: ReasoningSummaryConfig,
         service_tier: Option<String>,
         provider_request_options: Option<ProviderRequestOptions>,
-        responses_metadata: &MidnightCoderResponsesMetadata,
+        responses_metadata: &SolaiAgentResponsesMetadata,
         model_instructions: ModelInstructionsSetting,
     ) -> Result<ResponsesApiRequest> {
         let mut input = prompt.get_formatted_input_for_request(model_info.use_responses_lite);
@@ -1183,7 +1183,7 @@ impl ModelClient {
         session_telemetry: &SessionTelemetry,
         api_provider: codex_api::Provider,
         api_auth: SharedAuthProvider,
-        responses_metadata: &MidnightCoderResponsesMetadata,
+        responses_metadata: &SolaiAgentResponsesMetadata,
         auth_context: AuthRequestTelemetryContext,
         request_route_telemetry: RequestRouteTelemetry,
     ) -> std::result::Result<ApiWebSocketConnection, ApiError> {
@@ -1264,7 +1264,7 @@ impl ModelClient {
     /// Builds websocket handshake headers for both prewarm and turn-time reconnect.
     async fn build_websocket_headers(
         &self,
-        responses_metadata: &MidnightCoderResponsesMetadata,
+        responses_metadata: &SolaiAgentResponsesMetadata,
     ) -> ApiHeaderMap {
         let mut headers = build_responses_headers(
             self.state.beta_features_header.as_deref(),
@@ -1325,7 +1325,7 @@ impl ModelClientSession {
     /// regardless of transport choice.
     async fn build_responses_options(
         &self,
-        responses_metadata: &MidnightCoderResponsesMetadata,
+        responses_metadata: &SolaiAgentResponsesMetadata,
         compression: Compression,
         use_responses_lite: bool,
     ) -> ApiResponsesOptions {
@@ -1445,7 +1445,7 @@ impl ModelClientSession {
     pub async fn preconnect_websocket(
         &mut self,
         session_telemetry: &SessionTelemetry,
-        responses_metadata: &MidnightCoderResponsesMetadata,
+        responses_metadata: &SolaiAgentResponsesMetadata,
     ) -> std::result::Result<(), ApiError> {
         if !self.client.responses_websocket_enabled() {
             return Ok(());
@@ -1460,7 +1460,7 @@ impl ModelClientSession {
             ))
         })?;
         let auth_context = AuthRequestTelemetryContext::new(
-            client_setup.auth.as_ref().map(MidnightCoderAuth::auth_mode),
+            client_setup.auth.as_ref().map(SolaiAgentAuth::auth_mode),
             client_setup.api_auth.as_ref(),
             client_setup.agent_identity_telemetry.clone(),
             PendingUnauthorizedRetry::default(),
@@ -1551,9 +1551,9 @@ impl ModelClientSession {
             ))
     }
 
-    fn responses_request_compression(&self, auth: Option<&MidnightCoderAuth>) -> Compression {
+    fn responses_request_compression(&self, auth: Option<&SolaiAgentAuth>) -> Compression {
         if self.client.state.enable_request_compression
-            && auth.is_some_and(MidnightCoderAuth::uses_codex_backend)
+            && auth.is_some_and(SolaiAgentAuth::uses_codex_backend)
             && self.client.state.provider.info().is_openai()
         {
             Compression::Zstd
@@ -1562,7 +1562,7 @@ impl ModelClientSession {
         }
     }
 
-    /// Streams a turn via the MidnightCoder Responses API.
+    /// Streams a turn via the SolaiAgent Responses API.
     ///
     /// Handles reasoning summaries, verbosity, and the `text` controls used for output schemas.
     #[allow(clippy::too_many_arguments)]
@@ -1588,7 +1588,7 @@ impl ModelClientSession {
         summary: ReasoningSummaryConfig,
         service_tier: Option<String>,
         provider_request_options: Option<ProviderRequestOptions>,
-        responses_metadata: &MidnightCoderResponsesMetadata,
+        responses_metadata: &SolaiAgentResponsesMetadata,
         ollama_smart_context: OllamaSmartContextSetting,
         model_instructions: ModelInstructionsSetting,
         inference_trace: &InferenceTraceContext,
@@ -1602,7 +1602,7 @@ impl ModelClientSession {
             let client_setup = self.client.current_client_setup().await?;
             let transport = ReqwestTransport::new(build_reqwest_client());
             let request_auth_context = AuthRequestTelemetryContext::new(
-                client_setup.auth.as_ref().map(MidnightCoderAuth::auth_mode),
+                client_setup.auth.as_ref().map(SolaiAgentAuth::auth_mode),
                 client_setup.api_auth.as_ref(),
                 client_setup.agent_identity_telemetry.clone(),
                 pending_retry,
@@ -1637,7 +1637,7 @@ impl ModelClientSession {
             self.client
                 .prepare_response_items_for_request(&mut request.input, store);
             if uses_native_ollama_chat(&client_setup.api_provider, &request, ollama_smart_context) {
-                compact_midnightcoder_base_instructions_for_ollama(
+                compact_solai_base_instructions_for_ollama(
                     &mut request,
                     ollama_smart_context,
                 );
@@ -1790,7 +1790,7 @@ impl ModelClientSession {
         summary: ReasoningSummaryConfig,
         service_tier: Option<String>,
         provider_request_options: Option<ProviderRequestOptions>,
-        responses_metadata: &MidnightCoderResponsesMetadata,
+        responses_metadata: &SolaiAgentResponsesMetadata,
         ollama_smart_context: OllamaSmartContextSetting,
         model_instructions: ModelInstructionsSetting,
         warmup: bool,
@@ -1806,7 +1806,7 @@ impl ModelClientSession {
         loop {
             let client_setup = self.client.current_client_setup().await?;
             let request_auth_context = AuthRequestTelemetryContext::new(
-                client_setup.auth.as_ref().map(MidnightCoderAuth::auth_mode),
+                client_setup.auth.as_ref().map(SolaiAgentAuth::auth_mode),
                 client_setup.api_auth.as_ref(),
                 client_setup.agent_identity_telemetry.clone(),
                 pending_retry,
@@ -1995,7 +1995,7 @@ impl ModelClientSession {
         effort: Option<ReasoningEffortConfig>,
         summary: ReasoningSummaryConfig,
         service_tier: Option<String>,
-        responses_metadata: &MidnightCoderResponsesMetadata,
+        responses_metadata: &SolaiAgentResponsesMetadata,
     ) -> Result<()> {
         if !self.client.responses_websocket_enabled() {
             return Ok(());
@@ -2060,7 +2060,7 @@ impl ModelClientSession {
         summary: ReasoningSummaryConfig,
         service_tier: Option<String>,
         provider_request_options: Option<ProviderRequestOptions>,
-        responses_metadata: &MidnightCoderResponsesMetadata,
+        responses_metadata: &SolaiAgentResponsesMetadata,
         inference_trace: &InferenceTraceContext,
     ) -> Result<ResponseStream> {
         self.stream_with_smart_context(
@@ -2089,7 +2089,7 @@ impl ModelClientSession {
         summary: ReasoningSummaryConfig,
         service_tier: Option<String>,
         provider_request_options: Option<ProviderRequestOptions>,
-        responses_metadata: &MidnightCoderResponsesMetadata,
+        responses_metadata: &SolaiAgentResponsesMetadata,
         ollama_smart_context: OllamaSmartContextSetting,
         model_instructions: ModelInstructionsSetting,
         inference_trace: &InferenceTraceContext,
@@ -2147,7 +2147,7 @@ impl ModelClientSession {
         }
     }
 
-    /// Permanently disables WebSockets for this MidnightCoder session and resets WebSocket state.
+    /// Permanently disables WebSockets for this SolaiAgent session and resets WebSocket state.
     ///
     /// This is used after exhausting the provider retry budget, to force subsequent requests onto
     /// the HTTP transport.
@@ -2183,7 +2183,7 @@ fn stamp_ws_stream_request_start_ms(request: &mut ResponsesWsRequest) {
 
 /// Builds the extra headers attached to Responses API requests.
 ///
-/// These headers implement MidnightCoder-specific conventions:
+/// These headers implement SolaiAgent-specific conventions:
 ///
 /// - `x-codex-beta-features`: comma-separated beta feature keys enabled for the session.
 /// - `x-codex-turn-state`: sticky routing token captured earlier in the turn.
@@ -2409,7 +2409,7 @@ where
 /// Handles a 401 response by optionally refreshing ChatGPT tokens once.
 ///
 /// When refresh succeeds, the caller should retry the API call; otherwise
-/// the mapped `MidnightCoderErr` is returned to the caller.
+/// the mapped `SolaiAgentErr` is returned to the caller.
 #[derive(Clone, Copy, Debug)]
 struct UnauthorizedRecoveryExecution {
     mode: &'static str,
@@ -2478,7 +2478,7 @@ struct WebsocketConnectParams<'a> {
     session_telemetry: &'a SessionTelemetry,
     api_provider: codex_api::Provider,
     api_auth: SharedAuthProvider,
-    responses_metadata: &'a MidnightCoderResponsesMetadata,
+    responses_metadata: &'a SolaiAgentResponsesMetadata,
     auth_context: AuthRequestTelemetryContext,
     request_route_telemetry: RequestRouteTelemetry,
 }
@@ -2540,7 +2540,7 @@ async fn handle_unauthorized(
                     debug.auth_error.as_deref(),
                     debug.auth_error_code.as_deref(),
                 );
-                Err(MidnightCoderErr::RefreshTokenFailed(failed))
+                Err(SolaiAgentErr::RefreshTokenFailed(failed))
             }
             Err(RefreshTokenError::Transient(other)) => {
                 session_telemetry.record_auth_recovery(
@@ -2563,7 +2563,7 @@ async fn handle_unauthorized(
                     debug.auth_error.as_deref(),
                     debug.auth_error_code.as_deref(),
                 );
-                Err(MidnightCoderErr::Io(other))
+                Err(SolaiAgentErr::Io(other))
             }
         };
     }
@@ -2780,12 +2780,12 @@ fn uses_native_ollama_chat(
             .is_some_and(|tools| !tools.is_empty())
 }
 
-fn compact_midnightcoder_base_instructions_for_ollama(
+fn compact_solai_base_instructions_for_ollama(
     request: &mut ResponsesApiRequest,
     ollama_smart_context: OllamaSmartContextSetting,
 ) {
     if !matches!(ollama_smart_context, OllamaSmartContextSetting::Enabled)
-        || !is_midnightcoder_model(&request.model)
+        || !is_solai_model(&request.model)
         || request.instructions.trim().is_empty()
         || request.instructions == EMBEDDED_MODEL_INSTRUCTIONS_STUB
     {
@@ -2795,13 +2795,13 @@ fn compact_midnightcoder_base_instructions_for_ollama(
     request.instructions = compact_ollama_base_instructions(&request.instructions);
     tracing::debug!(
         model = %request.model,
-        "using compact MidnightCoder base instructions for Ollama request"
+        "using compact SolaiAgent base instructions for Ollama request"
     );
 }
 
-fn is_midnightcoder_model(model: &str) -> bool {
+fn is_solai_model(model: &str) -> bool {
     let model = model.to_ascii_lowercase();
-    model.starts_with("midnightcoder") || model.starts_with("midnight-coder")
+    model.starts_with("solai") || model.starts_with("solai")
 }
 
 fn instructions_for_model_request(
@@ -2813,7 +2813,7 @@ fn instructions_for_model_request(
 ) -> String {
     if model_instructions == ModelInstructionsSetting::EmbeddedInModel
         && is_ollama_provider(provider)
-        && is_midnightcoder_model(model)
+        && is_solai_model(model)
     {
         return EMBEDDED_MODEL_INSTRUCTIONS_STUB.to_string();
     }

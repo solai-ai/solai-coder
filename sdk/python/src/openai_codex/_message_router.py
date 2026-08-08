@@ -5,7 +5,7 @@ import threading
 from collections import deque
 
 from ._goal import _GoalOperationState
-from .errors import MidnightCoderError, map_jsonrpc_error
+from .errors import SolaiAgentError, map_jsonrpc_error
 from .generated.notification_registry import notification_turn_id
 from .generated.v2_all import AccountLoginCompletedNotification
 from .models import JsonValue, Notification, UnknownNotification
@@ -168,7 +168,7 @@ class MessageRouter:
                     )
                 )
             else:
-                waiter.put(MidnightCoderError("Malformed JSON-RPC error response"))
+                waiter.put(SolaiAgentError("Malformed JSON-RPC error response"))
             return
 
         waiter.put(msg.get("result"))

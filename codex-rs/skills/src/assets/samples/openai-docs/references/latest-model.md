@@ -1,6 +1,6 @@
 # Latest model guide
 
-This file is a curated helper. Every recommendation here must be verified against current Midnight Coder docs before it is repeated to a user.
+This file is a curated helper. Every recommendation here must be verified against current SOLAI Agent docs before it is repeated to a user.
 
 ## Current model map
 
@@ -33,5 +33,5 @@ This file is a curated helper. Every recommendation here must be verified agains
 
 ## Maintenance notes
 
-- This file will drift unless it is periodically re-verified against current Midnight Coder docs.
+- This file will drift unless it is periodically re-verified against current SOLAI Agent docs.
 - If this file conflicts with current docs, the docs win.

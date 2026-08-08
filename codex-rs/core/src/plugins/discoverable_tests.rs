@@ -21,13 +21,13 @@ async fn list_discoverable_plugins(
 
 async fn list_discoverable_plugins_with_auth(
     config: &crate::config::Config,
-    auth: Option<&codex_login::MidnightCoderAuth>,
+    auth: Option<&codex_login::SolaiAgentAuth>,
     loaded_plugin_app_connector_ids: &[String],
 ) -> anyhow::Result<Vec<DiscoverablePluginInfo>> {
     let plugins_manager = PluginsManager::new_with_options(
         config.codex_home.to_path_buf(),
-        Some(Product::MidnightCoder),
-        auth.map(codex_login::MidnightCoderAuth::api_auth_mode),
+        Some(Product::SolaiAgent),
+        auth.map(codex_login::SolaiAgentAuth::api_auth_mode),
     );
     list_discoverable_plugins_with_manager_and_auth(
         config,
@@ -41,7 +41,7 @@ async fn list_discoverable_plugins_with_auth(
 async fn list_discoverable_plugins_with_manager_and_auth(
     config: &crate::config::Config,
     plugins_manager: &PluginsManager,
-    auth: Option<&codex_login::MidnightCoderAuth>,
+    auth: Option<&codex_login::SolaiAgentAuth>,
     loaded_plugin_app_connector_ids: &[String],
 ) -> anyhow::Result<Vec<DiscoverablePluginInfo>> {
     super::list_tool_suggest_discoverable_plugins(
@@ -55,7 +55,7 @@ async fn list_discoverable_plugins_with_manager_and_auth(
 
 #[tokio::test]
 async fn list_tool_suggest_discoverable_plugins_includes_cached_remote_global_plugins() {
-    use codex_login::MidnightCoderAuth;
+    use codex_login::SolaiAgentAuth;
     use serde_json::json;
     use wiremock::Mock;
     use wiremock::MockServer;
@@ -216,7 +216,7 @@ remote_plugin = true
         .mount(&server)
         .await;
 
-    let auth = MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing();
     let mut config = load_plugins_config(codex_home.path()).await;
     config.chatgpt_base_url = format!("{}/backend-api", server.uri());
     let plugins_manager = PluginsManager::new(config.codex_home.to_path_buf());

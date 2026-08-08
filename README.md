@@ -76,7 +76,7 @@ status_line_2_use_colors = true
 When a local provider is configured, SOLAI Agent reads monitor metrics from the provider host on
 port `9898` at `/metrics`; the line stays hidden until metrics are available.
 
-![SOLAI Agent with monitor status line](docs/assets/midnight-coder-monitor.svg)
+![SOLAI Agent with monitor status line](docs/assets/solai-monitor.svg)
 
 ## What it includes
 

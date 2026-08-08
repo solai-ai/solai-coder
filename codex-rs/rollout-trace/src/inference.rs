@@ -19,7 +19,7 @@ use uuid::Uuid;
 
 use crate::model::AgentThreadId;
 use crate::model::InferenceCallId;
-use crate::model::MidnightCoderTurnId;
+use crate::model::SolaiAgentTurnId;
 use crate::payload::RawPayloadKind;
 use crate::raw_event::RawTraceEventContext;
 use crate::raw_event::RawTraceEventPayload;
@@ -48,14 +48,14 @@ enum InferenceTraceContextState {
 struct EnabledInferenceTraceContext {
     writer: Arc<TraceWriter>,
     thread_id: AgentThreadId,
-    codex_turn_id: MidnightCoderTurnId,
+    codex_turn_id: SolaiAgentTurnId,
     model: String,
     provider_name: String,
 }
 
 /// One concrete upstream request attempt.
 ///
-/// A MidnightCoder turn can create multiple attempts when auth recovery retries the
+/// A SolaiAgent turn can create multiple attempts when auth recovery retries the
 /// HTTP request or WebSocket setup falls back to HTTP. Completion is often
 /// observed after the client returns the response stream, so the attempt owns
 /// the terminal guard that prevents duplicate lifecycle events.
@@ -99,11 +99,11 @@ impl InferenceTraceContext {
         }
     }
 
-    /// Builds an enabled context for all upstream attempts made by one MidnightCoder turn.
+    /// Builds an enabled context for all upstream attempts made by one SolaiAgent turn.
     pub fn enabled(
         writer: Arc<TraceWriter>,
         thread_id: AgentThreadId,
-        codex_turn_id: MidnightCoderTurnId,
+        codex_turn_id: SolaiAgentTurnId,
         model: String,
         provider_name: String,
     ) -> Self {
@@ -265,7 +265,7 @@ impl InferenceTraceAttempt {
         );
     }
 
-    /// Records a provider stream that MidnightCoder intentionally stopped consuming.
+    /// Records a provider stream that SolaiAgent intentionally stopped consuming.
     ///
     /// This happens when the turn is interrupted or when mailbox delivery
     /// preempts the current sampling request. Complete output items observed
@@ -317,7 +317,7 @@ impl InferenceTraceAttempt {
 ///
 /// The protocol serializer intentionally omits some readable reasoning content
 /// when shaping items for later model requests. Rollout traces need the item as
-/// MidnightCoder received it, so this helper restores that content in the raw payload.
+/// SolaiAgent received it, so this helper restores that content in the raw payload.
 pub(crate) fn trace_response_item_json(item: &ResponseItem) -> JsonValue {
     let mut value = serde_json::to_value(item).unwrap_or_else(|err| {
         serde_json::json!({
@@ -453,7 +453,7 @@ mod tests {
             agent_path: "/root".to_string(),
             metadata_payload: None,
         })?;
-        writer.append(RawTraceEventPayload::MidnightCoderTurnStarted {
+        writer.append(RawTraceEventPayload::SolaiAgentTurnStarted {
             codex_turn_id: "turn-1".to_string(),
             thread_id: "thread-root".to_string(),
         })?;

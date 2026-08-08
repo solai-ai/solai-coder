@@ -161,17 +161,17 @@ pub fn emit_feedback_request_tags_with_auth_env(
 }
 
 #[derive(Clone)]
-pub struct MidnightCoderFeedback {
+pub struct SolaiAgentFeedback {
     inner: Arc<FeedbackInner>,
 }
 
-impl Default for MidnightCoderFeedback {
+impl Default for SolaiAgentFeedback {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl MidnightCoderFeedback {
+impl SolaiAgentFeedback {
     pub fn new() -> Self {
         Self::with_capacity(DEFAULT_MAX_BYTES)
     }
@@ -449,7 +449,7 @@ impl FeedbackSnapshot {
 
         let mut envelope = Envelope::new();
         let title = format!(
-            "[{}]: MidnightCoder session {}",
+            "[{}]: SolaiAgent session {}",
             display_classification(options.classification),
             self.thread_id
         );
@@ -698,7 +698,7 @@ mod tests {
 
     #[test]
     fn ring_buffer_drops_front_when_full() {
-        let fb = MidnightCoderFeedback::with_capacity(/*max_bytes*/ 8);
+        let fb = SolaiAgentFeedback::with_capacity(/*max_bytes*/ 8);
         {
             let mut w = fb.make_writer().make_writer();
             w.write_all(b"abcdefgh").unwrap();
@@ -711,7 +711,7 @@ mod tests {
 
     #[test]
     fn metadata_layer_records_tags_from_feedback_target() {
-        let fb = MidnightCoderFeedback::new();
+        let fb = SolaiAgentFeedback::new();
         let _guard = tracing_subscriber::registry()
             .with(fb.metadata_layer())
             .set_default();
@@ -733,7 +733,7 @@ mod tests {
         };
         fs::write(&extra_path, "rollout").expect("extra attachment should be written");
 
-        let snapshot_with_diagnostics = MidnightCoderFeedback::new()
+        let snapshot_with_diagnostics = SolaiAgentFeedback::new()
             .snapshot(/*session_id*/ None)
             .with_feedback_diagnostics(FeedbackDiagnostics::new(vec![FeedbackDiagnostic {
                 headline: "Proxy environment variables are set and may affect connectivity."
@@ -778,7 +778,7 @@ mod tests {
             OsStr::new(attachments_with_diagnostics[3].filename.as_str()),
             OsStr::new(extra_filename.as_str())
         );
-        let attachments_without_diagnostics = MidnightCoderFeedback::new()
+        let attachments_without_diagnostics = SolaiAgentFeedback::new()
             .snapshot(/*session_id*/ None)
             .with_feedback_diagnostics(FeedbackDiagnostics::default())
             .feedback_attachments(/*include_logs*/ true, &[], &[], Some(vec![1]));

@@ -1,6 +1,6 @@
 use codex_app_server_protocol::DynamicToolCallOutputContentItem;
 use codex_app_server_protocol::DynamicToolCallResponse;
-use codex_core::MidnightCoderThread;
+use codex_core::SolaiAgentThread;
 use codex_protocol::dynamic_tools::DynamicToolCallOutputContentItem as CoreDynamicToolCallOutputContentItem;
 use codex_protocol::dynamic_tools::DynamicToolResponse as CoreDynamicToolResponse;
 use codex_protocol::protocol::Op;
@@ -16,7 +16,7 @@ use crate::server_request_error::is_turn_transition_server_request_error;
 pub(crate) async fn on_call_response(
     call_id: String,
     receiver: oneshot::Receiver<ClientRequestResult>,
-    conversation: Arc<MidnightCoderThread>,
+    conversation: Arc<SolaiAgentThread>,
 ) {
     let response = receiver.await;
     let (response, _error) = match response {

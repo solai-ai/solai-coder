@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use codex_features::Feature;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_protocol::config_types::ServiceTier;
 use codex_protocol::protocol::EventMsg;
 use codex_protocol::protocol::Op;
@@ -15,7 +15,7 @@ use core_test_support::hooks::trust_discovered_hooks;
 use core_test_support::responses;
 use core_test_support::responses::ResponseMock;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestMidnightCoderHarness;
+use core_test_support::test_codex::TestSolaiAgentHarness;
 use core_test_support::test_codex::test_codex;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
@@ -41,10 +41,10 @@ enum AuthCase {
 }
 
 impl AuthCase {
-    fn build(self) -> MidnightCoderAuth {
+    fn build(self) -> SolaiAgentAuth {
         match self {
-            AuthCase::ChatGpt => MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing(),
-            AuthCase::ApiKey => MidnightCoderAuth::from_api_key("dummy"),
+            AuthCase::ChatGpt => SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing(),
+            AuthCase::ApiKey => SolaiAgentAuth::from_api_key("dummy"),
         }
     }
 }
@@ -486,7 +486,7 @@ async fn run_manual_hook_session(mode: Mode) -> Result<Value> {
     }))
 }
 
-async fn build_auto_harness(mode: Mode) -> Result<TestMidnightCoderHarness> {
+async fn build_auto_harness(mode: Mode) -> Result<TestSolaiAgentHarness> {
     build_harness_inner(
         mode,
         RunSettings::default(),
@@ -500,7 +500,7 @@ async fn build_harness(
     mode: Mode,
     settings: RunSettings,
     hooks: bool,
-) -> Result<TestMidnightCoderHarness> {
+) -> Result<TestSolaiAgentHarness> {
     build_harness_inner(mode, settings, hooks, /*auto_compact_limit*/ None).await
 }
 
@@ -509,7 +509,7 @@ async fn build_harness_inner(
     settings: RunSettings,
     hooks: bool,
     auto_compact_limit: Option<i64>,
-) -> Result<TestMidnightCoderHarness> {
+) -> Result<TestSolaiAgentHarness> {
     fs::create_dir_all(FIXED_CWD)?;
     let mut builder = test_codex()
         .with_auth(settings.auth.build())
@@ -520,7 +520,7 @@ async fn build_harness_inner(
     if hooks {
         builder = builder.with_pre_build_hook(write_manual_compact_hooks);
     }
-    TestMidnightCoderHarness::with_builder(builder.with_config(move |config| {
+    TestSolaiAgentHarness::with_builder(builder.with_config(move |config| {
         config.cwd = codex_utils_absolute_path::AbsolutePathBuf::from_absolute_path(PathBuf::from(
             FIXED_CWD,
         ))
@@ -540,7 +540,7 @@ async fn build_harness_inner(
     .await
 }
 
-fn rollout_path(harness: &TestMidnightCoderHarness) -> PathBuf {
+fn rollout_path(harness: &TestSolaiAgentHarness) -> PathBuf {
     harness
         .test()
         .session_configured
@@ -550,7 +550,7 @@ fn rollout_path(harness: &TestMidnightCoderHarness) -> PathBuf {
 }
 
 async fn mount_legacy_compact_if_needed(
-    harness: &TestMidnightCoderHarness,
+    harness: &TestSolaiAgentHarness,
     mode: Mode,
 ) -> Option<ResponseMock> {
     match mode {
@@ -568,7 +568,7 @@ fn follow_up_index(request_count: usize) -> usize {
 
 async fn capture_from_requests(
     mode: Mode,
-    codex: &codex_core::MidnightCoderThread,
+    codex: &codex_core::SolaiAgentThread,
     rollout_path: &Path,
     responses_mock: &ResponseMock,
     compact_mock: Option<&ResponseMock>,
@@ -607,7 +607,7 @@ async fn capture_from_requests(
 }
 
 async fn submit_user_input(
-    codex: &codex_core::MidnightCoderThread,
+    codex: &codex_core::SolaiAgentThread,
     items: Vec<UserInput>,
 ) -> Result<()> {
     codex
@@ -623,7 +623,7 @@ async fn submit_user_input(
     Ok(())
 }
 
-async fn wait_for_turn_complete(codex: &codex_core::MidnightCoderThread) {
+async fn wait_for_turn_complete(codex: &codex_core::SolaiAgentThread) {
     wait_for_event(codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 }
 

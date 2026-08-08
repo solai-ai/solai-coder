@@ -1938,7 +1938,7 @@ mod tests {
             frame_requester: FrameRequester::test_dummy(),
             has_input_focus: true,
             enhanced_keys_supported: false,
-            placeholder_text: "Ask MidnightCoder to do anything".to_string(),
+            placeholder_text: "Ask SolaiAgent to do anything".to_string(),
             disable_paste_burst,
             animations_enabled: true,
             skills: Some(Vec::new()),
@@ -2039,7 +2039,7 @@ mod tests {
             frame_requester: FrameRequester::test_dummy(),
             has_input_focus: true,
             enhanced_keys_supported: false,
-            placeholder_text: "Ask MidnightCoder to do anything".to_string(),
+            placeholder_text: "Ask SolaiAgent to do anything".to_string(),
             disable_paste_burst: true,
             animations_enabled: true,
             skills: Some(Vec::new()),
@@ -2059,7 +2059,7 @@ mod tests {
             frame_requester: FrameRequester::test_dummy(),
             has_input_focus: true,
             enhanced_keys_supported: false,
-            placeholder_text: "Ask MidnightCoder to do anything".to_string(),
+            placeholder_text: "Ask SolaiAgent to do anything".to_string(),
             disable_paste_burst: true,
             animations_enabled: true,
             skills: Some(Vec::new()),
@@ -2087,7 +2087,7 @@ mod tests {
             frame_requester: FrameRequester::test_dummy(),
             has_input_focus: true,
             enhanced_keys_supported: false,
-            placeholder_text: "Ask MidnightCoder to do anything".to_string(),
+            placeholder_text: "Ask SolaiAgent to do anything".to_string(),
             disable_paste_burst: false,
             animations_enabled: true,
             skills: Some(Vec::new()),
@@ -2337,7 +2337,7 @@ mod tests {
             frame_requester: FrameRequester::test_dummy(),
             has_input_focus: true,
             enhanced_keys_supported: false,
-            placeholder_text: "Ask MidnightCoder to do anything".to_string(),
+            placeholder_text: "Ask SolaiAgent to do anything".to_string(),
             disable_paste_burst: false,
             animations_enabled: true,
             skills: Some(Vec::new()),
@@ -2384,7 +2384,7 @@ mod tests {
             for x in 0..area.width {
                 row.push(buf[(x, y)].symbol().chars().next().unwrap_or(' '));
             }
-            if row.contains("Ask MidnightCoder") {
+            if row.contains("Ask SolaiAgent") {
                 found_composer = true;
                 break;
             }
@@ -2404,7 +2404,7 @@ mod tests {
             frame_requester: FrameRequester::test_dummy(),
             has_input_focus: true,
             enhanced_keys_supported: false,
-            placeholder_text: "Ask MidnightCoder to do anything".to_string(),
+            placeholder_text: "Ask SolaiAgent to do anything".to_string(),
             disable_paste_burst: false,
             animations_enabled: true,
             skills: Some(Vec::new()),
@@ -2431,7 +2431,7 @@ mod tests {
             frame_requester: FrameRequester::test_dummy(),
             has_input_focus: true,
             enhanced_keys_supported: false,
-            placeholder_text: "Ask MidnightCoder to do anything".to_string(),
+            placeholder_text: "Ask SolaiAgent to do anything".to_string(),
             disable_paste_burst: false,
             animations_enabled: true,
             skills: Some(Vec::new()),
@@ -2462,7 +2462,7 @@ mod tests {
             frame_requester: FrameRequester::test_dummy(),
             has_input_focus: true,
             enhanced_keys_supported: false,
-            placeholder_text: "Ask MidnightCoder to do anything".to_string(),
+            placeholder_text: "Ask SolaiAgent to do anything".to_string(),
             disable_paste_burst: false,
             animations_enabled: true,
             skills: Some(Vec::new()),
@@ -2485,7 +2485,7 @@ mod tests {
             frame_requester: FrameRequester::test_dummy(),
             has_input_focus: true,
             enhanced_keys_supported: false,
-            placeholder_text: "Ask MidnightCoder to do anything".to_string(),
+            placeholder_text: "Ask SolaiAgent to do anything".to_string(),
             disable_paste_burst: false,
             animations_enabled: true,
             skills: Some(Vec::new()),
@@ -2514,7 +2514,7 @@ mod tests {
             frame_requester: FrameRequester::test_dummy(),
             has_input_focus: true,
             enhanced_keys_supported: false,
-            placeholder_text: "Ask MidnightCoder to do anything".to_string(),
+            placeholder_text: "Ask SolaiAgent to do anything".to_string(),
             disable_paste_burst: false,
             animations_enabled: true,
             skills: Some(Vec::new()),
@@ -2551,7 +2551,7 @@ mod tests {
             frame_requester: FrameRequester::test_dummy(),
             has_input_focus: true,
             enhanced_keys_supported: false,
-            placeholder_text: "Ask MidnightCoder to do anything".to_string(),
+            placeholder_text: "Ask SolaiAgent to do anything".to_string(),
             disable_paste_burst: false,
             animations_enabled: true,
             skills: Some(Vec::new()),
@@ -2583,7 +2583,7 @@ mod tests {
             frame_requester: FrameRequester::test_dummy(),
             has_input_focus: true,
             enhanced_keys_supported: false,
-            placeholder_text: "Ask MidnightCoder to do anything".to_string(),
+            placeholder_text: "Ask SolaiAgent to do anything".to_string(),
             disable_paste_burst: false,
             animations_enabled: true,
             skills: Some(Vec::new()),
@@ -2614,7 +2614,7 @@ mod tests {
             frame_requester: FrameRequester::test_dummy(),
             has_input_focus: true,
             enhanced_keys_supported: false,
-            placeholder_text: "Ask MidnightCoder to do anything".to_string(),
+            placeholder_text: "Ask SolaiAgent to do anything".to_string(),
             disable_paste_burst: false,
             animations_enabled: true,
             skills: Some(Vec::new()),
@@ -2643,7 +2643,7 @@ mod tests {
             frame_requester: FrameRequester::test_dummy(),
             has_input_focus: true,
             enhanced_keys_supported: false,
-            placeholder_text: "Ask MidnightCoder to do anything".to_string(),
+            placeholder_text: "Ask SolaiAgent to do anything".to_string(),
             disable_paste_burst: false,
             animations_enabled: true,
             skills: Some(Vec::new()),
@@ -2666,7 +2666,7 @@ mod tests {
             frame_requester: FrameRequester::test_dummy(),
             has_input_focus: true,
             enhanced_keys_supported: false,
-            placeholder_text: "Ask MidnightCoder to do anything".to_string(),
+            placeholder_text: "Ask SolaiAgent to do anything".to_string(),
             disable_paste_burst: false,
             animations_enabled: true,
             skills: Some(vec![SkillMetadata {
@@ -2695,7 +2695,7 @@ mod tests {
 
         while let Ok(ev) = rx.try_recv() {
             assert!(
-                !matches!(ev, AppEvent::MidnightCoderOp(Op::Interrupt { .. })),
+                !matches!(ev, AppEvent::SolaiAgentOp(Op::Interrupt { .. })),
                 "expected Esc to not send Op::Interrupt when dismissing skill popup"
             );
         }
@@ -2714,7 +2714,7 @@ mod tests {
             frame_requester: FrameRequester::test_dummy(),
             has_input_focus: true,
             enhanced_keys_supported: false,
-            placeholder_text: "Ask MidnightCoder to do anything".to_string(),
+            placeholder_text: "Ask SolaiAgent to do anything".to_string(),
             disable_paste_burst: false,
             animations_enabled: true,
             skills: Some(Vec::new()),
@@ -2733,7 +2733,7 @@ mod tests {
 
         while let Ok(ev) = rx.try_recv() {
             assert!(
-                !matches!(ev, AppEvent::MidnightCoderOp(Op::Interrupt { .. })),
+                !matches!(ev, AppEvent::SolaiAgentOp(Op::Interrupt { .. })),
                 "expected Esc to not send Op::Interrupt while command popup is active"
             );
         }
@@ -2749,7 +2749,7 @@ mod tests {
             frame_requester: FrameRequester::test_dummy(),
             has_input_focus: true,
             enhanced_keys_supported: false,
-            placeholder_text: "Ask MidnightCoder to do anything".to_string(),
+            placeholder_text: "Ask SolaiAgent to do anything".to_string(),
             disable_paste_burst: false,
             animations_enabled: true,
             skills: Some(Vec::new()),
@@ -2769,7 +2769,7 @@ mod tests {
 
         while let Ok(ev) = rx.try_recv() {
             assert!(
-                !matches!(ev, AppEvent::MidnightCoderOp(Op::Interrupt { .. })),
+                !matches!(ev, AppEvent::SolaiAgentOp(Op::Interrupt { .. })),
                 "expected Esc to not send Op::Interrupt while typing `/agent`"
             );
         }
@@ -2785,7 +2785,7 @@ mod tests {
             frame_requester: FrameRequester::test_dummy(),
             has_input_focus: true,
             enhanced_keys_supported: false,
-            placeholder_text: "Ask MidnightCoder to do anything".to_string(),
+            placeholder_text: "Ask SolaiAgent to do anything".to_string(),
             disable_paste_burst: false,
             animations_enabled: true,
             skills: Some(Vec::new()),
@@ -2814,7 +2814,7 @@ mod tests {
 
         while let Ok(ev) = rx.try_recv() {
             assert!(
-                !matches!(ev, AppEvent::MidnightCoderOp(Op::Interrupt { .. })),
+                !matches!(ev, AppEvent::SolaiAgentOp(Op::Interrupt { .. })),
                 "expected Esc release after dismissing agent picker to not interrupt"
             );
         }
@@ -2833,7 +2833,7 @@ mod tests {
             frame_requester: FrameRequester::test_dummy(),
             has_input_focus: true,
             enhanced_keys_supported: false,
-            placeholder_text: "Ask MidnightCoder to do anything".to_string(),
+            placeholder_text: "Ask SolaiAgent to do anything".to_string(),
             disable_paste_burst: false,
             animations_enabled: true,
             skills: Some(Vec::new()),
@@ -2846,7 +2846,7 @@ mod tests {
         assert!(
             matches!(
                 rx.try_recv(),
-                Ok(AppEvent::MidnightCoderOp(Op::Interrupt { .. }))
+                Ok(AppEvent::SolaiAgentOp(Op::Interrupt { .. }))
             ),
             "expected Esc to send Op::Interrupt while a task is running"
         );
@@ -2873,7 +2873,7 @@ mod tests {
         assert!(
             matches!(
                 rx.try_recv(),
-                Ok(AppEvent::MidnightCoderOp(Op::Interrupt { .. }))
+                Ok(AppEvent::SolaiAgentOp(Op::Interrupt { .. }))
             ),
             "expected configured key to interrupt while `/agent` is being edited"
         );
@@ -2950,7 +2950,7 @@ mod tests {
             frame_requester: FrameRequester::test_dummy(),
             has_input_focus: true,
             enhanced_keys_supported: false,
-            placeholder_text: "Ask MidnightCoder to do anything".to_string(),
+            placeholder_text: "Ask SolaiAgent to do anything".to_string(),
             disable_paste_burst: false,
             animations_enabled: true,
             skills: Some(Vec::new()),
@@ -2998,7 +2998,7 @@ mod tests {
             frame_requester: FrameRequester::test_dummy(),
             has_input_focus: true,
             enhanced_keys_supported: false,
-            placeholder_text: "Ask MidnightCoder to do anything".to_string(),
+            placeholder_text: "Ask SolaiAgent to do anything".to_string(),
             disable_paste_burst: false,
             animations_enabled: true,
             skills: Some(Vec::new()),
@@ -3076,7 +3076,7 @@ mod tests {
             frame_requester: FrameRequester::test_dummy(),
             has_input_focus: true,
             enhanced_keys_supported: false,
-            placeholder_text: "Ask MidnightCoder to do anything".to_string(),
+            placeholder_text: "Ask SolaiAgent to do anything".to_string(),
             disable_paste_burst: false,
             animations_enabled: true,
             skills: Some(Vec::new()),

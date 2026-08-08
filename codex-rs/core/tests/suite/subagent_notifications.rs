@@ -29,7 +29,7 @@ use core_test_support::responses::sse_response;
 use core_test_support::responses::start_mock_server;
 use core_test_support::responses::strip_metadata_from_json;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestMidnightCoder;
+use core_test_support::test_codex::TestSolaiAgent;
 use core_test_support::test_codex::local_selections;
 use core_test_support::test_codex::test_codex;
 use core_test_support::test_codex::turn_permission_fields;
@@ -309,7 +309,7 @@ async fn wait_for_hook_log(
     }
 }
 
-async fn wait_for_spawned_thread_id(test: &TestMidnightCoder) -> Result<String> {
+async fn wait_for_spawned_thread_id(test: &TestSolaiAgent) -> Result<String> {
     let deadline = Instant::now() + Duration::from_secs(2);
     loop {
         let ids = test.thread_manager.list_thread_ids().await;
@@ -345,7 +345,7 @@ async fn wait_for_requests(
 async fn setup_turn_one_with_spawned_child(
     server: &MockServer,
     child_response_delay: Option<Duration>,
-) -> Result<(TestMidnightCoder, String)> {
+) -> Result<(TestSolaiAgent, String)> {
     let (test, spawned_id, _child_request_log) = setup_turn_one_with_custom_spawned_child(
         server,
         json!({
@@ -365,10 +365,10 @@ async fn setup_turn_one_with_custom_spawned_child(
     child_response_delay: Option<Duration>,
     wait_for_parent_notification: bool,
     configure_test: impl FnOnce(
-        core_test_support::test_codex::TestMidnightCoderBuilder,
-    ) -> core_test_support::test_codex::TestMidnightCoderBuilder,
+        core_test_support::test_codex::TestSolaiAgentBuilder,
+    ) -> core_test_support::test_codex::TestSolaiAgentBuilder,
 ) -> Result<(
-    TestMidnightCoder,
+    TestSolaiAgent,
     String,
     core_test_support::responses::ResponseMock,
 )> {
@@ -467,8 +467,8 @@ async fn spawn_child_and_capture_snapshot(
     server: &MockServer,
     spawn_args: serde_json::Value,
     configure_test: impl FnOnce(
-        core_test_support::test_codex::TestMidnightCoderBuilder,
-    ) -> core_test_support::test_codex::TestMidnightCoderBuilder,
+        core_test_support::test_codex::TestSolaiAgentBuilder,
+    ) -> core_test_support::test_codex::TestSolaiAgentBuilder,
 ) -> Result<ThreadConfigSnapshot> {
     let (test, spawned_id, _child_request_log) = setup_turn_one_with_custom_spawned_child(
         server,

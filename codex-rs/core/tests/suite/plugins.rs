@@ -7,7 +7,7 @@ use std::time::Instant;
 
 use anyhow::Result;
 use codex_features::Feature;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_mcp::CODEX_APPS_MCP_SERVER_NAME;
 use codex_protocol::protocol::EventMsg;
 use codex_protocol::protocol::Op;
@@ -25,7 +25,7 @@ use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
 use core_test_support::stdio_server_bin;
-use core_test_support::test_codex::TestMidnightCoder;
+use core_test_support::test_codex::TestSolaiAgent;
 use core_test_support::test_codex::test_codex;
 use core_test_support::wait_for_event;
 use core_test_support::wait_for_mcp_server;
@@ -119,11 +119,11 @@ fn write_plugin_app_plugin_with_name(home: &TempDir, app_name: &str) {
 async fn build_analytics_plugin_test_codex(
     server: &MockServer,
     codex_home: Arc<TempDir>,
-) -> Result<TestMidnightCoder> {
+) -> Result<TestSolaiAgent> {
     let chatgpt_base_url = server.uri();
     let mut builder = test_codex()
         .with_home(codex_home)
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model("gpt-5.2")
         .with_config(move |config| {
             config.chatgpt_base_url = chatgpt_base_url;
@@ -138,10 +138,10 @@ async fn build_apps_enabled_plugin_test_codex(
     server: &MockServer,
     codex_home: Arc<TempDir>,
     chatgpt_base_url: String,
-) -> Result<TestMidnightCoder> {
+) -> Result<TestSolaiAgent> {
     let mut builder = test_codex()
         .with_home(codex_home)
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(move |config| {
             config
                 .features
@@ -436,7 +436,7 @@ async fn explicit_plugin_mentions_use_mcp_for_api_key_dual_surface_plugins() -> 
 
     let mut builder = test_codex()
         .with_home(codex_home)
-        .with_auth(MidnightCoderAuth::from_api_key("Test API Key"))
+        .with_auth(SolaiAgentAuth::from_api_key("Test API Key"))
         .with_config(move |config| {
             config
                 .features

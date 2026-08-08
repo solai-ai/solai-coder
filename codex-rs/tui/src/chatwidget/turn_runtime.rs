@@ -314,11 +314,11 @@ impl ChatWidget {
 
     pub(super) fn handle_app_server_steer_rejected_error(
         &mut self,
-        codex_error_info: &AppServerMidnightCoderErrorInfo,
+        codex_error_info: &AppServerSolaiAgentErrorInfo,
     ) -> bool {
         matches!(
             codex_error_info,
-            AppServerMidnightCoderErrorInfo::ActiveTurnNotSteerable { .. }
+            AppServerSolaiAgentErrorInfo::ActiveTurnNotSteerable { .. }
         ) && self.enqueue_rejected_steer()
     }
 
@@ -362,7 +362,7 @@ impl ChatWidget {
         self.finalize_turn();
 
         let message = if message.trim().is_empty() {
-            "MidnightCoder is currently experiencing high load.".to_string()
+            "SolaiAgent is currently experiencing high load.".to_string()
         } else {
             message
         };
@@ -418,7 +418,7 @@ impl ChatWidget {
         match rate_limit_reached_type {
             Some(RateLimitReachedType::WorkspaceOwnerCreditsDepleted) => {
                 self.on_error(
-                    "You're out of credits. Your workspace is out of credits. Add credits to continue using MidnightCoder."
+                    "You're out of credits. Your workspace is out of credits. Add credits to continue using SolaiAgent."
                         .to_string(),
                 );
             }
@@ -445,7 +445,7 @@ impl ChatWidget {
     pub(super) fn handle_non_retry_error(
         &mut self,
         message: String,
-        codex_error_info: Option<AppServerMidnightCoderErrorInfo>,
+        codex_error_info: Option<AppServerSolaiAgentErrorInfo>,
     ) {
         if codex_error_info
             .as_ref()

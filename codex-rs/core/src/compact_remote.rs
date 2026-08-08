@@ -19,7 +19,7 @@ use crate::hook_runtime::PreCompactHookOutcome;
 use crate::hook_runtime::run_post_compact_hooks;
 use crate::hook_runtime::run_pre_compact_hooks;
 use crate::responses_metadata::CompactionTurnMetadata;
-use crate::responses_metadata::MidnightCoderResponsesRequestKind;
+use crate::responses_metadata::SolaiAgentResponsesRequestKind;
 use crate::session::session::Session;
 use crate::session::step_context::StepContext;
 use crate::session::turn::built_tools;
@@ -29,8 +29,8 @@ use codex_analytics::CompactionPhase;
 use codex_analytics::CompactionReason;
 use codex_analytics::CompactionTrigger;
 use codex_protocol::auth::AuthMode;
-use codex_protocol::error::MidnightCoderErr;
-use codex_protocol::error::Result as MidnightCoderResult;
+use codex_protocol::error::SolaiAgentErr;
+use codex_protocol::error::Result as SolaiAgentResult;
 use codex_protocol::items::ContextCompactionItem;
 use codex_protocol::items::TurnItem;
 use codex_protocol::models::BaseInstructions;
@@ -54,7 +54,7 @@ pub(crate) async fn run_inline_remote_auto_compact_task(
     initial_context_injection: InitialContextInjection,
     reason: CompactionReason,
     phase: CompactionPhase,
-) -> MidnightCoderResult<()> {
+) -> SolaiAgentResult<()> {
     run_remote_compact_task_inner(
         &sess,
         &step_context,
@@ -71,7 +71,7 @@ pub(crate) async fn run_inline_remote_auto_compact_task(
 pub(crate) async fn run_remote_compact_task(
     sess: Arc<Session>,
     turn_context: Arc<TurnContext>,
-) -> MidnightCoderResult<()> {
+) -> SolaiAgentResult<()> {
     // Standalone compaction is its own request boundary, so it captures a fresh step.
     let step_context = sess.capture_step_context(Arc::clone(&turn_context)).await;
     let start_event = EventMsg::TurnStarted(TurnStartedEvent {
@@ -104,7 +104,7 @@ async fn run_remote_compact_task_inner(
     trigger: CompactionTrigger,
     reason: CompactionReason,
     phase: CompactionPhase,
-) -> MidnightCoderResult<()> {
+) -> SolaiAgentResult<()> {
     let turn_context = &step_context.turn;
     let compaction_metadata = CompactionTurnMetadata::new(
         trigger,
@@ -129,7 +129,7 @@ async fn run_remote_compact_task_inner(
     match pre_compact_outcome {
         PreCompactHookOutcome::Continue => {}
         PreCompactHookOutcome::Stopped => {
-            let error = MidnightCoderErr::TurnAborted;
+            let error = SolaiAgentErr::TurnAborted;
             attempt
                 .track(
                     sess.as_ref(),
@@ -158,7 +158,7 @@ async fn run_remote_compact_task_inner(
             attempt
                 .track(sess.as_ref(), status, codex_error, analytics_details)
                 .await;
-            return Err(MidnightCoderErr::TurnAborted);
+            return Err(SolaiAgentErr::TurnAborted);
         }
     }
     attempt
@@ -182,7 +182,7 @@ async fn run_remote_compact_task_inner_impl(
     initial_context_injection: InitialContextInjection,
     compaction_metadata: CompactionTurnMetadata,
     analytics_details: &mut CompactionAnalyticsDetails,
-) -> MidnightCoderResult<()> {
+) -> SolaiAgentResult<()> {
     let turn_context = &step_context.turn;
     let context_compaction_item = ContextCompactionItem::new();
     let compact_model_info = compact_model_info(sess.as_ref(), turn_context.as_ref()).await;
@@ -257,7 +257,7 @@ async fn run_remote_compact_task_inner_impl(
     let responses_metadata = turn_context.turn_metadata_state.to_responses_metadata(
         sess.installation_id.clone(),
         window_id,
-        MidnightCoderResponsesRequestKind::Compaction(compaction_metadata),
+        SolaiAgentResponsesRequestKind::Compaction(compaction_metadata),
     );
     let new_history = sess
         .services

@@ -1,6 +1,6 @@
 use crate::agent::AgentStatus;
 use crate::config::ConstraintResult;
-use crate::session::MidnightCoder;
+use crate::session::SolaiAgent;
 use crate::session::SessionSettingsUpdate;
 use crate::session::SteerInputError;
 use codex_features::Feature;
@@ -11,8 +11,8 @@ use codex_protocol::config_types::CollaborationMode;
 use codex_protocol::config_types::Personality;
 use codex_protocol::config_types::ReasoningSummary;
 use codex_protocol::config_types::WindowsSandboxLevel;
-use codex_protocol::error::MidnightCoderErr;
-use codex_protocol::error::Result as MidnightCoderResult;
+use codex_protocol::error::SolaiAgentErr;
+use codex_protocol::error::Result as SolaiAgentResult;
 use codex_protocol::mcp::CallToolResult;
 use codex_protocol::models::ActivePermissionProfile;
 use codex_protocol::models::ContentItem;
@@ -80,7 +80,7 @@ pub struct ThreadConfigSnapshot {
     pub originator: String,
 }
 
-/// Explains why `MidnightCoderThread::try_start_turn_if_idle` rejected an automatic
+/// Explains why `SolaiAgentThread::try_start_turn_if_idle` rejected an automatic
 /// idle turn.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TryStartTurnIfIdleRejectionReason {
@@ -139,7 +139,7 @@ impl ThreadConfigSnapshot {
 
 /// Thread settings overrides that app-server validates before starting a turn.
 #[derive(Clone, Default)]
-pub struct MidnightCoderThreadSettingsOverrides {
+pub struct SolaiAgentThreadSettingsOverrides {
     pub environments: Option<TurnEnvironmentSelections>,
     pub workspace_roots: Option<Vec<AbsolutePathBuf>>,
     pub profile_workspace_roots: Option<Vec<AbsolutePathBuf>>,
@@ -157,8 +157,8 @@ pub struct MidnightCoderThreadSettingsOverrides {
     pub personality: Option<Personality>,
 }
 
-pub struct MidnightCoderThread {
-    pub(crate) codex: MidnightCoder,
+pub struct SolaiAgentThread {
+    pub(crate) codex: SolaiAgent,
     pub(crate) session_source: SessionSource,
     session_configured: SessionConfiguredEvent,
     rollout_path: Option<PathBuf>,
@@ -174,10 +174,10 @@ pub struct BackgroundTerminalInfo {
 }
 
 /// Conduit for the bidirectional stream of messages that compose a thread
-/// (formerly called a conversation) in MidnightCoder.
-impl MidnightCoderThread {
+/// (formerly called a conversation) in SolaiAgent.
+impl SolaiAgentThread {
     pub(crate) fn new(
-        codex: MidnightCoder,
+        codex: SolaiAgent,
         session_configured: SessionConfiguredEvent,
         rollout_path: Option<PathBuf>,
         session_source: SessionSource,
@@ -191,7 +191,7 @@ impl MidnightCoderThread {
         }
     }
 
-    pub async fn submit(&self, op: Op) -> MidnightCoderResult<String> {
+    pub async fn submit(&self, op: Op) -> SolaiAgentResult<String> {
         self.codex.submit(op).await
     }
 
@@ -200,7 +200,7 @@ impl MidnightCoderThread {
         self.codex.session.services.session_telemetry.clone()
     }
 
-    pub async fn shutdown_and_wait(&self) -> MidnightCoderResult<()> {
+    pub async fn shutdown_and_wait(&self) -> SolaiAgentResult<()> {
         self.codex.shutdown_and_wait().await
     }
 
@@ -247,7 +247,7 @@ impl MidnightCoderThread {
         &self,
         op: Op,
         trace: Option<W3cTraceContext>,
-    ) -> MidnightCoderResult<String> {
+    ) -> SolaiAgentResult<String> {
         self.codex.submit_with_trace(op, trace).await
     }
 
@@ -256,7 +256,7 @@ impl MidnightCoderThread {
         op: Op,
         trace: Option<W3cTraceContext>,
         client_user_message_id: Option<String>,
-    ) -> MidnightCoderResult<String> {
+    ) -> SolaiAgentResult<String> {
         self.codex
             .session
             .services
@@ -295,7 +295,7 @@ impl MidnightCoderThread {
     /// Injects model-visible items into the currently active turn.
     ///
     /// This is the thread-level bridge to `Session::inject_if_running` for
-    /// callers that only hold a `MidnightCoderThread`.
+    /// callers that only hold a `SolaiAgentThread`.
     /// It returns the unchanged items when this thread has no active turn.
     pub async fn inject_if_running(
         &self,
@@ -349,7 +349,7 @@ impl MidnightCoderThread {
     /// Preview persistent thread settings overrides without committing them.
     pub async fn preview_thread_settings_overrides(
         &self,
-        overrides: MidnightCoderThreadSettingsOverrides,
+        overrides: SolaiAgentThreadSettingsOverrides,
     ) -> ConstraintResult<ThreadConfigSnapshot> {
         let updates = self.thread_settings_update(overrides).await;
         self.codex.session.preview_settings(&updates).await
@@ -357,9 +357,9 @@ impl MidnightCoderThread {
 
     async fn thread_settings_update(
         &self,
-        overrides: MidnightCoderThreadSettingsOverrides,
+        overrides: SolaiAgentThreadSettingsOverrides,
     ) -> SessionSettingsUpdate {
-        let MidnightCoderThreadSettingsOverrides {
+        let SolaiAgentThreadSettingsOverrides {
             environments,
             workspace_roots,
             profile_workspace_roots,
@@ -405,11 +405,11 @@ impl MidnightCoderThread {
     }
 
     /// Use sparingly: this is intended to be removed soon.
-    pub async fn submit_with_id(&self, sub: Submission) -> MidnightCoderResult<()> {
+    pub async fn submit_with_id(&self, sub: Submission) -> SolaiAgentResult<()> {
         self.codex.submit_with_id(sub).await
     }
 
-    pub async fn next_event(&self) -> MidnightCoderResult<Event> {
+    pub async fn next_event(&self) -> SolaiAgentResult<Event> {
         self.codex.next_event().await
     }
 
@@ -459,9 +459,9 @@ impl MidnightCoderThread {
     }
 
     /// Record raw Responses API items without starting a new turn.
-    pub async fn inject_response_items(&self, items: Vec<ResponseItem>) -> MidnightCoderResult<()> {
+    pub async fn inject_response_items(&self, items: Vec<ResponseItem>) -> SolaiAgentResult<()> {
         if items.is_empty() {
-            return Err(MidnightCoderErr::InvalidRequest(
+            return Err(SolaiAgentErr::InvalidRequest(
                 "items must not be empty".to_string(),
             ));
         }
@@ -655,11 +655,11 @@ impl MidnightCoderThread {
         self.codex.enabled(feature)
     }
 
-    pub async fn increment_out_of_band_elicitation_count(&self) -> MidnightCoderResult<u64> {
+    pub async fn increment_out_of_band_elicitation_count(&self) -> SolaiAgentResult<u64> {
         let mut guard = self.out_of_band_elicitation_count.lock().await;
         let was_zero = *guard == 0;
         *guard = guard.checked_add(1).ok_or_else(|| {
-            MidnightCoderErr::Fatal("out-of-band elicitation count overflowed".to_string())
+            SolaiAgentErr::Fatal("out-of-band elicitation count overflowed".to_string())
         })?;
 
         if was_zero {
@@ -671,10 +671,10 @@ impl MidnightCoderThread {
         Ok(*guard)
     }
 
-    pub async fn decrement_out_of_band_elicitation_count(&self) -> MidnightCoderResult<u64> {
+    pub async fn decrement_out_of_band_elicitation_count(&self) -> SolaiAgentResult<u64> {
         let mut guard = self.out_of_band_elicitation_count.lock().await;
         if *guard == 0 {
-            return Err(MidnightCoderErr::InvalidRequest(
+            return Err(SolaiAgentErr::InvalidRequest(
                 "out-of-band elicitation count is already zero".to_string(),
             ));
         }

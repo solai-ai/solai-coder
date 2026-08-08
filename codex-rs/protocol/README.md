@@ -1,6 +1,6 @@
 # codex-protocol
 
-This crate defines the "types" for the protocol used by Midnight Coder, which includes both "internal types" for communication between `codex-core` and `codex-tui`, as well as "external types" used with `codex app-server`.
+This crate defines the "types" for the protocol used by SOLAI Agent, which includes both "internal types" for communication between `codex-core` and `codex-tui`, as well as "external types" used with `codex app-server`.
 
 This crate should have minimal dependencies.
 

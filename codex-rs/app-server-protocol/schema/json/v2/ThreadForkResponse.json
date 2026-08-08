@@ -105,7 +105,7 @@
       ],
       "type": "object"
     },
-    "MidnightCoderErrorInfo": {
+    "SolaiAgentErrorInfo": {
       "description": "This translation layer make sure that we expose codex error code in camel case.\n\nWhen an upstream HTTP status is available (for example, from the Responses API or a provider), it is forwarded in `httpStatusCode` on the relevant `codexErrorInfo` variant.",
       "oneOf": [
         {
@@ -144,7 +144,7 @@
           "required": [
             "httpConnectionFailed"
           ],
-          "title": "HttpConnectionFailedMidnightCoderErrorInfo",
+          "title": "HttpConnectionFailedSolaiAgentErrorInfo",
           "type": "object"
         },
         {
@@ -168,7 +168,7 @@
           "required": [
             "responseStreamConnectionFailed"
           ],
-          "title": "ResponseStreamConnectionFailedMidnightCoderErrorInfo",
+          "title": "ResponseStreamConnectionFailedSolaiAgentErrorInfo",
           "type": "object"
         },
         {
@@ -192,7 +192,7 @@
           "required": [
             "responseStreamDisconnected"
           ],
-          "title": "ResponseStreamDisconnectedMidnightCoderErrorInfo",
+          "title": "ResponseStreamDisconnectedSolaiAgentErrorInfo",
           "type": "object"
         },
         {
@@ -216,7 +216,7 @@
           "required": [
             "responseTooManyFailedAttempts"
           ],
-          "title": "ResponseTooManyFailedAttemptsMidnightCoderErrorInfo",
+          "title": "ResponseTooManyFailedAttemptsSolaiAgentErrorInfo",
           "type": "object"
         },
         {
@@ -238,7 +238,7 @@
           "required": [
             "activeTurnNotSteerable"
           ],
-          "title": "ActiveTurnNotSteerableMidnightCoderErrorInfo",
+          "title": "ActiveTurnNotSteerableSolaiAgentErrorInfo",
           "type": "object"
         }
       ]
@@ -1077,7 +1077,7 @@
           "description": "Optional Git metadata captured when the thread was created."
         },
         "id": {
-          "description": "Identifier for this thread. Midnight Coder-generated thread IDs are UUIDv7.",
+          "description": "Identifier for this thread. SOLAI Agent-generated thread IDs are UUIDv7.",
           "type": "string"
         },
         "modelProvider": {
@@ -2047,7 +2047,7 @@
           "description": "Only populated when the Turn's status is failed."
         },
         "id": {
-          "description": "Identifier for this turn. Midnight Coder-generated turn IDs are UUIDv7.",
+          "description": "Identifier for this turn. SOLAI Agent-generated turn IDs are UUIDv7.",
           "type": "string"
         },
         "items": {
@@ -2097,7 +2097,7 @@
         "codexErrorInfo": {
           "anyOf": [
             {
-              "$ref": "#/definitions/MidnightCoderErrorInfo"
+              "$ref": "#/definitions/SolaiAgentErrorInfo"
             },
             {
               "type": "null"

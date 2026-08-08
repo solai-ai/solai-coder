@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Entry point for the MidnightCoder responses API proxy binary.
+// Entry point for the SolaiAgent responses API proxy binary.
 
 import { spawn } from "node:child_process";
 import path from "path";

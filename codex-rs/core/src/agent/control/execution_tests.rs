@@ -1,5 +1,5 @@
 use crate::agent::AgentControl;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::protocol::MultiAgentVersion;
 use codex_protocol::protocol::SessionSource;
 use codex_protocol::protocol::SubAgentSource;
@@ -29,7 +29,7 @@ fn execution_guards_count_active_v2_subagent_turns() {
     let Err(err) = control.ensure_execution_capacity(MultiAgentVersion::V2, &source) else {
         panic!("second active turn should exceed the derived non-root cap");
     };
-    let MidnightCoderErr::AgentLimitReached { max_threads } = err else {
+    let SolaiAgentErr::AgentLimitReached { max_threads } = err else {
         panic!("expected AgentLimitReached");
     };
     assert_eq!(max_threads, 1);

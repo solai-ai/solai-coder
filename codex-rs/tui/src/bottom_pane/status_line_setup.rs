@@ -109,8 +109,8 @@ pub(crate) enum StatusLineItem {
     /// Remaining usage on the secondary rate limit.
     WeeklyLimit,
 
-    /// MidnightCoder application version.
-    MidnightCoderVersion,
+    /// SolaiAgent application version.
+    SolaiAgentVersion,
 
     /// Total context window size in tokens.
     ContextWindowSize,
@@ -179,7 +179,7 @@ impl StatusLineItem {
             StatusLineItem::WeeklyLimit => {
                 "Remaining usage on the secondary usage limit (omitted when unavailable)"
             }
-            StatusLineItem::MidnightCoderVersion => "MidnightCoder application version",
+            StatusLineItem::SolaiAgentVersion => "SolaiAgent application version",
             StatusLineItem::ContextWindowSize => {
                 "Total context window size in tokens (omitted when unknown)"
             }
@@ -219,7 +219,7 @@ impl StatusLineItem {
             StatusLineItem::ContextUsed => StatusSurfacePreviewItem::ContextUsed,
             StatusLineItem::FiveHourLimit => StatusSurfacePreviewItem::FiveHourLimit,
             StatusLineItem::WeeklyLimit => StatusSurfacePreviewItem::WeeklyLimit,
-            StatusLineItem::MidnightCoderVersion => StatusSurfacePreviewItem::MidnightCoderVersion,
+            StatusLineItem::SolaiAgentVersion => StatusSurfacePreviewItem::SolaiAgentVersion,
             StatusLineItem::ContextWindowSize => StatusSurfacePreviewItem::ContextWindowSize,
             StatusLineItem::UsedTokens => StatusSurfacePreviewItem::UsedTokens,
             StatusLineItem::TotalInputTokens => StatusSurfacePreviewItem::TotalInputTokens,

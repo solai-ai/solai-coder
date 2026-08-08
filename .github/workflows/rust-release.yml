@@ -86,7 +86,7 @@ jobs:
             target: x86_64-unknown-linux-musl
             bundle: primary
             artifact_name: x86_64-unknown-linux-musl
-            binaries: "midnight-coder codex-responses-api-proxy bwrap"
+            binaries: "solai codex-responses-api-proxy bwrap"
             build_dmg: "false"
           - runner: ubuntu-24.04
             target: x86_64-unknown-linux-musl
@@ -98,7 +98,7 @@ jobs:
             target: aarch64-unknown-linux-musl
             bundle: primary
             artifact_name: aarch64-unknown-linux-musl
-            binaries: "midnight-coder codex-responses-api-proxy bwrap"
+            binaries: "solai codex-responses-api-proxy bwrap"
             build_dmg: "false"
           - runner: ubuntu-24.04-arm
             target: aarch64-unknown-linux-musl
@@ -323,7 +323,7 @@ jobs:
             bundle_root="${RUNNER_TEMP}/codex-${{ matrix.target }}-bundle"
             rm -rf "$bundle_root"
             mkdir -p "$bundle_root/codex-resources"
-            cp "$dest/midnight-coder-${{ matrix.target }}" "$bundle_root/codex"
+            cp "$dest/solai-${{ matrix.target }}" "$bundle_root/codex"
             cp "$dest/bwrap-${{ matrix.target }}" "$bundle_root/codex-resources/bwrap"
             chmod 0755 "$bundle_root/codex" "$bundle_root/codex-resources/bwrap"
             tar -C "$bundle_root" -cf - codex codex-resources/bwrap |
@@ -377,7 +377,7 @@ jobs:
           # the Homebrew Python as externally managed under PEP 668.
           "${RUNNER_TEMP}/python-runtime-build-venv/bin/python" -m pip install build
 
-          stage_dir="${RUNNER_TEMP}/midnight-coder-bin-${{ matrix.target }}"
+          stage_dir="${RUNNER_TEMP}/solai-bin-${{ matrix.target }}"
           wheel_dir="${GITHUB_WORKSPACE}/python-runtime-dist/${{ matrix.target }}"
           stage_runtime_args=(
             "${GITHUB_WORKSPACE}/sdk/python/scripts/update_sdk_artifacts.py"
@@ -462,7 +462,7 @@ jobs:
           - target: aarch64-apple-darwin
             bundle: primary
             artifact_name: aarch64-apple-darwin
-            binaries: "midnight-coder codex-responses-api-proxy"
+            binaries: "solai codex-responses-api-proxy"
           - target: aarch64-apple-darwin
             bundle: app-server
             artifact_name: aarch64-apple-darwin-app-server
@@ -470,7 +470,7 @@ jobs:
           - target: x86_64-apple-darwin
             bundle: primary
             artifact_name: x86_64-apple-darwin
-            binaries: "midnight-coder codex-responses-api-proxy"
+            binaries: "solai codex-responses-api-proxy"
           - target: x86_64-apple-darwin
             bundle: app-server
             artifact_name: x86_64-apple-darwin-app-server
@@ -581,7 +581,7 @@ jobs:
           - target: aarch64-apple-darwin
             bundle: primary
             artifact_name: aarch64-apple-darwin
-            binaries: "midnight-coder codex-responses-api-proxy"
+            binaries: "solai codex-responses-api-proxy"
             build_dmg: "true"
           - target: aarch64-apple-darwin
             bundle: app-server
@@ -591,7 +591,7 @@ jobs:
           - target: x86_64-apple-darwin
             bundle: primary
             artifact_name: x86_64-apple-darwin
-            binaries: "midnight-coder codex-responses-api-proxy"
+            binaries: "solai codex-responses-api-proxy"
             build_dmg: "true"
           - target: x86_64-apple-darwin
             bundle: app-server
@@ -720,7 +720,7 @@ jobs:
           python3 -m venv "${RUNNER_TEMP}/python-runtime-build-venv"
           "${RUNNER_TEMP}/python-runtime-build-venv/bin/python" -m pip install build
 
-          stage_dir="${RUNNER_TEMP}/midnight-coder-bin-${{ matrix.target }}"
+          stage_dir="${RUNNER_TEMP}/solai-bin-${{ matrix.target }}"
           wheel_dir="${GITHUB_WORKSPACE}/python-runtime-dist/${{ matrix.target }}"
           python3 \
             "${GITHUB_WORKSPACE}/sdk/python/scripts/update_sdk_artifacts.py" \
@@ -879,7 +879,7 @@ jobs:
           - target: aarch64-apple-darwin
             bundle: primary
             artifact_name: aarch64-apple-darwin
-            binaries: "midnight-coder codex-responses-api-proxy"
+            binaries: "solai codex-responses-api-proxy"
             verify_dmg: "true"
           - target: aarch64-apple-darwin
             bundle: app-server
@@ -889,7 +889,7 @@ jobs:
           - target: x86_64-apple-darwin
             bundle: primary
             artifact_name: x86_64-apple-darwin
-            binaries: "midnight-coder codex-responses-api-proxy"
+            binaries: "solai codex-responses-api-proxy"
             verify_dmg: "true"
           - target: x86_64-apple-darwin
             bundle: app-server
@@ -1192,7 +1192,7 @@ jobs:
             --release-version "$RELEASE_VERSION" \
             --workflow-url "$workflow_url" \
             --artifacts-dir "${GITHUB_WORKSPACE}/dist" \
-            --package midnight-coder
+            --package solai
 
       - name: Stage installer scripts
         run: |
@@ -1249,8 +1249,8 @@ jobs:
           tag="$RELEASE_TAG"
           mkdir -p dist/npm
           patterns=(
-            "midnight-coder-${version}.tgz"
-            "midnight-coder-*-*-${version}.tgz"
+            "solai-${version}.tgz"
+            "solai-*-*-${version}.tgz"
           )
           for pattern in "${patterns[@]}"; do
             gh release download "$tag" \
@@ -1273,18 +1273,18 @@ jobs:
             prefix="${NPM_TAG}-"
           fi
 
-          root_tarball="dist/npm/midnight-coder-${VERSION}.tgz"
+          root_tarball="dist/npm/solai-${VERSION}.tgz"
           # Keep this list in sync with CODEX_PLATFORM_PACKAGES in
           # the npm package builder. The root wrapper advances
-          # midnight-coder@latest as soon as it publishes, so every platform
+          # solai@latest as soon as it publishes, so every platform
           # package it aliases must already exist in the registry first.
           platform_tarballs=(
-            "dist/npm/midnight-coder-linux-x64-${VERSION}.tgz"
-            "dist/npm/midnight-coder-linux-arm64-${VERSION}.tgz"
-            "dist/npm/midnight-coder-android-x64-${VERSION}.tgz"
-            "dist/npm/midnight-coder-android-arm64-${VERSION}.tgz"
-            "dist/npm/midnight-coder-win32-x64-${VERSION}.tgz"
-            "dist/npm/midnight-coder-win32-arm64-${VERSION}.tgz"
+            "dist/npm/solai-linux-x64-${VERSION}.tgz"
+            "dist/npm/solai-linux-arm64-${VERSION}.tgz"
+            "dist/npm/solai-android-x64-${VERSION}.tgz"
+            "dist/npm/solai-android-arm64-${VERSION}.tgz"
+            "dist/npm/solai-win32-x64-${VERSION}.tgz"
+            "dist/npm/solai-win32-arm64-${VERSION}.tgz"
           )
 
           for required_tarball in "${platform_tarballs[@]}" "${root_tarball}"; do
@@ -1316,7 +1316,7 @@ jobs:
           done
 
           # npm returns HTTP 409 when concurrent publishes update the same
-          # packument. Every platform tarball is a version of midnight-coder,
+          # packument. Every platform tarball is a version of solai,
           # so publish all tarballs serially.
           tarballs=(
             "${platform_tarballs[@]}"
@@ -1329,12 +1329,12 @@ jobs:
             tag=""
 
             case "${filename}" in
-              midnight-coder-*-*-"${VERSION}".tgz)
-                platform="${filename#midnight-coder-}"
+              solai-*-*-"${VERSION}".tgz)
+                platform="${filename#solai-}"
                 platform="${platform%-${VERSION}.tgz}"
                 tag="${prefix}${platform}"
                 ;;
-              midnight-coder-"${VERSION}".tgz)
+              solai-"${VERSION}".tgz)
                 tag="${NPM_TAG}"
                 ;;
               *)
@@ -1367,7 +1367,7 @@ jobs:
             exit "${publish_status}"
           done
 
-          npm dist-tag add "midnight-coder@${VERSION}" latest
+          npm dist-tag add "solai@${VERSION}" latest
           if [[ -n "${NPM_TAG}" ]]; then
-            npm dist-tag add "midnight-coder@${VERSION}" "${NPM_TAG}"
+            npm dist-tag add "solai@${VERSION}" "${NPM_TAG}"
           fi

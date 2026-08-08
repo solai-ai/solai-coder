@@ -7,7 +7,7 @@ use codex_login::AuthManager;
 use codex_login::ExternalAuth;
 use codex_login::ExternalAuthRefreshContext;
 use codex_login::ExternalAuthTokens;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_login::TokenData;
 use codex_protocol::auth::AuthMode;
 use codex_protocol::openai_models::ModelsResponse;
@@ -209,7 +209,7 @@ fn openai_manager_for_tests(
         codex_home,
         endpoint_client,
         Some(AuthManager::from_auth_for_testing(
-            MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing(),
+            SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing(),
         )),
     )
 }
@@ -226,7 +226,7 @@ fn static_manager_for_tests(model_catalog: ModelsResponse) -> StaticModelsManage
     StaticModelsManager::new(/*auth_manager*/ None, model_catalog)
 }
 
-async fn chatgpt_auth_tokens_for_tests(codex_home: &Path) -> MidnightCoderAuth {
+async fn chatgpt_auth_tokens_for_tests(codex_home: &Path) -> SolaiAgentAuth {
     let auth_dot_json = codex_login::AuthDotJson {
         auth_mode: Some(AuthMode::ChatgptAuthTokens),
         openai_api_key: None,
@@ -253,7 +253,7 @@ c2ln",
     )
     .expect("auth.json should be written");
 
-    MidnightCoderAuth::from_auth_storage(
+    SolaiAgentAuth::from_auth_storage(
         codex_home,
         AuthCredentialsStoreMode::File,
         /*chatgpt_base_url*/ None,
@@ -668,7 +668,7 @@ async fn refresh_available_models_keeps_merging_for_api_auth() {
         codex_home.path().to_path_buf(),
         endpoint.clone(),
         Some(AuthManager::from_auth_for_testing(
-            MidnightCoderAuth::from_api_key("test-api-key"),
+            SolaiAgentAuth::from_api_key("test-api-key"),
         )),
     );
     let mut expected = load_remote_models_from_file().expect("bundled models should parse");
@@ -881,7 +881,7 @@ impl TestAuthAwareModelsEndpoint {
                 .auth()
                 .await
                 .as_ref()
-                .is_some_and(MidnightCoderAuth::uses_codex_backend),
+                .is_some_and(SolaiAgentAuth::uses_codex_backend),
             None => false,
         }
     }
@@ -920,7 +920,7 @@ async fn refresh_available_models_skips_network_when_external_api_key_overrides_
     let dynamic_slug = "dynamic-model-only-for-test-external-api-key";
     let codex_home = tempdir().expect("temp dir");
     let auth_manager = AuthManager::from_auth_for_testing(
-        MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing(),
+        SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing(),
     );
     auth_manager.set_external_auth(Arc::new(TestExternalApiKeyAuth));
     let endpoint = TestAuthAwareModelsEndpoint::new(
@@ -961,7 +961,7 @@ async fn refresh_available_models_uses_cached_chatgpt_when_external_api_key_is_u
     let dynamic_slug = "dynamic-model-only-for-test-unresolved-external-api-key";
     let codex_home = tempdir().expect("temp dir");
     let auth_manager = AuthManager::from_auth_for_testing(
-        MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing(),
+        SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing(),
     );
     auth_manager.set_external_auth(Arc::new(TestUnresolvedExternalApiKeyAuth));
     let endpoint = TestAuthAwareModelsEndpoint::new(
@@ -1055,7 +1055,7 @@ fn build_available_models_picks_default_after_hiding_hidden_models() {
 #[tokio::test]
 async fn static_manager_reads_latest_auth_mode() {
     let auth_manager = AuthManager::from_auth_for_testing(
-        MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing(),
+        SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing(),
     );
     let chatgpt_only_model = {
         let mut model = remote_model("chatgpt-only", "ChatGPT Only", /*priority*/ 0);

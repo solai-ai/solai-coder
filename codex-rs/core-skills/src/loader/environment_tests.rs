@@ -48,7 +48,7 @@ policy:
     let outcome = load_environment_skills_from_root(
         LOCAL_FS.as_ref(),
         &root_uri,
-        Some(Product::MidnightCoder),
+        Some(Product::SolaiAgent),
     )
     .await;
 
@@ -71,7 +71,7 @@ policy:
             }),
             policy: Some(SkillPolicy {
                 allow_implicit_invocation: Some(false),
-                products: vec![Product::MidnightCoder],
+                products: vec![Product::SolaiAgent],
             }),
         }]
     );

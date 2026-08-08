@@ -98,7 +98,7 @@ async fn app_server_cyber_policy_error_renders_dedicated_notice() {
     handle_error(
         &mut chat,
         "server fallback message",
-        Some(MidnightCoderErrorInfo::CyberPolicy),
+        Some(SolaiAgentErrorInfo::CyberPolicy),
     );
 
     let cells = drain_insert_history(&mut rx);
@@ -438,14 +438,14 @@ async fn completed_plan_table_tail_skips_provisional_history_insert() {
     );
     controller.push("| Step | Owner |\n");
     controller.push("| --- | --- |\n");
-    controller.push("| Verify | MidnightCoder |\n");
+    controller.push("| Verify | SolaiAgent |\n");
     assert!(
         controller.has_live_tail(),
         "expected plan table holdback to leave a live tail",
     );
     chat.plan_stream_controller = Some(controller);
     chat.transcript.plan_delta_buffer =
-        "| Step | Owner |\n| --- | --- |\n| Verify | MidnightCoder |\n".to_string();
+        "| Step | Owner |\n| --- | --- |\n| Verify | SolaiAgent |\n".to_string();
 
     while rx.try_recv().is_ok() {}
 
@@ -495,7 +495,7 @@ async fn configured_pet_load_is_deferred_until_after_construction() {
         has_chatgpt_account: false,
         has_codex_backend_auth: false,
         model_catalog: test_model_catalog(&cfg),
-        feedback: codex_feedback::MidnightCoderFeedback::new(),
+        feedback: codex_feedback::SolaiAgentFeedback::new(),
         is_first_run: true,
         status_account_display: None,
         runtime_model_provider_base_url: None,
@@ -1373,7 +1373,7 @@ async fn workspace_owner_limit_states_render_state_specific_messages() {
         (
             RateLimitReachedType::WorkspaceOwnerCreditsDepleted,
             RateLimitErrorKind::Generic,
-            "You're out of credits. Your workspace is out of credits. Add credits to continue using MidnightCoder.",
+            "You're out of credits. Your workspace is out of credits. Add credits to continue using SolaiAgent.",
         ),
         (
             RateLimitReachedType::WorkspaceOwnerUsageLimitReached,
@@ -1609,7 +1609,7 @@ async fn esc_interrupt_pauses_active_goal_turn() {
 
     assert_matches!(
         rx.try_recv(),
-        Ok(AppEvent::MidnightCoderOp(Op::Interrupt { .. }))
+        Ok(AppEvent::SolaiAgentOp(Op::Interrupt { .. }))
     );
     assert_goal_paused_event(&mut rx, thread_id);
 
@@ -1649,7 +1649,7 @@ async fn request_user_input_interrupt_pauses_active_goal_turn() {
 
         assert_matches!(
             rx.try_recv(),
-            Ok(AppEvent::MidnightCoderOp(Op::Interrupt { .. }))
+            Ok(AppEvent::SolaiAgentOp(Op::Interrupt { .. }))
         );
         assert_goal_paused_event(&mut rx, thread_id);
     }

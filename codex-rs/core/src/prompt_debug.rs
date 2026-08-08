@@ -4,8 +4,8 @@ use codex_exec_server::EnvironmentManager;
 use codex_exec_server::ExecServerRuntimePaths;
 use codex_extension_api::UserInstructionsProvider;
 use codex_login::AuthManager;
-use codex_protocol::error::MidnightCoderErr;
-use codex_protocol::error::Result as MidnightCoderResult;
+use codex_protocol::error::SolaiAgentErr;
+use codex_protocol::error::Result as SolaiAgentResult;
 use codex_protocol::models::ResponseItem;
 use codex_protocol::protocol::SessionSource;
 use codex_protocol::user_input::UserInput;
@@ -28,7 +28,7 @@ pub async fn build_prompt_input(
     input: Vec<UserInput>,
     state_db: Option<StateDbHandle>,
     user_instructions_provider: Arc<dyn UserInstructionsProvider>,
-) -> MidnightCoderResult<Vec<ResponseItem>> {
+) -> SolaiAgentResult<Vec<ResponseItem>> {
     config.ephemeral = true;
 
     let auth_manager =
@@ -51,7 +51,7 @@ pub async fn build_prompt_input(
                 Some(local_runtime_paths),
             )
             .await
-            .map_err(|err| MidnightCoderErr::Fatal(err.to_string()))?,
+            .map_err(|err| SolaiAgentErr::Fatal(err.to_string()))?,
         ),
         empty_extension_registry(),
         user_instructions_provider,
@@ -75,7 +75,7 @@ pub async fn build_prompt_input(
 pub(crate) async fn build_prompt_input_from_session(
     sess: &Arc<Session>,
     input: Vec<UserInput>,
-) -> MidnightCoderResult<Vec<ResponseItem>> {
+) -> SolaiAgentResult<Vec<ResponseItem>> {
     let turn_context = sess.new_default_turn().await;
     // Prompt debugging builds a standalone request without entering run_turn.
     let step_context = sess.capture_step_context(Arc::clone(&turn_context)).await;

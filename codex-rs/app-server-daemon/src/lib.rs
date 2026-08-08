@@ -676,8 +676,8 @@ impl Daemon {
 
         let managed_codex_path = self.managed_codex_bin.display();
         Err(anyhow!(
-            "managed standalone MidnightCoder install not found at {managed_codex_path}\n\n\
-             This command requires the standalone install managed by the MidnightCoder installer, because \
+            "managed standalone SolaiAgent install not found at {managed_codex_path}\n\n\
+             This command requires the standalone install managed by the SolaiAgent installer, because \
              the daemon starts and updates app-server from that fixed path.\n\n\
              Install it with:\n  curl -fsSL https://chatgpt.com/codex/install.sh | sh\n\n\
              Then rerun the command you just tried."
@@ -966,8 +966,8 @@ mod tests {
             serde_json::json!({
                 "status": "alreadyRunning",
                 "backend": "pid",
-                "managedMidnightCoderPath": "codex",
-                "managedMidnightCoderVersion": "1.2.3",
+                "managedSolaiAgentPath": "codex",
+                "managedSolaiAgentVersion": "1.2.3",
                 "socketPath": "codex.sock",
                 "cliVersion": "1.2.3",
                 "appServerVersion": "1.2.4",
@@ -998,8 +998,8 @@ mod tests {
                 "backend": "pid",
                 "autoUpdateEnabled": true,
                 "remoteControlEnabled": true,
-                "managedMidnightCoderPath": "codex",
-                "managedMidnightCoderVersion": "1.2.3",
+                "managedSolaiAgentPath": "codex",
+                "managedSolaiAgentVersion": "1.2.3",
                 "socketPath": "codex.sock",
                 "cliVersion": "1.2.3",
                 "appServerVersion": "1.2.4",

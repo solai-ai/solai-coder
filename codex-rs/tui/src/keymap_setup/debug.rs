@@ -23,8 +23,8 @@ use super::key_event_to_config_key_spec;
 
 const MISSING_KEY_HINT_DELAY: Duration = Duration::from_secs(3);
 const SHORT_MISSING_KEY_HINT: &str =
-    "Tip: MidnightCoder can only inspect keys your terminal sends.";
-const DELAYED_MISSING_KEY_HINT: &str = "Still waiting? If nothing changes when you press a key, your terminal is not sending that key to MidnightCoder. Only received keys can be assigned as shortcuts.";
+    "Tip: SolaiAgent can only inspect keys your terminal sends.";
+const DELAYED_MISSING_KEY_HINT: &str = "Still waiting? If nothing changes when you press a key, your terminal is not sending that key to SolaiAgent. Only received keys can be assigned as shortcuts.";
 
 struct KeymapDebugReport {
     detected: KeyBinding,
@@ -65,7 +65,7 @@ impl KeymapDebugView {
         let mut lines = vec![
             Line::from("Keypress Inspector".bold()),
             Line::from(
-                "Press any key to see what MidnightCoder receives. Esc is inspected; Ctrl+C closes.".dim(),
+                "Press any key to see what SolaiAgent receives. Esc is inspected; Ctrl+C closes.".dim(),
             ),
         ];
         let hint = if self.should_show_delayed_hint(now) {

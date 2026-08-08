@@ -85,7 +85,7 @@ pub enum Feature {
     /// Enable the default shell tool.
     ShellTool,
     /// Enable Claude-style lifecycle hooks loaded from hooks.json files.
-    MidnightCoderHooks,
+    SolaiAgentHooks,
     /// Store CLI auth in the encrypted local secrets backend when keyring storage is selected.
     SecretAuthStorage,
 
@@ -142,7 +142,7 @@ pub enum Feature {
     EnableRequestCompression,
     /// Start the managed network proxy for sandboxed sessions.
     NetworkProxy,
-    /// Respect host system proxy settings for MidnightCoder-owned network clients.
+    /// Respect host system proxy settings for SolaiAgent-owned network clients.
     RespectSystemProxy,
     /// Enable collab tools.
     Collab,
@@ -186,7 +186,7 @@ pub enum Feature {
     ///
     /// Requirements-only gate: this should be set from requirements, not user config.
     BrowserUseExternal,
-    /// Allow MidnightCoder Computer Use.
+    /// Allow SolaiAgent Computer Use.
     ///
     /// Requirements-only gate: this should be set from requirements, not user config.
     ComputerUse,
@@ -224,7 +224,7 @@ pub enum Feature {
     CurrentTimeReminder,
     /// Route MCP tool approval prompts through the MCP elicitation request path.
     ToolCallMcpElicitation,
-    /// Prompt MidnightCoder Apps connector auth failures through MCP URL elicitations.
+    /// Prompt SolaiAgent Apps connector auth failures through MCP URL elicitations.
     AuthElicitation,
     /// Enable personality selection in the TUI.
     Personality,
@@ -265,7 +265,7 @@ pub enum Feature {
     /// Legacy remote models flag kept for backward compatibility.
     RemoteModels,
     /// Removed legacy git commit attribution guidance flag.
-    MidnightCoderGitCommit,
+    SolaiAgentGitCommit,
     /// Persist rollout metadata to a local SQLite database.
     Sqlite,
     /// Removed compatibility flag for the deleted apply_patch fallback feature.
@@ -901,7 +901,7 @@ pub const FEATURES: &[FeatureSpec] = &[
         default_enabled: false,
     },
     FeatureSpec {
-        id: Feature::MidnightCoderGitCommit,
+        id: Feature::SolaiAgentGitCommit,
         key: "codex_git_commit",
         stage: Stage::Removed,
         default_enabled: false,
@@ -923,8 +923,8 @@ pub const FEATURES: &[FeatureSpec] = &[
         key: "memories",
         stage: Stage::Experimental {
             name: "Memories",
-            menu_description: "Allow MidnightCoder to create new memories from conversations and bring relevant memories into new conversations.",
-            announcement: "NEW: MidnightCoder can now generate and use memories. Try it now with `/memories`",
+            menu_description: "Allow SolaiAgent to create new memories from conversations and bring relevant memories into new conversations.",
+            announcement: "NEW: SolaiAgent can now generate and use memories. Try it now with `/memories`",
         },
         default_enabled: false,
     },
@@ -959,7 +959,7 @@ pub const FEATURES: &[FeatureSpec] = &[
         default_enabled: false,
     },
     FeatureSpec {
-        id: Feature::MidnightCoderHooks,
+        id: Feature::SolaiAgentHooks,
         key: "hooks",
         stage: Stage::Stable,
         default_enabled: true,
@@ -1018,7 +1018,7 @@ pub const FEATURES: &[FeatureSpec] = &[
         stage: Stage::Experimental {
             name: "Network proxy",
             menu_description: "Apply network proxy restrictions to sandboxed sessions that already have network access.",
-            announcement: "NEW: Network proxy can now be enabled from /experimental. Restart MidnightCoder after enabling it.",
+            announcement: "NEW: Network proxy can now be enabled from /experimental. Restart SolaiAgent after enabling it.",
         },
         default_enabled: false,
     },
@@ -1320,7 +1320,7 @@ pub const FEATURES: &[FeatureSpec] = &[
         )) {
             Stage::Experimental {
                 name: "Prevent sleep while running",
-                menu_description: "Keep your computer awake while MidnightCoder is running a thread.",
+                menu_description: "Keep your computer awake while SolaiAgent is running a thread.",
                 announcement: "NEW: Prevent sleep while running is now available in /experimental.",
             }
         } else {

@@ -1,5 +1,5 @@
 use super::*;
-use crate::MidnightCoderThread;
+use crate::SolaiAgentThread;
 use crate::StateDbHandle;
 use crate::ThreadManager;
 use crate::agent::agent_status_from_event;
@@ -15,7 +15,7 @@ use codex_extension_api::ExtensionDataInit;
 use codex_extension_api::empty_extension_registry;
 use codex_features::Feature;
 use codex_login::AuthManager;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_protocol::AgentPath;
 use codex_protocol::capabilities::CapabilityRootLocation;
 use codex_protocol::capabilities::SelectedCapabilityRoot;
@@ -122,7 +122,7 @@ impl AgentControlHarness {
     async fn new_with_config(home: TempDir, config: Config) -> Self {
         let state_db = init_state_db(&config).await;
         let manager = ThreadManager::with_models_provider_home_and_state_for_tests(
-            MidnightCoderAuth::from_api_key("dummy"),
+            SolaiAgentAuth::from_api_key("dummy"),
             config.model_provider.clone(),
             config.codex_home.to_path_buf(),
             std::sync::Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
@@ -138,7 +138,7 @@ impl AgentControlHarness {
         }
     }
 
-    async fn start_thread(&self) -> (ThreadId, Arc<MidnightCoderThread>) {
+    async fn start_thread(&self) -> (ThreadId, Arc<SolaiAgentThread>) {
         let new_thread = self
             .manager
             .start_thread(self.config.clone())
@@ -148,7 +148,7 @@ impl AgentControlHarness {
     }
 }
 
-async fn persisted_originator(thread: &MidnightCoderThread) -> String {
+async fn persisted_originator(thread: &SolaiAgentThread) -> String {
     thread.ensure_rollout_materialized().await;
     thread
         .flush_rollout()
@@ -232,7 +232,7 @@ fn history_contains_assistant_inter_agent_communication(
     })
 }
 
-async fn wait_for_subagent_notification(parent_thread: &Arc<MidnightCoderThread>) -> bool {
+async fn wait_for_subagent_notification(parent_thread: &Arc<SolaiAgentThread>) -> bool {
     let wait = async {
         loop {
             let history_items = parent_thread
@@ -253,7 +253,7 @@ async fn wait_for_subagent_notification(parent_thread: &Arc<MidnightCoderThread>
     timeout(Duration::from_secs(10), wait).await.is_ok()
 }
 
-async fn persist_thread_for_tree_resume(thread: &Arc<MidnightCoderThread>, message: &str) {
+async fn persist_thread_for_tree_resume(thread: &Arc<SolaiAgentThread>, message: &str) {
     thread
         .inject_user_message_without_turn(message.to_string())
         .await;
@@ -296,7 +296,7 @@ async fn wait_for_live_thread_spawn_children(
 
 async fn assert_thread_not_loaded(manager: &ThreadManager, thread_id: ThreadId) {
     match manager.get_thread(thread_id).await {
-        Err(MidnightCoderErr::ThreadNotFound(id)) => assert_eq!(id, thread_id),
+        Err(SolaiAgentErr::ThreadNotFound(id)) => assert_eq!(id, thread_id),
         Err(err) => panic!("expected ThreadNotFound, got {err:?}"),
         Ok(_) => panic!("expected thread not to be loaded"),
     }
@@ -428,7 +428,7 @@ async fn send_input_errors_when_thread_missing() {
         )
         .await
         .expect_err("send_input should fail for missing thread");
-    assert_matches!(err, MidnightCoderErr::ThreadNotFound(id) if id == thread_id);
+    assert_matches!(err, SolaiAgentErr::ThreadNotFound(id) if id == thread_id);
 }
 
 #[tokio::test]
@@ -455,7 +455,7 @@ async fn subscribe_status_errors_for_missing_thread() {
         .subscribe_status(thread_id)
         .await
         .expect_err("subscribe_status should fail for missing thread");
-    assert_matches!(err, MidnightCoderErr::ThreadNotFound(id) if id == thread_id);
+    assert_matches!(err, SolaiAgentErr::ThreadNotFound(id) if id == thread_id);
 }
 
 #[tokio::test]
@@ -631,7 +631,7 @@ async fn ensure_v2_agent_loaded_reloads_registered_unloaded_agent() {
             .is_some()
     );
     match harness.manager.get_thread(spawned_agent.thread_id).await {
-        Err(MidnightCoderErr::ThreadNotFound(id)) => assert_eq!(id, spawned_agent.thread_id),
+        Err(SolaiAgentErr::ThreadNotFound(id)) => assert_eq!(id, spawned_agent.thread_id),
         Err(err) => panic!("expected ThreadNotFound, got {err:?}"),
         Ok(_) => panic!("expected thread to be removed"),
     }
@@ -737,7 +737,7 @@ async fn resume_agent_from_rollout_does_not_reopen_v2_descendants() {
     assert_eq!(report.timed_out, Vec::<ThreadId>::new());
 
     let resumed_manager = ThreadManager::with_models_provider_home_and_state_for_tests(
-        MidnightCoderAuth::from_api_key("dummy"),
+        SolaiAgentAuth::from_api_key("dummy"),
         harness.config.model_provider.clone(),
         harness.config.codex_home.to_path_buf(),
         std::sync::Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
@@ -1696,7 +1696,7 @@ async fn spawn_agent_respects_max_threads_limit() {
     )])
     .await;
     let manager = ThreadManager::with_models_provider_and_home_for_tests(
-        MidnightCoderAuth::from_api_key("dummy"),
+        SolaiAgentAuth::from_api_key("dummy"),
         config.model_provider.clone(),
         config.codex_home.to_path_buf(),
         std::sync::Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
@@ -1725,11 +1725,11 @@ async fn spawn_agent_respects_max_threads_limit() {
         )
         .await
         .expect_err("spawn_agent should respect max threads");
-    let MidnightCoderErr::AgentLimitReached {
+    let SolaiAgentErr::AgentLimitReached {
         max_threads: seen_max_threads,
     } = err
     else {
-        panic!("expected MidnightCoderErr::AgentLimitReached");
+        panic!("expected SolaiAgentErr::AgentLimitReached");
     };
     assert_eq!(seen_max_threads, max_threads);
 
@@ -1748,7 +1748,7 @@ async fn spawn_agent_releases_slot_after_shutdown() {
     )])
     .await;
     let manager = ThreadManager::with_models_provider_and_home_for_tests(
-        MidnightCoderAuth::from_api_key("dummy"),
+        SolaiAgentAuth::from_api_key("dummy"),
         config.model_provider.clone(),
         config.codex_home.to_path_buf(),
         std::sync::Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
@@ -1791,7 +1791,7 @@ async fn spawn_agent_limit_shared_across_clones() {
     )])
     .await;
     let manager = ThreadManager::with_models_provider_and_home_for_tests(
-        MidnightCoderAuth::from_api_key("dummy"),
+        SolaiAgentAuth::from_api_key("dummy"),
         config.model_provider.clone(),
         config.codex_home.to_path_buf(),
         std::sync::Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
@@ -1816,8 +1816,8 @@ async fn spawn_agent_limit_shared_across_clones() {
         )
         .await
         .expect_err("spawn_agent should respect shared guard");
-    let MidnightCoderErr::AgentLimitReached { max_threads } = err else {
-        panic!("expected MidnightCoderErr::AgentLimitReached");
+    let SolaiAgentErr::AgentLimitReached { max_threads } = err else {
+        panic!("expected SolaiAgentErr::AgentLimitReached");
     };
     assert_eq!(max_threads, 1);
 
@@ -1836,7 +1836,7 @@ async fn resume_agent_respects_max_threads_limit() {
     )])
     .await;
     let manager = ThreadManager::with_models_provider_and_home_for_tests(
-        MidnightCoderAuth::from_api_key("dummy"),
+        SolaiAgentAuth::from_api_key("dummy"),
         config.model_provider.clone(),
         config.codex_home.to_path_buf(),
         std::sync::Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
@@ -1869,11 +1869,11 @@ async fn resume_agent_respects_max_threads_limit() {
         .resume_agent_from_rollout(config, resumable_id, SessionSource::Exec)
         .await
         .expect_err("resume should respect max threads");
-    let MidnightCoderErr::AgentLimitReached {
+    let SolaiAgentErr::AgentLimitReached {
         max_threads: seen_max_threads,
     } = err
     else {
-        panic!("expected MidnightCoderErr::AgentLimitReached");
+        panic!("expected SolaiAgentErr::AgentLimitReached");
     };
     assert_eq!(seen_max_threads, max_threads);
 
@@ -1892,7 +1892,7 @@ async fn resume_agent_releases_slot_after_resume_failure() {
     )])
     .await;
     let manager = ThreadManager::with_models_provider_and_home_for_tests(
-        MidnightCoderAuth::from_api_key("dummy"),
+        SolaiAgentAuth::from_api_key("dummy"),
         config.model_provider.clone(),
         config.codex_home.to_path_buf(),
         std::sync::Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
@@ -2373,7 +2373,7 @@ async fn resume_thread_subagent_restores_stored_metadata() {
     let thread_store = Arc::new(InMemoryThreadStore::default());
     let manager = ThreadManager::new(
         &config,
-        AuthManager::from_auth_for_testing(MidnightCoderAuth::from_api_key("dummy")),
+        AuthManager::from_auth_for_testing(SolaiAgentAuth::from_api_key("dummy")),
         SessionSource::Exec,
         Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
         empty_extension_registry(),
@@ -2708,7 +2708,7 @@ async fn list_agent_subtree_thread_ids_includes_anonymous_and_closed_descendants
 async fn list_agent_subtree_thread_ids_finds_live_descendants_of_unloaded_root() {
     let (_home, config) = test_config().await;
     let manager = ThreadManager::with_models_provider_home_and_state_for_tests(
-        MidnightCoderAuth::from_api_key("dummy"),
+        SolaiAgentAuth::from_api_key("dummy"),
         config.model_provider.clone(),
         config.codex_home.to_path_buf(),
         std::sync::Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),

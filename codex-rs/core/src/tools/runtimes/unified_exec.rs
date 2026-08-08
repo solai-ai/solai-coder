@@ -43,7 +43,7 @@ use crate::unified_exec::UnifiedExecProcess;
 use crate::unified_exec::UnifiedExecProcessManager;
 use codex_network_proxy::ManagedNetworkSandboxContext;
 use codex_network_proxy::NetworkProxy;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::error::SandboxErr;
 use codex_protocol::models::AdditionalPermissionProfile;
 use codex_protocol::protocol::ReviewDecision;
@@ -333,7 +333,7 @@ impl<'a> ToolRuntime<UnifiedExecRequest, UnifiedExecProcess> for UnifiedExecRunt
                         Some(&req.turn_environment.environment_id),
                     )
                     .map_err(|err| {
-                        ToolError::MidnightCoder(MidnightCoderErr::Io(io::Error::other(format!(
+                        ToolError::SolaiAgent(SolaiAgentErr::Io(io::Error::other(format!(
                             "failed to prepare network proxy for environment `{}`: {err}",
                             req.turn_environment.environment_id
                         ))))
@@ -401,7 +401,7 @@ impl<'a> ToolRuntime<UnifiedExecRequest, UnifiedExecProcess> for UnifiedExecRunt
                 ToolError::Rejected(_) => {
                     ToolError::Rejected("missing command line for PTY".to_string())
                 }
-                error @ ToolError::MidnightCoder(_) => error,
+                error @ ToolError::SolaiAgent(_) => error,
             })?;
             let options = unified_exec_options(attempt.network_denial_cancellation_token.clone());
             let mut exec_env = attempt
@@ -411,7 +411,7 @@ impl<'a> ToolRuntime<UnifiedExecRequest, UnifiedExecProcess> for UnifiedExecRunt
                     managed_network,
                     Some(&req.turn_environment.environment_id),
                 )
-                .map_err(ToolError::MidnightCoder)?;
+                .map_err(ToolError::SolaiAgent)?;
             exec_env.exec_server_env_config = req.exec_server_env_config.clone();
             match zsh_fork_backend::maybe_prepare_unified_exec(
                 req,
@@ -441,7 +441,7 @@ impl<'a> ToolRuntime<UnifiedExecRequest, UnifiedExecProcess> for UnifiedExecRunt
                         .await
                         .map_err(|err| match err {
                             UnifiedExecError::SandboxDenied { output, .. } => {
-                                ToolError::MidnightCoder(MidnightCoderErr::Sandbox(
+                                ToolError::SolaiAgent(SolaiAgentErr::Sandbox(
                                     SandboxErr::Denied {
                                         output: Box::new(output),
                                         network_policy_decision: None,
@@ -469,7 +469,7 @@ impl<'a> ToolRuntime<UnifiedExecRequest, UnifiedExecProcess> for UnifiedExecRunt
             ToolError::Rejected(_) => {
                 ToolError::Rejected("missing command line for PTY".to_string())
             }
-            error @ ToolError::MidnightCoder(_) => error,
+            error @ ToolError::SolaiAgent(_) => error,
         })?;
         let options = unified_exec_options(attempt.network_denial_cancellation_token.clone());
         self.manager

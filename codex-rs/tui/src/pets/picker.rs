@@ -39,7 +39,7 @@ struct PetPickerEntry {
 /// Build the selection popup parameters for `/pets`.
 ///
 /// The picker preselects `DEFAULT_PET_ID` when no pet is configured so the UI
-/// has a sensible starting point without implying that MidnightCoder is already the
+/// has a sensible starting point without implying that SolaiAgent is already the
 /// active ambient pet. Callers should treat the returned actions as the only
 /// supported mutation path; bypassing them would skip preview-loading and
 /// selection-specific event wiring.
@@ -253,7 +253,7 @@ mod tests {
                 "Disable terminal pets",
                 "BSOD",
                 "Chefito",
-                "MidnightCoder",
+                "SolaiAgent",
                 "Dewey",
                 "Fireball",
                 "Null Signal",
@@ -281,8 +281,8 @@ mod tests {
         let codex_idx = params
             .items
             .iter()
-            .position(|item| item.name == "MidnightCoder")
-            .expect("MidnightCoder pet should be present");
+            .position(|item| item.name == "SolaiAgent")
+            .expect("SolaiAgent pet should be present");
         assert_eq!(params.initial_selected_idx, Some(codex_idx));
         assert!(!params.items[codex_idx].is_current);
     }

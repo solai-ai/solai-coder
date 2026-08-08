@@ -1994,7 +1994,7 @@ fn mcp_server_elicitation_request_from_core_openai_form_request() {
         message: "Choose a report".to_string(),
         requested_schema: requested_schema.clone(),
     })
-    .expect("MidnightCoder form request should convert");
+    .expect("SolaiAgent form request should convert");
 
     assert_eq!(
         request,
@@ -3827,7 +3827,7 @@ fn marketplace_upgrade_response_serializes_camel_case_fields() {
 
 #[test]
 fn codex_error_info_serializes_http_status_code_in_camel_case() {
-    let value = MidnightCoderErrorInfo::ResponseTooManyFailedAttempts {
+    let value = SolaiAgentErrorInfo::ResponseTooManyFailedAttempts {
         http_status_code: Some(401),
     };
 
@@ -3844,14 +3844,14 @@ fn codex_error_info_serializes_http_status_code_in_camel_case() {
 #[test]
 fn codex_error_info_serializes_cyber_policy_in_camel_case() {
     assert_eq!(
-        serde_json::to_value(MidnightCoderErrorInfo::CyberPolicy).unwrap(),
+        serde_json::to_value(SolaiAgentErrorInfo::CyberPolicy).unwrap(),
         json!("cyberPolicy")
     );
 }
 
 #[test]
 fn codex_error_info_serializes_active_turn_not_steerable_turn_kind_in_camel_case() {
-    let value = MidnightCoderErrorInfo::ActiveTurnNotSteerable {
+    let value = SolaiAgentErrorInfo::ActiveTurnNotSteerable {
         turn_kind: NonSteerableTurnKind::Review,
     };
 

@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
 #[command(
-    about = "Generate TypeScript bindings and JSON Schemas for the MidnightCoder app-server protocol"
+    about = "Generate TypeScript bindings and JSON Schemas for the SolaiAgent app-server protocol"
 )]
 struct Args {
     /// Output directory where generated files will be written

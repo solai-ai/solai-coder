@@ -45,7 +45,7 @@ impl StatusLineAccent {
             | StatusLineItem::TotalInputTokens
             | StatusLineItem::TotalOutputTokens => Self::Usage,
             StatusLineItem::FiveHourLimit | StatusLineItem::WeeklyLimit => Self::Limit,
-            StatusLineItem::MidnightCoderVersion | StatusLineItem::SessionId => Self::Metadata,
+            StatusLineItem::SolaiAgentVersion | StatusLineItem::SessionId => Self::Metadata,
             StatusLineItem::FastMode | StatusLineItem::RawOutput | StatusLineItem::SmartContext => {
                 Self::Mode
             }

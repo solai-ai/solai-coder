@@ -267,7 +267,7 @@ async fn specs_filter_deferred_dynamic_tools() -> anyhow::Result<()> {
     let visible_tool = "visible_dynamic_tool";
     let dynamic_tools = vec![DynamicToolSpec::Namespace(DynamicToolNamespaceSpec {
         name: "codex_app".to_string(),
-        description: "MidnightCoder app tools.".to_string(),
+        description: "SolaiAgent app tools.".to_string(),
         tools: vec![
             DynamicToolNamespaceTool::Function(DynamicToolFunctionSpec {
                 name: hidden_tool.to_string(),

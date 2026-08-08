@@ -22,7 +22,7 @@
     "displayName": "Plugin Display Name",
     "shortDescription": "Short description for subtitle",
     "longDescription": "Long description for details page",
-    "developerName": "Midnight Coder",
+    "developerName": "SOLAI Agent",
     "category": "Productivity",
     "capabilities": ["Interactive", "Write"],
     "websiteURL": "https://openai.com/",
@@ -155,7 +155,7 @@ personal marketplace unless the caller explicitly requests a repo-local destinat
 
 - `name` (`string`): Marketplace identifier or catalog name.
 - `interface` (`object`, optional): Marketplace presentation metadata.
-- `plugins` (`array`): Ordered plugin entries. This order determines how Midnight Coder renders plugins.
+- `plugins` (`array`): Ordered plugin entries. This order determines how SOLAI Agent renders plugins.
 
 ### `interface` fields
 

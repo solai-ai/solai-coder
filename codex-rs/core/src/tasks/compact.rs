@@ -8,7 +8,7 @@ use crate::session::TurnInput;
 use crate::session::turn_context::TurnContext;
 use crate::state::TaskKind;
 use codex_features::Feature;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::user_input::UserInput;
 use tokio_util::sync::CancellationToken;
 
@@ -75,7 +75,7 @@ impl SessionTask for CompactTask {
             }];
             crate::compact::run_compact_task(session.clone(), ctx, input).await
         };
-        if let Err(err @ MidnightCoderErr::TurnAborted) = result {
+        if let Err(err @ SolaiAgentErr::TurnAborted) = result {
             return Err(err);
         }
         Ok(None)

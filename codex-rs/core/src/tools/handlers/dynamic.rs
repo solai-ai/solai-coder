@@ -102,7 +102,7 @@ impl ToolExecutor<ToolInvocation> for DynamicToolHandler {
             Some(ToolSearchSourceInfo {
                 name: "Dynamic tools".to_string(),
                 description: Some(
-                    "Tools provided by the current MidnightCoder thread.".to_string(),
+                    "Tools provided by the current SolaiAgent thread.".to_string(),
                 ),
             }),
         )

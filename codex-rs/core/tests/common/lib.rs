@@ -11,11 +11,11 @@ use tempfile::TempDir;
 use codex_config::CloudConfigBundleLoader;
 use codex_config::LoaderOverrides;
 use codex_config::test_support::CloudConfigBundleFixture;
-use codex_core::MidnightCoderThread;
+use codex_core::SolaiAgentThread;
 use codex_core::config::Config;
 use codex_core::config::ConfigBuilder;
 use codex_core::config::ConfigOverrides;
-pub use codex_core::test_support::TestMidnightCoderResponsesRequestKind;
+pub use codex_core::test_support::TestSolaiAgentResponsesRequestKind;
 pub use codex_core::test_support::responses_metadata;
 use codex_utils_absolute_path::AbsolutePathBuf;
 pub use codex_utils_absolute_path::test_support::PathBufExt;
@@ -260,7 +260,7 @@ pub fn find_codex_linux_sandbox_exe() -> Result<PathBuf, CargoBinError> {
 }
 
 pub async fn wait_for_event<F>(
-    codex: &MidnightCoderThread,
+    codex: &SolaiAgentThread,
     predicate: F,
 ) -> codex_protocol::protocol::EventMsg
 where
@@ -272,7 +272,7 @@ where
 
 /// Waits for a configured MCP server to finish startup and requires it to be ready.
 pub async fn wait_for_mcp_server(
-    codex: &MidnightCoderThread,
+    codex: &SolaiAgentThread,
     server_name: &str,
 ) -> anyhow::Result<()> {
     use codex_protocol::protocol::EventMsg;
@@ -307,7 +307,7 @@ pub async fn wait_for_mcp_server(
 }
 
 pub async fn submit_thread_settings(
-    codex: &MidnightCoderThread,
+    codex: &SolaiAgentThread,
     thread_settings: codex_protocol::protocol::ThreadSettingsOverrides,
 ) -> anyhow::Result<()> {
     use codex_protocol::protocol::EventMsg;
@@ -331,7 +331,7 @@ pub async fn submit_thread_settings(
     }
 }
 
-pub async fn wait_for_event_match<T, F>(codex: &MidnightCoderThread, matcher: F) -> T
+pub async fn wait_for_event_match<T, F>(codex: &SolaiAgentThread, matcher: F) -> T
 where
     F: Fn(&codex_protocol::protocol::EventMsg) -> Option<T>,
 {
@@ -340,7 +340,7 @@ where
 }
 
 pub async fn wait_for_event_with_timeout<F>(
-    codex: &MidnightCoderThread,
+    codex: &SolaiAgentThread,
     mut predicate: F,
     wait_time: tokio::time::Duration,
 ) -> codex_protocol::protocol::EventMsg
@@ -567,7 +567,7 @@ macro_rules! skip_if_no_network {
     () => {{
         if ::std::env::var($crate::sandbox_network_env_var()).is_ok() {
             println!(
-                "Skipping test because it cannot execute when network is disabled in a MidnightCoder sandbox."
+                "Skipping test because it cannot execute when network is disabled in a SolaiAgent sandbox."
             );
             return;
         }
@@ -575,7 +575,7 @@ macro_rules! skip_if_no_network {
     ($return_value:expr $(,)?) => {{
         if ::std::env::var($crate::sandbox_network_env_var()).is_ok() {
             println!(
-                "Skipping test because it cannot execute when network is disabled in a MidnightCoder sandbox."
+                "Skipping test because it cannot execute when network is disabled in a SolaiAgent sandbox."
             );
             return $return_value;
         }

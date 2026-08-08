@@ -30,7 +30,7 @@ use codex_config::types::ToolSuggestDiscoverableType;
 use codex_core_plugins::PluginsManager;
 use codex_features::Feature;
 use codex_login::AuthManager;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_mcp::CODEX_APPS_MCP_SERVER_NAME;
 use codex_mcp::MCP_TOOL_CODEX_APPS_META_KEY;
 use codex_mcp::McpConnectionManager;
@@ -97,7 +97,7 @@ pub(crate) async fn list_accessible_and_enabled_connectors_from_manager(
 pub(crate) async fn list_tool_suggest_discoverable_tools_with_auth(
     config: &Config,
     plugins_manager: &PluginsManager,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
     accessible_connectors: &[AppInfo],
     loaded_plugin_app_connector_ids: &[String],
 ) -> anyhow::Result<Vec<DiscoverableTool>> {
@@ -136,7 +136,7 @@ pub async fn list_cached_accessible_connectors_from_mcp_tools(
     let auth = auth_manager.auth().await;
     if !config.features.apps_enabled_for_auth(
         auth.as_ref()
-            .is_some_and(MidnightCoderAuth::uses_codex_backend),
+            .is_some_and(SolaiAgentAuth::uses_codex_backend),
     ) {
         return Some(Vec::new());
     }
@@ -146,7 +146,7 @@ pub async fn list_cached_accessible_connectors_from_mcp_tools(
 
 pub(crate) fn refresh_accessible_connectors_cache_from_mcp_tools(
     config: &Config,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
     mcp_tools: &[ToolInfo],
 ) {
     if !config.features.enabled(Feature::Apps) {
@@ -218,7 +218,7 @@ pub async fn list_accessible_connectors_from_mcp_tools_with_mcp_manager(
     let auth = auth_manager.auth().await;
     if !config.features.apps_enabled_for_auth(
         auth.as_ref()
-            .is_some_and(MidnightCoderAuth::uses_codex_backend),
+            .is_some_and(SolaiAgentAuth::uses_codex_backend),
     ) {
         return Ok(AccessibleConnectorsStatus {
             connectors: Vec::new(),
@@ -357,11 +357,11 @@ pub async fn list_accessible_connectors_from_mcp_tools_with_mcp_manager(
 
 fn accessible_connectors_cache_key(
     config: &Config,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
 ) -> AccessibleConnectorsCacheKey {
-    let account_id = auth.and_then(MidnightCoderAuth::get_account_id);
-    let chatgpt_user_id = auth.and_then(MidnightCoderAuth::get_chatgpt_user_id);
-    let is_workspace_account = auth.is_some_and(MidnightCoderAuth::is_workspace_account);
+    let account_id = auth.and_then(SolaiAgentAuth::get_account_id);
+    let chatgpt_user_id = auth.and_then(SolaiAgentAuth::get_chatgpt_user_id);
+    let is_workspace_account = auth.is_some_and(SolaiAgentAuth::is_workspace_account);
     AccessibleConnectorsCacheKey {
         chatgpt_base_url: config.chatgpt_base_url.clone(),
         account_id,
@@ -434,7 +434,7 @@ fn tool_suggest_connector_ids(
 #[instrument(level = "trace", skip_all)]
 async fn cached_directory_connectors_for_tool_suggest_with_auth(
     config: &Config,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
 ) -> Vec<AppInfo> {
     if !config.features.enabled(Feature::Apps) {
         return Vec::new();

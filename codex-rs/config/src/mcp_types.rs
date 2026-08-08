@@ -117,7 +117,7 @@ impl AsRef<str> for McpServerEnvVar {
     }
 }
 
-/// OAuth client settings used when MidnightCoder launches an MCP OAuth flow.
+/// OAuth client settings used when SolaiAgent launches an MCP OAuth flow.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, JsonSchema)]
 #[schemars(deny_unknown_fields)]
 pub struct McpServerOAuthConfig {
@@ -126,7 +126,7 @@ pub struct McpServerOAuthConfig {
     pub client_id: Option<String>,
 }
 
-/// Authentication flow MidnightCoder attempts after resolving an HTTP MCP server's
+/// Authentication flow SolaiAgent attempts after resolving an HTTP MCP server's
 /// configured bearer token and authorization headers, which always take
 /// precedence. ChatGPT authentication falls back to stored OAuth credentials
 /// when its session provider is unavailable; both modes ultimately fall back
@@ -161,10 +161,10 @@ pub struct McpServerConfig {
     #[serde(default, skip_serializing_if = "McpServerAuth::is_default")]
     pub auth: McpServerAuth,
 
-    /// Effective environment id for where MidnightCoder should start this MCP server.
+    /// Effective environment id for where SolaiAgent should start this MCP server.
     pub environment_id: String,
 
-    /// When `false`, MidnightCoder skips initializing this MCP server.
+    /// When `false`, SolaiAgent skips initializing this MCP server.
     #[serde(default = "default_enabled")]
     pub enabled: bool,
 

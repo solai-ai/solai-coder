@@ -12,7 +12,7 @@ use thiserror::Error;
 use ts_rs::TS;
 
 /// A UTF-8 path for preserving raw path compatibility at the app-server API
-/// boundary while MidnightCoder migrates to [`PathUri`].
+/// boundary while SolaiAgent migrates to [`PathUri`].
 ///
 /// Supports storing arbitrary strings read from the API and converting to and
 /// from [`PathUri`] using an explicitly selected native path convention.
@@ -26,7 +26,7 @@ use ts_rs::TS;
 ///
 /// Deserialization accepts any UTF-8 string without interpreting or validating
 /// it. That unrestricted construction path is intentionally available only to
-/// serde: MidnightCoder-internal code cannot construct this type directly from a raw
+/// serde: SolaiAgent-internal code cannot construct this type directly from a raw
 /// `String` and is instead encouraged to convert through [`PathUri`] or
 /// [`AbsolutePathBuf`]. Relative path text remains valid until an operation
 /// such as [`Self::to_path_uri`] requires an absolute path.

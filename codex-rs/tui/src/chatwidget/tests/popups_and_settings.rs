@@ -44,7 +44,7 @@ async fn experimental_mode_plan_is_ignored_on_startup() {
         has_chatgpt_account: false,
         has_codex_backend_auth: false,
         model_catalog: test_model_catalog(&cfg),
-        feedback: codex_feedback::MidnightCoderFeedback::new(),
+        feedback: codex_feedback::SolaiAgentFeedback::new(),
         is_first_run: true,
         status_account_display: None,
         runtime_model_provider_base_url: None,
@@ -276,7 +276,7 @@ async fn plugins_popup_truncates_long_descriptions_in_list_rows() {
         .expect("expected verbose plugin row in popup");
     insta::assert_snapshot!(
         verbose_row,
-        @"  [-] Verbose Plugin  Available · MidnightCoder Curated · This desc…"
+        @"  [-] Verbose Plugin  Available · SolaiAgent Curated · This desc…"
     );
     assert!(
         !popup
@@ -1240,7 +1240,7 @@ async fn plugins_popup_remote_section_fallback_states_snapshot() {
         ])),
     );
     let curated_loading_popup =
-        select_tab_containing(&mut chat, "Loading MidnightCoder Curated plugins...");
+        select_tab_containing(&mut chat, "Loading SolaiAgent Curated plugins...");
     let workspace_loading_popup = select_tab_containing(&mut chat, "Loading Workspace plugins.");
     let shared_loading_popup = select_tab_containing(&mut chat, "Loading Shared with me plugins.");
     let _ = select_tab_containing(&mut chat, "Loading Workspace plugins.");
@@ -1277,7 +1277,7 @@ async fn plugins_popup_remote_section_fallback_states_snapshot() {
     );
     let remote_curated_empty_popup = select_tab_containing(
         &mut remote_chat,
-        "No MidnightCoder Curated plugins available",
+        "No SolaiAgent Curated plugins available",
     );
 
     insta::assert_snapshot!(
@@ -1290,8 +1290,8 @@ async fn plugins_popup_remote_section_fallback_states_snapshot() {
         ]
         .join("\n\n"),
         @"
-    MidnightCoder Curated marketplace.
-    Loading MidnightCoder Curated plugins...  This updates when MidnightCoder Curated plugins finish…
+    SolaiAgent Curated marketplace.
+    Loading SolaiAgent Curated plugins...  This updates when SolaiAgent Curated plugins finish…
 
     Loading Workspace plugins.
     Loading Workspace plugins...  This updates when workspace plugins finish loading.
@@ -1302,8 +1302,8 @@ async fn plugins_popup_remote_section_fallback_states_snapshot() {
     Workspace unavailable.
     Workspace unavailable  Sign in to ChatGPT to load workspace plugins.
 
-    MidnightCoder Curated marketplace.
-    No MidnightCoder Curated plugins available  No MidnightCoder Curated plugins available.
+    SolaiAgent Curated marketplace.
+    No SolaiAgent Curated plugins available  No SolaiAgent Curated plugins available.
     "
     );
 }
@@ -1941,12 +1941,12 @@ async fn plugins_popup_openai_curated_tab_omits_marketplace_in_rows() {
 
     let popup = render_bottom_popup(&chat, /*width*/ 100);
     assert!(
-        popup.contains("MidnightCoder Curated marketplace."),
-        "expected MidnightCoder Curated tab header, got:\n{popup}"
+        popup.contains("SolaiAgent Curated marketplace."),
+        "expected SolaiAgent Curated tab header, got:\n{popup}"
     );
     assert!(
         popup.contains("Calendar") && !popup.contains("Repo Plugin"),
-        "expected MidnightCoder Curated tab to show only official marketplace plugins, got:\n{popup}"
+        "expected SolaiAgent Curated tab to show only official marketplace plugins, got:\n{popup}"
     );
     assert!(
         !popup.contains("ChatGPT Marketplace ·"),
@@ -2603,7 +2603,7 @@ async fn apps_popup_keeps_existing_full_snapshot_while_partial_refresh_loads() {
                 },
                 AppInfo {
                     id: "connector_openai_hidden".to_string(),
-                    name: "Hidden MidnightCoder".to_string(),
+                    name: "Hidden SolaiAgent".to_string(),
                     description: Some("Should be filtered".to_string()),
                     logo_url: None,
                     logo_url_dark: None,
@@ -2634,7 +2634,7 @@ async fn apps_popup_keeps_existing_full_snapshot_while_partial_refresh_loads() {
         "expected popup to keep the last full snapshot while partial refresh loads, got:\n{popup}"
     );
     assert!(
-        !popup.contains("Hidden MidnightCoder"),
+        !popup.contains("Hidden SolaiAgent"),
         "expected popup to ignore partial refresh rows until the full list arrives, got:\n{popup}"
     );
 }
@@ -3160,7 +3160,7 @@ async fn server_overloaded_error_does_not_switch_models() {
     handle_error(
         &mut chat,
         "server overloaded",
-        Some(MidnightCoderErrorInfo::ServerOverloaded),
+        Some(SolaiAgentErrorInfo::ServerOverloaded),
     );
 
     while let Ok(event) = rx.try_recv() {

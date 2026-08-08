@@ -106,7 +106,7 @@ else
     echo "Firewall verification passed - unable to reach https://example.com as expected"
 fi
 
-# Always verify MidnightCoder API access is working
+# Always verify SolaiAgent API access is working
 if ! curl --connect-timeout 5 https://api.openai.com >/dev/null 2>&1; then
     echo "ERROR: Firewall verification failed - unable to reach https://api.openai.com"
     exit 1

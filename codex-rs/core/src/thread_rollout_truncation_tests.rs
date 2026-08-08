@@ -128,7 +128,7 @@ fn truncate_rollout_after_turn_id_rejects_rolled_back_turn() {
 
     assert!(matches!(
         err,
-        MidnightCoderErr::InvalidRequest(message)
+        SolaiAgentErr::InvalidRequest(message)
             if message == "lastTurnId 'turn-2' was not found in the source thread"
     ));
 }
@@ -147,7 +147,7 @@ fn truncate_rollout_after_turn_id_rejects_synthetic_legacy_turn_id() {
 
     assert!(matches!(
         err,
-        MidnightCoderErr::InvalidRequest(message)
+        SolaiAgentErr::InvalidRequest(message)
             if message
                 == "lastTurnId 'rollout-0' is not a persisted canonical turn in the source thread"
     ));
@@ -162,7 +162,7 @@ fn truncate_rollout_after_turn_id_rejects_in_progress_turn() {
 
     assert!(matches!(
         err,
-        MidnightCoderErr::InvalidRequest(message)
+        SolaiAgentErr::InvalidRequest(message)
             if message == "lastTurnId 'turn-1' identifies an in-progress turn"
     ));
 }

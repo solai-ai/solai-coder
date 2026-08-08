@@ -14,19 +14,19 @@ pub async fn run_windows_app_open_or_install(
     let workspace_path = workspace.display().to_string();
     let display_workspace = display_workspace_path(&workspace);
     if codex_app_is_installed().await? {
-        eprintln!("Opening MidnightCoder Desktop workspace {display_workspace}...");
+        eprintln!("Opening SolaiAgent Desktop workspace {display_workspace}...");
         open_url(&codex_new_thread_url(&workspace_path)).await?;
         return Ok(());
     }
 
-    eprintln!("MidnightCoder Desktop not found; opening Windows installer...");
+    eprintln!("SolaiAgent Desktop not found; opening Windows installer...");
     let download_url = download_url_override
         .as_deref()
         .unwrap_or(CODEX_WINDOWS_INSTALLER_URL);
     if open_url(download_url).await.is_err() && download_url_override.is_none() {
         open_url(CODEX_MICROSOFT_STORE_WEB_URL).await?;
     }
-    eprintln!("After installing MidnightCoder Desktop, open workspace {display_workspace}.");
+    eprintln!("After installing SolaiAgent Desktop, open workspace {display_workspace}.");
     Ok(())
 }
 
@@ -34,7 +34,7 @@ async fn codex_app_is_installed() -> anyhow::Result<bool> {
     let output = Command::new("powershell.exe")
         .arg("-NoProfile")
         .arg("-Command")
-        .arg("Get-StartApps -Name 'MidnightCoder' | Select-Object -First 1 -ExpandProperty AppID")
+        .arg("Get-StartApps -Name 'SolaiAgent' | Select-Object -First 1 -ExpandProperty AppID")
         .output()
         .await
         .context("failed to invoke `powershell.exe`")?;

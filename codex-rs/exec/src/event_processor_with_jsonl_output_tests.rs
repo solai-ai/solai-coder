@@ -25,7 +25,7 @@ fn failed_turn_does_not_overwrite_output_last_message_file() {
         },
     ));
 
-    assert_eq!(collected.status, MidnightCoderStatus::Running);
+    assert_eq!(collected.status, SolaiAgentStatus::Running);
     assert_eq!(processor.final_message(), Some("partial answer"));
 
     let status = processor.process_server_notification(ServerNotification::TurnCompleted(
@@ -48,7 +48,7 @@ fn failed_turn_does_not_overwrite_output_last_message_file() {
         },
     ));
 
-    assert_eq!(status, MidnightCoderStatus::InitiateShutdown);
+    assert_eq!(status, SolaiAgentStatus::InitiateShutdown);
     assert_eq!(processor.final_message(), None);
 
     EventProcessor::print_final_output(&mut processor);
@@ -81,7 +81,7 @@ fn runtime_warning_emits_a_non_fatal_error_item() {
                     }),
                 },
             })],
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
 }
@@ -97,7 +97,7 @@ fn mcp_tool_call_result_preserves_meta_in_jsonl_event() {
                 server: "search service".to_string(),
                 tool: "web_run".to_string(),
                 status: McpToolCallStatus::Completed,
-                arguments: json!({"search_query": [{"q": "MidnightCoder CLI documentation"}]}),
+                arguments: json!({"search_query": [{"q": "SolaiAgent CLI documentation"}]}),
                 app_context: None,
                 mcp_app_resource_uri: None,
                 plugin_id: None,
@@ -115,7 +115,7 @@ fn mcp_tool_call_result_preserves_meta_in_jsonl_event() {
         },
     ));
 
-    assert_eq!(collected.status, MidnightCoderStatus::Running);
+    assert_eq!(collected.status, SolaiAgentStatus::Running);
     assert_eq!(collected.events.len(), 1);
 
     let ThreadEvent::ItemCompleted(ItemCompletedEvent { item }) = &collected.events[0] else {

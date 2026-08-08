@@ -3,7 +3,7 @@
 use std::sync::Arc;
 
 use codex_core::NewThread;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_protocol::ThreadId;
 use codex_protocol::config_types::ModeKind;
 use codex_protocol::config_types::ReasoningSummary;
@@ -97,11 +97,11 @@ async fn emits_warning_when_resumed_model_differs() {
     let initial_history = resume_history(&config, "previous-model", &rollout_path);
 
     let thread_manager = codex_core::test_support::thread_manager_with_models_provider(
-        MidnightCoderAuth::from_api_key("test"),
+        SolaiAgentAuth::from_api_key("test"),
         config.model_provider.clone(),
     );
     let auth_manager =
-        codex_core::test_support::auth_manager_from_auth(MidnightCoderAuth::from_api_key("test"));
+        codex_core::test_support::auth_manager_from_auth(SolaiAgentAuth::from_api_key("test"));
 
     // Act: resume the conversation.
     let NewThread {

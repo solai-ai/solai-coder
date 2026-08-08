@@ -1,7 +1,7 @@
 #![cfg(not(target_os = "windows"))]
 
 use codex_features::Feature;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_protocol::protocol::EventMsg;
 use codex_protocol::protocol::Op;
 use codex_protocol::user_input::UserInput;
@@ -28,7 +28,7 @@ async fn request_body_is_zstd_compressed_for_codex_backend_when_enabled() -> any
 
     let base_url = format!("{}/backend-api/codex/v1", server.uri());
     let mut builder = test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(move |config| {
             config
                 .features

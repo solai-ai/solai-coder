@@ -48,9 +48,9 @@ rustPlatform.buildRustPackage (_: {
   };
 
   meta = with lib; {
-    description = "Midnight Coder command‑line interface rust implementation";
+    description = "SOLAI Agent command‑line interface rust implementation";
     license = licenses.asl20;
-    homepage = "https://github.com/modnight/coder";
+    homepage = "https://github.com/solai-ai/solai-agent";
     mainProgram = "codex";
   };
 })

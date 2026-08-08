@@ -19,7 +19,7 @@ use crate::inference::trace_response_item_json;
 use crate::model::AgentThreadId;
 use crate::model::CompactionId;
 use crate::model::CompactionRequestId;
-use crate::model::MidnightCoderTurnId;
+use crate::model::SolaiAgentTurnId;
 use crate::payload::RawPayloadKind;
 use crate::raw_event::RawTraceEventContext;
 use crate::raw_event::RawTraceEventPayload;
@@ -46,7 +46,7 @@ enum CompactionTraceContextState {
 struct EnabledCompactionTraceContext {
     writer: Arc<TraceWriter>,
     thread_id: AgentThreadId,
-    codex_turn_id: MidnightCoderTurnId,
+    codex_turn_id: SolaiAgentTurnId,
     compaction_id: CompactionId,
     model: String,
     provider_name: String,
@@ -98,7 +98,7 @@ impl CompactionTraceContext {
     pub fn enabled(
         writer: Arc<TraceWriter>,
         thread_id: AgentThreadId,
-        codex_turn_id: MidnightCoderTurnId,
+        codex_turn_id: SolaiAgentTurnId,
         compaction_id: CompactionId,
         model: String,
         provider_name: String,

@@ -19,7 +19,7 @@ use codex_model_provider_info::built_in_model_providers;
 use codex_protocol::ThreadId;
 use codex_protocol::models::PermissionProfile;
 use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::MidnightCoderErrorInfo;
+use codex_protocol::protocol::SolaiAgentErrorInfo;
 use codex_protocol::protocol::Op;
 use codex_protocol::user_input::UserInput;
 use core_test_support::assert_regex_match;
@@ -313,7 +313,7 @@ async fn current_time_reminder_is_refreshed_after_compaction() -> Result<()> {
     )
     .await;
     let mut model_provider = built_in_model_providers(/*openai_base_url*/ None)["openai"].clone();
-    model_provider.name = "MidnightCoder-compatible test provider".to_string();
+    model_provider.name = "SolaiAgent-compatible test provider".to_string();
     model_provider.base_url = Some(format!("{}/v1", server.uri()));
     model_provider.supports_websockets = false;
     let test = test_codex()
@@ -396,7 +396,7 @@ async fn time_provider_failure_stops_before_inference() -> Result<()> {
         error.message,
         "Fatal error: failed to read current time: test clock unavailable"
     );
-    assert_eq!(error.codex_error_info, Some(MidnightCoderErrorInfo::Other));
+    assert_eq!(error.codex_error_info, Some(SolaiAgentErrorInfo::Other));
 
     wait_for_event(&test.codex, |event| {
         matches!(event, EventMsg::TurnComplete(_))

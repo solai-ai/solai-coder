@@ -37,15 +37,15 @@ pub(crate) struct RateLimitStatusWithResetCredits {
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
-pub struct MidnightCoderWorkspaceMessagesResponse {
+pub struct SolaiAgentWorkspaceMessagesResponse {
     #[serde(default)]
-    pub messages: Vec<MidnightCoderWorkspaceMessage>,
+    pub messages: Vec<SolaiAgentWorkspaceMessage>,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
-pub struct MidnightCoderWorkspaceMessage {
+pub struct SolaiAgentWorkspaceMessage {
     pub message_id: String,
-    pub message_type: MidnightCoderWorkspaceMessageType,
+    pub message_type: SolaiAgentWorkspaceMessageType,
     pub message_body: String,
     #[serde(default)]
     pub created_at: Option<String>,
@@ -71,7 +71,7 @@ pub struct ConsumeRateLimitResetCreditResponse {
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
-pub enum MidnightCoderWorkspaceMessageType {
+pub enum SolaiAgentWorkspaceMessageType {
     Headline,
     Announcement,
     #[serde(other)]
@@ -549,7 +549,7 @@ Second line"
 
     #[test]
     fn workspace_messages_response_deserializes_messages() {
-        let response: MidnightCoderWorkspaceMessagesResponse =
+        let response: SolaiAgentWorkspaceMessagesResponse =
             serde_json::from_value(serde_json::json!({
                 "messages": [
                     {
@@ -577,25 +577,25 @@ Second line"
 
         assert_eq!(
             response,
-            MidnightCoderWorkspaceMessagesResponse {
+            SolaiAgentWorkspaceMessagesResponse {
                 messages: vec![
-                    MidnightCoderWorkspaceMessage {
+                    SolaiAgentWorkspaceMessage {
                         message_id: "headline-id".to_string(),
-                        message_type: MidnightCoderWorkspaceMessageType::Headline,
+                        message_type: SolaiAgentWorkspaceMessageType::Headline,
                         message_body: "Headline body".to_string(),
                         created_at: Some("2026-06-14T00:00:00Z".to_string()),
                         archived_at: None,
                     },
-                    MidnightCoderWorkspaceMessage {
+                    SolaiAgentWorkspaceMessage {
                         message_id: "announcement-id".to_string(),
-                        message_type: MidnightCoderWorkspaceMessageType::Announcement,
+                        message_type: SolaiAgentWorkspaceMessageType::Announcement,
                         message_body: "Announcement body".to_string(),
                         created_at: Some("2026-06-14T01:00:00Z".to_string()),
                         archived_at: None,
                     },
-                    MidnightCoderWorkspaceMessage {
+                    SolaiAgentWorkspaceMessage {
                         message_id: "unknown-id".to_string(),
-                        message_type: MidnightCoderWorkspaceMessageType::Unknown,
+                        message_type: SolaiAgentWorkspaceMessageType::Unknown,
                         message_body: "Unknown body".to_string(),
                         created_at: None,
                         archived_at: None,

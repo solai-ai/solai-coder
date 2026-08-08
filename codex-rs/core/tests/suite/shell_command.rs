@@ -10,8 +10,8 @@ use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse;
 use core_test_support::skip_if_host_windows;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestMidnightCoderBuilder;
-use core_test_support::test_codex::TestMidnightCoderHarness;
+use core_test_support::test_codex::TestSolaiAgentBuilder;
+use core_test_support::test_codex::TestSolaiAgentHarness;
 use core_test_support::test_codex::test_codex;
 use serde_json::json;
 use test_case::test_case;
@@ -58,14 +58,14 @@ fn shell_responses(call_id: &str, command: &str, login: Option<bool>) -> Vec<Str
 }
 
 async fn shell_command_harness_with(
-    configure: impl FnOnce(TestMidnightCoderBuilder) -> TestMidnightCoderBuilder,
-) -> Result<TestMidnightCoderHarness> {
+    configure: impl FnOnce(TestSolaiAgentBuilder) -> TestSolaiAgentBuilder,
+) -> Result<TestSolaiAgentHarness> {
     let builder = configure(test_codex());
-    TestMidnightCoderHarness::with_builder(builder).await
+    TestSolaiAgentHarness::with_builder(builder).await
 }
 
 async fn mount_shell_responses(
-    harness: &TestMidnightCoderHarness,
+    harness: &TestSolaiAgentHarness,
     call_id: &str,
     command: &str,
     login: Option<bool>,
@@ -74,7 +74,7 @@ async fn mount_shell_responses(
 }
 
 async fn mount_shell_responses_with_timeout(
-    harness: &TestMidnightCoderHarness,
+    harness: &TestSolaiAgentHarness,
     call_id: &str,
     command: &str,
     login: Option<bool>,

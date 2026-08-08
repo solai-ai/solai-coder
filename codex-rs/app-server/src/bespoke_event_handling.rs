@@ -38,7 +38,7 @@ use codex_app_server_protocol::McpServerElicitationRequestParams;
 use codex_app_server_protocol::McpServerElicitationRequestResponse;
 use codex_app_server_protocol::McpServerStartupState;
 use codex_app_server_protocol::McpServerStatusUpdatedNotification;
-use codex_app_server_protocol::MidnightCoderErrorInfo as V2MidnightCoderErrorInfo;
+use codex_app_server_protocol::SolaiAgentErrorInfo as V2SolaiAgentErrorInfo;
 use codex_app_server_protocol::ModelReroutedNotification;
 use codex_app_server_protocol::ModelSafetyBufferingUpdatedNotification;
 use codex_app_server_protocol::ModelVerificationNotification;
@@ -85,7 +85,7 @@ use codex_app_server_protocol::WarningNotification;
 use codex_app_server_protocol::build_item_from_guardian_event;
 use codex_app_server_protocol::guardian_auto_approval_review_notification;
 use codex_app_server_protocol::item_event_to_server_notification;
-use codex_core::MidnightCoderThread;
+use codex_core::SolaiAgentThread;
 use codex_core::ThreadManager;
 use codex_core::review_format::format_review_findings_block;
 use codex_core::review_prompts;
@@ -96,7 +96,7 @@ use codex_protocol::plan_tool::UpdatePlanArgs;
 use codex_protocol::protocol::Event;
 use codex_protocol::protocol::EventMsg;
 use codex_protocol::protocol::ExecApprovalRequestEvent;
-use codex_protocol::protocol::MidnightCoderErrorInfo as CoreMidnightCoderErrorInfo;
+use codex_protocol::protocol::SolaiAgentErrorInfo as CoreSolaiAgentErrorInfo;
 use codex_protocol::protocol::Op;
 use codex_protocol::protocol::RealtimeEvent;
 use codex_protocol::protocol::ReviewDecision;
@@ -139,7 +139,7 @@ struct CommandExecutionCompletionItem {
 pub(crate) async fn apply_bespoke_event_handling(
     event: Event,
     conversation_id: ThreadId,
-    conversation: Arc<MidnightCoderThread>,
+    conversation: Arc<SolaiAgentThread>,
     thread_manager: Arc<ThreadManager>,
     outgoing: ThreadScopedOutgoingMessageSender,
     thread_state: Arc<tokio::sync::Mutex<ThreadState>>,
@@ -953,7 +953,7 @@ pub(crate) async fn apply_bespoke_event_handling(
             // Don't send a notification for this error.
             if matches!(
                 codex_error_info,
-                Some(CoreMidnightCoderErrorInfo::ThreadRollbackFailed)
+                Some(CoreSolaiAgentErrorInfo::ThreadRollbackFailed)
             ) {
                 return handle_thread_rollback_failed(
                     conversation_id,
@@ -970,7 +970,7 @@ pub(crate) async fn apply_bespoke_event_handling(
 
             let turn_error = TurnError {
                 message: ev.message,
-                codex_error_info: ev.codex_error_info.map(V2MidnightCoderErrorInfo::from),
+                codex_error_info: ev.codex_error_info.map(V2SolaiAgentErrorInfo::from),
                 additional_details: None,
             };
             handle_error_notification(
@@ -987,7 +987,7 @@ pub(crate) async fn apply_bespoke_event_handling(
             // but we notify the client.
             let turn_error = TurnError {
                 message: ev.message,
-                codex_error_info: ev.codex_error_info.map(V2MidnightCoderErrorInfo::from),
+                codex_error_info: ev.codex_error_info.map(V2SolaiAgentErrorInfo::from),
                 additional_details: ev.additional_details,
             };
             outgoing
@@ -1687,7 +1687,7 @@ async fn on_request_user_input_response(
     event_turn_id: String,
     pending_request_id: RequestId,
     receiver: oneshot::Receiver<ClientRequestResult>,
-    conversation: Arc<MidnightCoderThread>,
+    conversation: Arc<SolaiAgentThread>,
     thread_state: Arc<Mutex<ThreadState>>,
     user_input_guard: ThreadWatchActiveGuard,
 ) {
@@ -1769,7 +1769,7 @@ async fn on_mcp_server_elicitation_response(
     request_id: codex_protocol::mcp::RequestId,
     pending_request_id: RequestId,
     receiver: oneshot::Receiver<ClientRequestResult>,
-    conversation: Arc<MidnightCoderThread>,
+    conversation: Arc<SolaiAgentThread>,
     thread_state: Arc<Mutex<ThreadState>>,
     permission_guard: ThreadWatchActiveGuard,
 ) {
@@ -1833,7 +1833,7 @@ fn mcp_server_elicitation_response_from_client_result(
 
 async fn on_request_permissions_response(
     pending_response: PendingRequestPermissionsResponse,
-    conversation: Arc<MidnightCoderThread>,
+    conversation: Arc<SolaiAgentThread>,
     thread_state: Arc<Mutex<ThreadState>>,
 ) {
     let PendingRequestPermissionsResponse {
@@ -2002,7 +2002,7 @@ async fn on_file_change_request_approval_response(
     item_id: String,
     pending_request_id: RequestId,
     receiver: oneshot::Receiver<ClientRequestResult>,
-    codex: Arc<MidnightCoderThread>,
+    codex: Arc<SolaiAgentThread>,
     thread_state: Arc<Mutex<ThreadState>>,
     permission_guard: ThreadWatchActiveGuard,
 ) {
@@ -2052,7 +2052,7 @@ async fn on_command_execution_request_approval_response(
     completion_item: Option<CommandExecutionCompletionItem>,
     pending_request_id: RequestId,
     receiver: oneshot::Receiver<ClientRequestResult>,
-    conversation: Arc<MidnightCoderThread>,
+    conversation: Arc<SolaiAgentThread>,
     outgoing: ThreadScopedOutgoingMessageSender,
     thread_state: Arc<Mutex<ThreadState>>,
     permission_guard: ThreadWatchActiveGuard,
@@ -2191,7 +2191,7 @@ mod tests {
     use codex_app_server_protocol::GuardianApprovalReviewStatus;
     use codex_app_server_protocol::JSONRPCErrorError;
     use codex_app_server_protocol::TurnPlanStepStatus;
-    use codex_login::MidnightCoderAuth;
+    use codex_login::SolaiAgentAuth;
     use codex_protocol::AgentPath;
     use codex_protocol::items::HookPromptFragment;
     use codex_protocol::items::build_hook_prompt_message;
@@ -2402,7 +2402,7 @@ mod tests {
 
     struct GuardianAssessmentTestContext {
         conversation_id: ThreadId,
-        conversation: Arc<MidnightCoderThread>,
+        conversation: Arc<SolaiAgentThread>,
         thread_manager: Arc<ThreadManager>,
         outgoing: ThreadScopedOutgoingMessageSender,
         thread_state: Arc<Mutex<ThreadState>>,
@@ -2731,7 +2731,7 @@ mod tests {
         let config = load_default_config_for_test(&codex_home).await;
         let thread_manager = Arc::new(
             codex_core::test_support::thread_manager_with_models_provider_and_home(
-                MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing(),
+                SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing(),
                 config.model_provider.clone(),
                 config.codex_home.to_path_buf(),
                 Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
@@ -3292,7 +3292,7 @@ mod tests {
             conversation_id,
             TurnError {
                 message: "boom".to_string(),
-                codex_error_info: Some(V2MidnightCoderErrorInfo::InternalServerError),
+                codex_error_info: Some(V2SolaiAgentErrorInfo::InternalServerError),
                 additional_details: None,
             },
             &thread_state,
@@ -3304,7 +3304,7 @@ mod tests {
             turn_summary.last_error,
             Some(TurnError {
                 message: "boom".to_string(),
-                codex_error_info: Some(V2MidnightCoderErrorInfo::InternalServerError),
+                codex_error_info: Some(V2SolaiAgentErrorInfo::InternalServerError),
                 additional_details: None,
             })
         );
@@ -3317,7 +3317,7 @@ mod tests {
         let config = load_default_config_for_test(&codex_home).await;
         let thread_manager = Arc::new(
             codex_core::test_support::thread_manager_with_models_provider_and_home(
-                MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing(),
+                SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing(),
                 config.model_provider.clone(),
                 config.codex_home.to_path_buf(),
                 Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
@@ -3405,7 +3405,7 @@ mod tests {
         let config = load_default_config_for_test(&codex_home).await;
         let thread_manager = Arc::new(
             codex_core::test_support::thread_manager_with_models_provider_and_home(
-                MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing(),
+                SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing(),
                 config.model_provider.clone(),
                 config.codex_home.to_path_buf(),
                 Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
@@ -3606,7 +3606,7 @@ mod tests {
             conversation_id,
             TurnError {
                 message: "bad".to_string(),
-                codex_error_info: Some(V2MidnightCoderErrorInfo::Other),
+                codex_error_info: Some(V2SolaiAgentErrorInfo::Other),
                 additional_details: None,
             },
             &thread_state,
@@ -3641,7 +3641,7 @@ mod tests {
                     n.turn.error,
                     Some(TurnError {
                         message: "bad".to_string(),
-                        codex_error_info: Some(V2MidnightCoderErrorInfo::Other),
+                        codex_error_info: Some(V2SolaiAgentErrorInfo::Other),
                         additional_details: None,
                     })
                 );
@@ -3852,7 +3852,7 @@ mod tests {
             conversation_a,
             TurnError {
                 message: "a1".to_string(),
-                codex_error_info: Some(V2MidnightCoderErrorInfo::BadRequest),
+                codex_error_info: Some(V2SolaiAgentErrorInfo::BadRequest),
                 additional_details: None,
             },
             &thread_state,
@@ -3909,7 +3909,7 @@ mod tests {
                     n.turn.error,
                     Some(TurnError {
                         message: "a1".to_string(),
-                        codex_error_info: Some(V2MidnightCoderErrorInfo::BadRequest),
+                        codex_error_info: Some(V2SolaiAgentErrorInfo::BadRequest),
                         additional_details: None,
                     })
                 );

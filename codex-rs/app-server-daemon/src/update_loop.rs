@@ -147,7 +147,7 @@ pub(crate) fn reexec_managed_updater(managed_codex_bin: &std::path::Path) -> Res
         .exec();
     Err(err).with_context(|| {
         format!(
-            "failed to replace updater with managed MidnightCoder binary {}",
+            "failed to replace updater with managed SolaiAgent binary {}",
             managed_codex_bin.display()
         )
     })
@@ -157,12 +157,12 @@ pub(crate) fn reexec_managed_updater(managed_codex_bin: &std::path::Path) -> Res
 async fn install_latest_standalone() -> Result<()> {
     let script = reqwest::get("https://chatgpt.com/codex/install.sh")
         .await
-        .context("failed to fetch standalone MidnightCoder updater")?
+        .context("failed to fetch standalone SolaiAgent updater")?
         .error_for_status()
-        .context("standalone MidnightCoder updater request failed")?
+        .context("standalone SolaiAgent updater request failed")?
         .bytes()
         .await
-        .context("failed to read standalone MidnightCoder updater")?;
+        .context("failed to read standalone SolaiAgent updater")?;
 
     let mut child = Command::new("/bin/sh")
         .arg("-s")
@@ -170,25 +170,25 @@ async fn install_latest_standalone() -> Result<()> {
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
-        .context("failed to invoke standalone MidnightCoder updater")?;
+        .context("failed to invoke standalone SolaiAgent updater")?;
     let mut stdin = child
         .stdin
         .take()
-        .context("standalone MidnightCoder updater stdin was unavailable")?;
+        .context("standalone SolaiAgent updater stdin was unavailable")?;
     stdin
         .write_all(&script)
         .await
-        .context("failed to pass standalone MidnightCoder updater to shell")?;
+        .context("failed to pass standalone SolaiAgent updater to shell")?;
     drop(stdin);
     let status = child
         .wait()
         .await
-        .context("failed to wait for standalone MidnightCoder updater")?;
+        .context("failed to wait for standalone SolaiAgent updater")?;
 
     if status.success() {
         Ok(())
     } else {
-        anyhow::bail!("standalone MidnightCoder updater exited with status {status}")
+        anyhow::bail!("standalone SolaiAgent updater exited with status {status}")
     }
 }
 

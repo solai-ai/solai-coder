@@ -10,7 +10,7 @@ use super::CompactionId;
 use super::ConversationItemId;
 use super::EdgeId;
 use super::InferenceCallId;
-use super::MidnightCoderTurnId;
+use super::SolaiAgentTurnId;
 use super::ModelVisibleCallId;
 use super::ToolCallId;
 use super::session::ExecutionWindow;
@@ -27,10 +27,10 @@ pub struct ConversationItem {
     pub item_id: ConversationItemId,
     pub thread_id: AgentThreadId,
     /// Runtime activation that first introduced this item locally, when known.
-    pub codex_turn_id: Option<MidnightCoderTurnId>,
+    pub codex_turn_id: Option<SolaiAgentTurnId>,
     pub first_seen_at_unix_ms: i64,
     pub role: ConversationRole,
-    /// MidnightCoder channel for assistant/tool content, when the item is channel-specific.
+    /// SolaiAgent channel for assistant/tool content, when the item is channel-specific.
     pub channel: Option<ConversationChannel>,
     pub kind: ConversationItemKind,
     /// Routing metadata carried by a Responses `agent_message` item.
@@ -63,7 +63,7 @@ pub enum ConversationRole {
     Tool,
 }
 
-/// MidnightCoder channel for model-visible content.
+/// SolaiAgent channel for model-visible content.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ConversationChannel {
@@ -161,7 +161,7 @@ pub enum ProducerRef {
 pub struct InferenceCall {
     pub inference_call_id: InferenceCallId,
     pub thread_id: AgentThreadId,
-    pub codex_turn_id: MidnightCoderTurnId,
+    pub codex_turn_id: SolaiAgentTurnId,
     pub execution: ExecutionWindow,
     pub model: String,
     pub provider_name: String,

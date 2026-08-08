@@ -20,7 +20,7 @@ use crate::tools::parallel::ToolCallRuntime;
 use crate::tools::router::ToolRouter;
 use codex_memories_read::citations::parse_memory_citation;
 use codex_memories_read::citations::thread_ids_from_memory_citation;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::error::Result;
 use codex_protocol::memory_citation::MemoryCitation;
 use codex_protocol::models::FunctionCallOutputBody;
@@ -201,7 +201,7 @@ async fn save_image_generation_result(
     let bytes = BASE64_STANDARD
         .decode(result.trim().as_bytes())
         .map_err(|err| {
-            MidnightCoderErr::InvalidRequest(format!("invalid image generation payload: {err}"))
+            SolaiAgentErr::InvalidRequest(format!("invalid image generation payload: {err}"))
         })?;
     let path = image_generation_artifact_path(codex_home, session_id, call_id);
     if let Some(parent) = path.parent() {
@@ -591,7 +591,7 @@ pub(crate) async fn handle_output_item_done(
         }
         // A fatal error occurred; surface it back into history.
         Err(FunctionCallError::Fatal(message)) => {
-            return Err(MidnightCoderErr::Fatal(message));
+            return Err(SolaiAgentErr::Fatal(message));
         }
     }
 

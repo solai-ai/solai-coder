@@ -21,9 +21,9 @@ pub use request_options::request_options_for_provider;
 use semver::Version;
 
 /// Default OSS model to use when `--oss` is passed without an explicit `-m`.
-pub const DEFAULT_OSS_MODEL: &str = "MidnightCoder-30B";
+pub const DEFAULT_OSS_MODEL: &str = "SolaiAgent-30B";
 const MISSING_DEFAULT_MODEL_MESSAGE: &str =
-    "* MidnightCoder-30B is not installed. Download it with Ollama or from Hugging Face.";
+    "* SolaiAgent-30B is not installed. Download it with Ollama or from Hugging Face.";
 
 /// Prepare the local OSS environment when `--oss` is selected.
 ///
@@ -52,7 +52,7 @@ pub async fn ensure_oss_ready(config: &Config) -> std::io::Result<()> {
             if !models.iter().any(|m| m == model) {
                 if !allow_pull {
                     return Err(std::io::Error::other(format!(
-                        "{MISSING_DEFAULT_MODEL_MESSAGE} The configured remote Ollama server does not have model `{model}`, and Midnight Coder will not pull models on remote servers automatically."
+                        "{MISSING_DEFAULT_MODEL_MESSAGE} The configured remote Ollama server does not have model `{model}`, and SOLAI Agent will not pull models on remote servers automatically."
                     )));
                 }
                 let mut reporter = crate::CliProgressReporter::new();
@@ -99,7 +99,7 @@ pub async fn ensure_responses_supported(provider: &ModelProviderInfo) -> std::io
 
     let min = min_responses_version();
     Err(std::io::Error::other(format!(
-        "Ollama {version} is too old. MidnightCoder requires Ollama {min} or newer."
+        "Ollama {version} is too old. SolaiAgent requires Ollama {min} or newer."
     )))
 }
 

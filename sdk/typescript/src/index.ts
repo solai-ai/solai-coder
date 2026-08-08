@@ -26,9 +26,9 @@ export type {
 export { Thread } from "./thread";
 export type { RunResult, RunStreamedResult, Input, UserInput } from "./thread";
 
-export { MidnightCoder } from "./codex";
+export { SolaiAgent } from "./codex";
 
-export type { MidnightCoderOptions } from "./codexOptions";
+export type { SolaiAgentOptions } from "./codexOptions";
 
 export type {
   ThreadOptions,

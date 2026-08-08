@@ -32,7 +32,7 @@ pub use windows::resolve_windows_restricted_token_filesystem_overrides;
 pub use windows::unsupported_windows_restricted_token_sandbox_reason;
 pub use windows::windows_sandbox_uses_elevated_backend;
 
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 
 #[cfg(not(target_os = "linux"))]
 pub fn system_bwrap_warning(
@@ -41,30 +41,30 @@ pub fn system_bwrap_warning(
     None
 }
 
-impl From<SandboxTransformError> for MidnightCoderErr {
+impl From<SandboxTransformError> for SolaiAgentErr {
     fn from(err: SandboxTransformError) -> Self {
         match err {
             error @ SandboxTransformError::InvalidCommandCwd { .. }
             | error @ SandboxTransformError::InvalidSandboxPolicyCwd { .. } => {
-                MidnightCoderErr::InvalidRequest(error.to_string())
+                SolaiAgentErr::InvalidRequest(error.to_string())
             }
             SandboxTransformError::MissingLinuxSandboxExecutable => {
-                MidnightCoderErr::LandlockSandboxExecutableNotProvided
+                SolaiAgentErr::LandlockSandboxExecutableNotProvided
             }
             SandboxTransformError::EnvironmentNetworkProxy(message) => {
-                MidnightCoderErr::UnsupportedOperation(message)
+                SolaiAgentErr::UnsupportedOperation(message)
             }
             #[cfg(target_os = "linux")]
             SandboxTransformError::Wsl1UnsupportedForBubblewrap => {
-                MidnightCoderErr::UnsupportedOperation(crate::bwrap::WSL1_BWRAP_WARNING.to_string())
+                SolaiAgentErr::UnsupportedOperation(crate::bwrap::WSL1_BWRAP_WARNING.to_string())
             }
             #[cfg(not(target_os = "macos"))]
-            SandboxTransformError::SeatbeltUnavailable => MidnightCoderErr::UnsupportedOperation(
+            SandboxTransformError::SeatbeltUnavailable => SolaiAgentErr::UnsupportedOperation(
                 "seatbelt sandbox is only available on macOS".to_string(),
             ),
             #[cfg(target_os = "windows")]
             SandboxTransformError::WindowsSandboxPreparation(message) => {
-                MidnightCoderErr::UnsupportedOperation(message)
+                SolaiAgentErr::UnsupportedOperation(message)
             }
         }
     }

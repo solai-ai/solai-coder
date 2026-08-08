@@ -28,14 +28,14 @@ Remote mode registers the local exec-server with the environment registry,
 then reconnects to the service-provided rendezvous websocket as the environment.
 Remote communication uses the Noise relay contract; the registry and harness
 must support it.
-It uses the standard Midnight Coder ChatGPT sign-in state; run `codex login` first when
+It uses the standard SOLAI Agent ChatGPT sign-in state; run `codex login` first when
 remote registration needs authentication. Containerized callers that receive an
 Agent Identity JWT in `CODEX_ACCESS_TOKEN` can opt into that auth path with
-`--use-agent-identity-auth`; Midnight Coder then registers an Agent task and sends the
+`--use-agent-identity-auth`; SOLAI Agent then registers an Agent task and sends the
 derived AgentAssertion headers on the registry request.
 
 Alternatively, API users can instead use `CODEX_API_KEY`;
-Midnight Coder sends it as a bearer token on the registration request. For example:
+SOLAI Agent sends it as a bearer token on the registration request. For example:
 
 ```sh
 CODEX_API_KEY="$OPENAI_API_KEY" \
@@ -403,7 +403,7 @@ The crate exports:
 Callers must pass `ExecServerRuntimePaths` to `run_main()`. The top-level
 `codex exec-server` command builds these paths from the `codex` arg0 dispatch
 state. `RemoteEnvironmentConfig::new(...)` also takes the auth provider that
-remote registration should use; the CLI builds that provider from Midnight Coder auth
+remote registration should use; the CLI builds that provider from SOLAI Agent auth
 state before starting remote mode.
 
 ## Example session

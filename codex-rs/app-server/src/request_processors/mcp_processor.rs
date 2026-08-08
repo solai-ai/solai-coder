@@ -96,7 +96,7 @@ impl McpRequestProcessor {
     async fn load_thread(
         &self,
         thread_id: &str,
-    ) -> Result<(ThreadId, Arc<MidnightCoderThread>), JSONRPCErrorError> {
+    ) -> Result<(ThreadId, Arc<SolaiAgentThread>), JSONRPCErrorError> {
         let thread_id = ThreadId::from_string(thread_id)
             .map_err(|err| invalid_request(format!("invalid thread id: {err}")))?;
 
@@ -282,9 +282,9 @@ impl McpRequestProcessor {
         request_id: ConnectionRequestId,
         params: ListMcpServerStatusParams,
         mcp_config: codex_mcp::McpConfig,
-        auth: Option<MidnightCoderAuth>,
+        auth: Option<SolaiAgentAuth>,
         runtime_context: McpRuntimeContext,
-        codex_apps_tools_cache: codex_mcp::MidnightCoderAppsToolsCache,
+        codex_apps_tools_cache: codex_mcp::SolaiAgentAppsToolsCache,
     ) {
         let result = Self::list_mcp_server_status_response(
             request_id.request_id.to_string(),
@@ -302,9 +302,9 @@ impl McpRequestProcessor {
         request_id: String,
         params: ListMcpServerStatusParams,
         mcp_config: codex_mcp::McpConfig,
-        auth: Option<MidnightCoderAuth>,
+        auth: Option<SolaiAgentAuth>,
         runtime_context: McpRuntimeContext,
-        codex_apps_tools_cache: codex_mcp::MidnightCoderAppsToolsCache,
+        codex_apps_tools_cache: codex_mcp::SolaiAgentAppsToolsCache,
     ) -> Result<ListMcpServerStatusResponse, JSONRPCErrorError> {
         let detail = match params.detail.unwrap_or(McpServerStatusDetail::Full) {
             McpServerStatusDetail::Full => McpSnapshotDetail::Full,

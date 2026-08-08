@@ -1,10 +1,10 @@
 #!/usr/bin/env -S NODE_NO_WARNINGS=1 pnpm ts-node-esm --files
 
-import { MidnightCoder } from "@openai/codex-sdk";
+import { SolaiAgent } from "solai-sdk";
 
 import { codexPathOverride } from "./helpers.ts";
 
-const codex = new MidnightCoder({ codexPathOverride: codexPathOverride() });
+const codex = new SolaiAgent({ codexPathOverride: codexPathOverride() });
 
 const thread = codex.startThread();
 

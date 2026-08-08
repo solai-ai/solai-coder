@@ -14,47 +14,47 @@ use tracing::Span;
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 #[derive(Clone, Debug)]
-pub struct MidnightCoderHttpClient {
+pub struct SolaiAgentHttpClient {
     inner: reqwest::Client,
 }
 
-impl MidnightCoderHttpClient {
+impl SolaiAgentHttpClient {
     pub fn new(inner: reqwest::Client) -> Self {
         Self { inner }
     }
 
-    pub fn get<U>(&self, url: U) -> MidnightCoderRequestBuilder
+    pub fn get<U>(&self, url: U) -> SolaiAgentRequestBuilder
     where
         U: IntoUrl,
     {
         self.request(Method::GET, url)
     }
 
-    pub fn post<U>(&self, url: U) -> MidnightCoderRequestBuilder
+    pub fn post<U>(&self, url: U) -> SolaiAgentRequestBuilder
     where
         U: IntoUrl,
     {
         self.request(Method::POST, url)
     }
 
-    pub fn request<U>(&self, method: Method, url: U) -> MidnightCoderRequestBuilder
+    pub fn request<U>(&self, method: Method, url: U) -> SolaiAgentRequestBuilder
     where
         U: IntoUrl,
     {
         let url_str = url.as_str().to_string();
-        MidnightCoderRequestBuilder::new(self.inner.request(method.clone(), url), method, url_str)
+        SolaiAgentRequestBuilder::new(self.inner.request(method.clone(), url), method, url_str)
     }
 }
 
 #[must_use = "requests are not sent unless `send` is awaited"]
 #[derive(Debug)]
-pub struct MidnightCoderRequestBuilder {
+pub struct SolaiAgentRequestBuilder {
     builder: reqwest::RequestBuilder,
     method: Method,
     url: String,
 }
 
-impl MidnightCoderRequestBuilder {
+impl SolaiAgentRequestBuilder {
     fn new(builder: reqwest::RequestBuilder, method: Method, url: String) -> Self {
         Self {
             builder,

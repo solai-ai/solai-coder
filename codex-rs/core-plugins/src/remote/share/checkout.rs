@@ -6,7 +6,7 @@ use super::super::RemotePluginServiceConfig;
 use super::local_paths;
 use codex_app_server_protocol::PluginAuthPolicy;
 use codex_app_server_protocol::PluginInstallPolicy;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_plugin::PluginId;
 use codex_plugin::validate_plugin_segment;
 use codex_utils_absolute_path::AbsolutePathBuf;
@@ -36,7 +36,7 @@ pub struct RemotePluginShareCheckoutResult {
 
 pub async fn checkout_remote_plugin_share(
     config: &RemotePluginServiceConfig,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
     codex_home: &Path,
     remote_plugin_id: &str,
 ) -> Result<RemotePluginShareCheckoutResult, RemotePluginCatalogError> {

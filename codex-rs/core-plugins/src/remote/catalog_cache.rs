@@ -1,6 +1,6 @@
 use super::RemotePluginDirectoryItem;
 use super::RemotePluginServiceConfig;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use serde::Deserialize;
 use serde::Serialize;
 use std::path::Path;
@@ -19,7 +19,7 @@ struct RemotePluginCatalogCacheKey {
 }
 
 impl RemotePluginCatalogCacheKey {
-    fn global(config: &RemotePluginServiceConfig, auth: &MidnightCoderAuth) -> Self {
+    fn global(config: &RemotePluginServiceConfig, auth: &SolaiAgentAuth) -> Self {
         Self {
             chatgpt_base_url: config.chatgpt_base_url.clone(),
             account_id: auth.get_account_id(),
@@ -38,7 +38,7 @@ struct RemotePluginCatalogDiskCache {
 pub(crate) fn load_cached_global_directory_plugins(
     codex_home: &Path,
     config: &RemotePluginServiceConfig,
-    auth: &MidnightCoderAuth,
+    auth: &SolaiAgentAuth,
 ) -> Option<Vec<RemotePluginDirectoryItem>> {
     let cache_path = cache_path(
         codex_home,
@@ -77,7 +77,7 @@ pub(crate) fn load_cached_global_directory_plugins(
 pub(crate) fn write_cached_global_directory_plugins(
     codex_home: &Path,
     config: &RemotePluginServiceConfig,
-    auth: &MidnightCoderAuth,
+    auth: &SolaiAgentAuth,
     plugins: &[RemotePluginDirectoryItem],
 ) {
     let cache_path = cache_path(

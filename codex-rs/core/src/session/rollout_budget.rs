@@ -1,8 +1,8 @@
 use super::session::Session;
 use super::turn_context::TurnContext;
 use crate::context::ContextualUserFragment;
-use codex_protocol::error::MidnightCoderErr;
-use codex_protocol::error::Result as MidnightCoderResult;
+use codex_protocol::error::SolaiAgentErr;
+use codex_protocol::error::Result as SolaiAgentResult;
 use codex_protocol::protocol::TokenUsage;
 
 pub(super) async fn maybe_record_reminder(
@@ -26,14 +26,14 @@ impl Session {
     pub(crate) fn record_rollout_budget_usage(
         &self,
         usage: &TokenUsage,
-    ) -> MidnightCoderResult<()> {
+    ) -> SolaiAgentResult<()> {
         if self
             .services
             .agent_control
             .rollout_budget()
             .record_usage(usage)
         {
-            return Err(MidnightCoderErr::SessionBudgetExceeded);
+            return Err(SolaiAgentErr::SessionBudgetExceeded);
         }
         Ok(())
     }

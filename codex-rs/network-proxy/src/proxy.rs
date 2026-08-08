@@ -26,7 +26,7 @@ use tracing::warn;
 #[derive(Debug, Clone, Parser)]
 #[command(
     name = "codex-network-proxy",
-    about = "MidnightCoder network sandbox proxy"
+    about = "SolaiAgent network sandbox proxy"
 )]
 pub struct Args {}
 
@@ -600,7 +600,7 @@ fn apply_proxy_env_overrides(
     #[cfg(target_os = "macos")]
     if socks_enabled {
         // Preserve existing SSH wrappers (for example: Secretive/Teleport setups)
-        // but refresh a previously injected MidnightCoder fallback so it cannot point
+        // but refresh a previously injected SolaiAgent fallback so it cannot point
         // at a stale proxy port after the proxy is restarted.
         match env.get(GIT_SSH_COMMAND_ENV_KEY) {
             Some(command) if !is_codex_proxy_git_ssh_command(command) => {}

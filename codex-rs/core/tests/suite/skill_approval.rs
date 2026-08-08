@@ -12,7 +12,7 @@ use codex_protocol::user_input::UserInput;
 use core_test_support::responses::mount_function_call_agent_response;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestMidnightCoder;
+use core_test_support::test_codex::TestSolaiAgent;
 use core_test_support::test_codex::local_selections;
 use core_test_support::test_codex::turn_permission_fields;
 use core_test_support::wait_for_event;
@@ -39,7 +39,7 @@ fn shell_command_arguments(command: &str) -> Result<String> {
 }
 
 async fn submit_turn_with_policies(
-    test: &TestMidnightCoder,
+    test: &TestSolaiAgent,
     prompt: &str,
     approval_policy: AskForApproval,
     permission_profile: PermissionProfile,
@@ -106,7 +106,7 @@ description: {name} skill
     Ok(script_path)
 }
 
-fn skill_script_command(test: &TestMidnightCoder, script_name: &str) -> Result<String> {
+fn skill_script_command(test: &TestSolaiAgent, script_name: &str) -> Result<String> {
     let script_path = fs::canonicalize(
         test.codex_home_path()
             .join("skills/mbolin-test-skill/scripts")
@@ -116,7 +116,7 @@ fn skill_script_command(test: &TestMidnightCoder, script_name: &str) -> Result<S
 }
 
 async fn wait_for_exec_approval_request(
-    test: &TestMidnightCoder,
+    test: &TestSolaiAgent,
 ) -> Option<ExecApprovalRequestEvent> {
     wait_for_event_match(test.codex.as_ref(), |event| match event {
         EventMsg::ExecApprovalRequest(request) => Some(Some(request.clone())),
@@ -126,7 +126,7 @@ async fn wait_for_exec_approval_request(
     .await
 }
 
-async fn wait_for_turn_complete(test: &TestMidnightCoder) {
+async fn wait_for_turn_complete(test: &TestSolaiAgent) {
     wait_for_event(test.codex.as_ref(), |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })

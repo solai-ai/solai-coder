@@ -4,22 +4,22 @@ import path from "node:path";
 
 import { afterEach, beforeEach } from "@jest/globals";
 
-const originalMidnightCoderHome = process.env.CODEX_HOME;
-let currentMidnightCoderHome: string | undefined;
+const originalSolaiAgentHome = process.env.CODEX_HOME;
+let currentSolaiAgentHome: string | undefined;
 
 beforeEach(async () => {
-  currentMidnightCoderHome = await fs.mkdtemp(path.join(os.tmpdir(), "codex-sdk-test-"));
-  process.env.CODEX_HOME = currentMidnightCoderHome;
+  currentSolaiAgentHome = await fs.mkdtemp(path.join(os.tmpdir(), "codex-sdk-test-"));
+  process.env.CODEX_HOME = currentSolaiAgentHome;
 });
 
 afterEach(async () => {
-  const codexHomeToDelete = currentMidnightCoderHome;
-  currentMidnightCoderHome = undefined;
+  const codexHomeToDelete = currentSolaiAgentHome;
+  currentSolaiAgentHome = undefined;
 
-  if (originalMidnightCoderHome === undefined) {
+  if (originalSolaiAgentHome === undefined) {
     delete process.env.CODEX_HOME;
   } else {
-    process.env.CODEX_HOME = originalMidnightCoderHome;
+    process.env.CODEX_HOME = originalSolaiAgentHome;
   }
 
   if (codexHomeToDelete) {

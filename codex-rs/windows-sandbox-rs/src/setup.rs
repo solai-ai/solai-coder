@@ -41,8 +41,8 @@ use windows_sys::Win32::Security::FreeSid;
 use windows_sys::Win32::Security::SECURITY_NT_AUTHORITY;
 
 pub const SETUP_VERSION: u32 = 5;
-pub const OFFLINE_USERNAME: &str = "MidnightCoderSandboxOffline";
-pub const ONLINE_USERNAME: &str = "MidnightCoderSandboxOnline";
+pub const OFFLINE_USERNAME: &str = "SolaiAgentSandboxOffline";
+pub const ONLINE_USERNAME: &str = "SolaiAgentSandboxOnline";
 const ERROR_CANCELLED: u32 = 1223;
 const SECURITY_BUILTIN_DOMAIN_RID: u32 = 0x0000_0020;
 const DOMAIN_ALIAS_RID_ADMINS: u32 = 0x0000_0220;
@@ -1630,7 +1630,7 @@ mod tests {
     fn expanded_write_roots_still_drop_protected_codex_home() {
         let tmp = TempDir::new().expect("tempdir");
         let user_profile = tmp.path().join("user-profile");
-        let codex_home = user_profile.join("MidnightCoderHome");
+        let codex_home = user_profile.join("SolaiAgentHome");
         let documents = user_profile.join("Documents");
         fs::create_dir_all(&codex_home).expect("create codex home");
         fs::create_dir_all(&documents).expect("create documents");

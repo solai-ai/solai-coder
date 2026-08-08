@@ -13,7 +13,7 @@ ensure_local_sdk_src()
 import asyncio
 
 from openai_codex import (
-    AsyncMidnightCoder,
+    AsyncSolaiAgent,
 )
 from openai_codex.types import (
     Personality,
@@ -42,7 +42,7 @@ PROMPT = (
 
 
 async def main() -> None:
-    async with AsyncMidnightCoder(config=runtime_config()) as codex:
+    async with AsyncSolaiAgent(config=runtime_config()) as codex:
         thread = await codex.thread_start(
             model="gpt-5.4", config={"model_reasoning_effort": "high"}
         )

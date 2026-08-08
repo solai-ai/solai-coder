@@ -921,7 +921,7 @@ fn add_dynamic_tools(context: &CoreToolPlanContext<'_>, planned_tools: &mut Plan
             DynamicToolSpec::Function(tool) => {
                 let Some(handler) = DynamicToolHandler::new(tool) else {
                     tracing::error!(
-                        "Failed to convert dynamic tool {:?} to MidnightCoder tool",
+                        "Failed to convert dynamic tool {:?} to SolaiAgent tool",
                         tool.name
                     );
                     continue;
@@ -934,7 +934,7 @@ fn add_dynamic_tools(context: &CoreToolPlanContext<'_>, planned_tools: &mut Plan
                     let Some(handler) = DynamicToolHandler::new_in_namespace(namespace, tool)
                     else {
                         tracing::error!(
-                            "Failed to convert dynamic tool {:?}.{:?} to MidnightCoder tool",
+                            "Failed to convert dynamic tool {:?}.{:?} to SolaiAgent tool",
                             namespace.name,
                             tool.name
                         );

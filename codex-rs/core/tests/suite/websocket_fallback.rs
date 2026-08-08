@@ -13,7 +13,7 @@ use core_test_support::responses::mount_sse_once;
 use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestMidnightCoder;
+use core_test_support::test_codex::TestSolaiAgent;
 use core_test_support::test_codex::local_selections;
 use core_test_support::test_codex::test_codex;
 use core_test_support::test_codex::turn_permission_fields;
@@ -144,7 +144,7 @@ async fn websocket_fallback_hides_first_websocket_retry_stream_error() -> Result
             config.model_provider.request_max_retries = Some(0);
         }
     });
-    let TestMidnightCoder {
+    let TestSolaiAgent {
         codex,
         session_configured,
         cwd,

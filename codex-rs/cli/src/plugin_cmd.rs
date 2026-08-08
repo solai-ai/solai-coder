@@ -17,7 +17,7 @@ use codex_core_plugins::marketplace::MarketplacePluginAuthPolicy;
 use codex_core_plugins::marketplace::MarketplacePluginInstallPolicy;
 use codex_core_plugins::marketplace::MarketplacePluginSource;
 use codex_core_plugins::marketplace::find_marketplace_manifest_path;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_login::auth::read_codex_api_key_from_env;
 use codex_plugin::PluginId;
 use codex_plugin::validate_plugin_segment;
@@ -596,11 +596,11 @@ async fn load_plugin_command_context(
 
 pub(crate) async fn load_cli_auth_mode(config: &Config) -> Option<AuthMode> {
     if let Some(api_key) = read_codex_api_key_from_env() {
-        return Some(MidnightCoderAuth::from_api_key(&api_key).api_auth_mode());
+        return Some(SolaiAgentAuth::from_api_key(&api_key).api_auth_mode());
     }
 
     let auth_route_config = config.auth_route_config();
-    MidnightCoderAuth::from_auth_storage(
+    SolaiAgentAuth::from_auth_storage(
         &config.codex_home,
         config.cli_auth_credentials_store_mode,
         Some(&config.chatgpt_base_url),

@@ -46,7 +46,7 @@ host_executable(
 
 ## CLI
 
-- From the Midnight Coder, run `codex execpolicy check` subcommand with one or more policy files (for example `src/default.rules`) to check a command:
+- From the SOLAI Agent, run `codex execpolicy check` subcommand with one or more policy files (for example `src/default.rules`) to check a command:
 
 ```bash
 codex execpolicy check --rules path/to/policy.rules git status

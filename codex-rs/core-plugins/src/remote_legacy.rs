@@ -1,5 +1,5 @@
 use crate::remote::RemotePluginServiceConfig;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_login::default_client::build_reqwest_client;
 use codex_protocol::protocol::Product;
 use serde::Deserialize;
@@ -97,7 +97,7 @@ pub enum RemotePluginFetchError {
 
 pub async fn fetch_remote_featured_plugin_ids(
     config: &RemotePluginServiceConfig,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
     product: Option<Product>,
 ) -> Result<Vec<String>, RemotePluginFetchError> {
     let base_url = config.chatgpt_base_url.trim_end_matches('/');
@@ -107,7 +107,7 @@ pub async fn fetch_remote_featured_plugin_ids(
         .get(&url)
         .query(&[(
             "platform",
-            product.unwrap_or(Product::MidnightCoder).to_app_platform(),
+            product.unwrap_or(Product::SolaiAgent).to_app_platform(),
         )])
         .timeout(REMOTE_FEATURED_PLUGIN_FETCH_TIMEOUT);
 
@@ -137,7 +137,7 @@ pub async fn fetch_remote_featured_plugin_ids(
 
 pub async fn enable_remote_plugin(
     config: &RemotePluginServiceConfig,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
     plugin_id: &str,
 ) -> Result<(), RemotePluginMutationError> {
     post_remote_plugin_mutation(config, auth, plugin_id, "enable").await?;
@@ -146,7 +146,7 @@ pub async fn enable_remote_plugin(
 
 pub async fn uninstall_remote_plugin(
     config: &RemotePluginServiceConfig,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
     plugin_id: &str,
 ) -> Result<(), RemotePluginMutationError> {
     post_remote_plugin_mutation(config, auth, plugin_id, "uninstall").await?;
@@ -154,8 +154,8 @@ pub async fn uninstall_remote_plugin(
 }
 
 fn ensure_codex_backend_auth(
-    auth: Option<&MidnightCoderAuth>,
-) -> Result<&MidnightCoderAuth, RemotePluginMutationError> {
+    auth: Option<&SolaiAgentAuth>,
+) -> Result<&SolaiAgentAuth, RemotePluginMutationError> {
     let Some(auth) = auth else {
         return Err(RemotePluginMutationError::AuthRequired);
     };
@@ -167,7 +167,7 @@ fn ensure_codex_backend_auth(
 
 async fn post_remote_plugin_mutation(
     config: &RemotePluginServiceConfig,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
     plugin_id: &str,
     action: &str,
 ) -> Result<RemotePluginMutationResponse, RemotePluginMutationError> {

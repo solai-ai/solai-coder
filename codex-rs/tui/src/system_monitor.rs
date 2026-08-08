@@ -149,7 +149,7 @@ impl SystemMonitor {
                 let client = match reqwest::Client::builder().timeout(REQUEST_TIMEOUT).build() {
                     Ok(client) => client,
                     Err(err) => {
-                        tracing::debug!(%err, "failed to create Midnight Monitor client");
+                        tracing::debug!(%err, "failed to create SOLAI Monitor client");
                         return;
                     }
                 };

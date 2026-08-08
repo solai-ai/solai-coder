@@ -246,7 +246,7 @@ impl ChatWidget {
         approvals_reviewer: ApprovalsReviewer,
     ) -> Vec<SelectionAction> {
         vec![Box::new(move |tx| {
-            tx.send(AppEvent::MidnightCoderOp(
+            tx.send(AppEvent::SolaiAgentOp(
                 AppCommand::override_turn_context(
                     /*cwd*/ None,
                     Some(approval),
@@ -417,7 +417,7 @@ impl ChatWidget {
         let mut header_children: Vec<Box<dyn Renderable>> = Vec::new();
         let title_line = Line::from("Enable full access?").bold();
         let info_line = Line::from(vec![
-            "When MidnightCoder runs with full access, it can edit any file on your computer and run commands with network, without your approval. "
+            "When SolaiAgent runs with full access, it can edit any file on your computer and run commands with network, without your approval. "
                 .into(),
             "Exercise caution when enabling full access. This significantly increases the risk of data loss, leaks, or unexpected behavior."
                 .fg(Color::Red),

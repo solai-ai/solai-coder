@@ -1,4 +1,4 @@
-//! Persist MidnightCoder session rollouts (.jsonl) so sessions can be replayed or inspected later.
+//! Persist SolaiAgent session rollouts (.jsonl) so sessions can be replayed or inspected later.
 
 use std::collections::HashSet;
 use std::fs;
@@ -267,7 +267,7 @@ enum ThreadListRepairMode {
 }
 
 impl RolloutRecorder {
-    /// List threads (rollout files) under the provided MidnightCoder home directory.
+    /// List threads (rollout files) under the provided SolaiAgent home directory.
     #[allow(clippy::too_many_arguments)]
     pub async fn list_threads(
         state_db_ctx: Option<StateDbHandle>,

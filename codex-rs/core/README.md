@@ -1,6 +1,6 @@
 # codex-core
 
-This crate implements the business logic for Midnight Coder. It is designed to be used by the various Midnight Coder UIs written in Rust.
+This crate implements the business logic for SOLAI Agent. It is designed to be used by the various SOLAI Agent UIs written in Rust.
 
 ## Wine-exec integration tests
 
@@ -54,12 +54,12 @@ current working directory whenever it is available. If `bwrap` is present but
 too old to support `--argv0`, the helper keeps using system bubblewrap and
 switches to a no-`--argv0` compatibility path for the inner re-exec. If
 `bwrap` is missing, it falls back to the bundled `codex-resources/bwrap`
-binary shipped with Midnight Coder and Midnight Coder surfaces a startup warning through its
+binary shipped with SOLAI Agent and SOLAI Agent surfaces a startup warning through its
 normal notification path instead of printing directly from the sandbox helper.
-Midnight Coder also surfaces a startup warning when bubblewrap cannot create user
+SOLAI Agent also surfaces a startup warning when bubblewrap cannot create user
 namespaces. WSL2 uses the normal Linux bubblewrap path. WSL1 is not supported
 for bubblewrap sandboxing because it cannot create the required user
-namespaces, so Midnight Coder rejects sandboxed shell commands that would enter the
+namespaces, so SOLAI Agent rejects sandboxed shell commands that would enter the
 bubblewrap path before invoking `bwrap`.
 
 ### Windows

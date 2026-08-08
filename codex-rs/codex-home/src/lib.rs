@@ -1,3 +1,3 @@
 mod instructions;
 
-pub use instructions::MidnightCoderHomeUserInstructionsProvider;
+pub use instructions::SolaiAgentHomeUserInstructionsProvider;

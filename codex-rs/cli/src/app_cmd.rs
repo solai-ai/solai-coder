@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 #[derive(Debug, Parser)]
 pub struct AppCommand {
-    /// Workspace path to open in MidnightCoder Desktop.
+    /// Workspace path to open in SolaiAgent Desktop.
     #[arg(value_name = "PATH", default_value = ".")]
     pub path: PathBuf,
 

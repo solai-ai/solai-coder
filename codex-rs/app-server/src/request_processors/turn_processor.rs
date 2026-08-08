@@ -300,7 +300,7 @@ impl TurnRequestProcessor {
     async fn load_thread(
         &self,
         thread_id: &str,
-    ) -> Result<(ThreadId, Arc<MidnightCoderThread>), JSONRPCErrorError> {
+    ) -> Result<(ThreadId, Arc<SolaiAgentThread>), JSONRPCErrorError> {
         // Resolve the core conversation handle from a v2 thread id string.
         let thread_id = ThreadId::from_string(thread_id)
             .map_err(|err| invalid_request(format!("invalid thread id: {err}")))?;
@@ -317,7 +317,7 @@ impl TurnRequestProcessor {
     async fn ensure_direct_input_allowed(
         &self,
         request_id: &ConnectionRequestId,
-        thread: &MidnightCoderThread,
+        thread: &SolaiAgentThread,
     ) -> Result<(), JSONRPCErrorError> {
         if thread.multi_agent_version() == Some(MultiAgentVersion::V2)
             && matches!(
@@ -411,9 +411,9 @@ impl TurnRequestProcessor {
     async fn submit_core_op(
         &self,
         request_id: &ConnectionRequestId,
-        thread: &MidnightCoderThread,
+        thread: &SolaiAgentThread,
         op: Op,
-    ) -> MidnightCoderResult<String> {
+    ) -> SolaiAgentResult<String> {
         thread
             .submit_with_trace(op, self.request_trace_context(request_id).await)
             .await
@@ -477,7 +477,7 @@ impl TurnRequestProcessor {
             .await
             .map_err(|err| {
                 internal_error(format!(
-                    "failed to update MidnightCoder form elicitation support: {err}"
+                    "failed to update SolaiAgent form elicitation support: {err}"
                 ))
             })?;
 
@@ -570,7 +570,7 @@ impl TurnRequestProcessor {
 
     async fn build_environment_override(
         &self,
-        thread: &MidnightCoderThread,
+        thread: &SolaiAgentThread,
         cwd: Option<AbsolutePathBuf>,
         environment_selections: Option<Vec<TurnEnvironmentSelection>>,
     ) -> Option<TurnEnvironmentSelections> {
@@ -603,7 +603,7 @@ impl TurnRequestProcessor {
 
     async fn build_thread_settings_overrides(
         &self,
-        thread: &MidnightCoderThread,
+        thread: &SolaiAgentThread,
         params: ThreadSettingsBuildParams,
     ) -> Result<codex_protocol::protocol::ThreadSettingsOverrides, JSONRPCErrorError> {
         let ThreadSettingsBuildParams {
@@ -713,7 +713,7 @@ impl TurnRequestProcessor {
 
         if has_any_overrides {
             thread
-                .preview_thread_settings_overrides(MidnightCoderThreadSettingsOverrides {
+                .preview_thread_settings_overrides(SolaiAgentThreadSettingsOverrides {
                     environments: environments.clone(),
                     workspace_roots: runtime_workspace_roots.clone(),
                     approval_policy,
@@ -821,14 +821,14 @@ impl TurnRequestProcessor {
             .inject_response_items(items)
             .await
             .map_err(|err| match err {
-                MidnightCoderErr::InvalidRequest(message) => invalid_request(message),
+                SolaiAgentErr::InvalidRequest(message) => invalid_request(message),
                 err => internal_error(format!("failed to inject response items: {err}")),
             })?;
         Ok(ThreadInjectItemsResponse {})
     }
 
     async fn set_app_server_client_info(
-        thread: &MidnightCoderThread,
+        thread: &SolaiAgentThread,
         app_server_client_name: Option<String>,
         app_server_client_version: Option<String>,
     ) -> Result<(), JSONRPCErrorError> {
@@ -921,7 +921,7 @@ impl TurnRequestProcessor {
                         let error = TurnError {
                             message: message.clone(),
                             codex_error_info: Some(
-                                MidnightCoderErrorInfo::ActiveTurnNotSteerable {
+                                SolaiAgentErrorInfo::ActiveTurnNotSteerable {
                                     turn_kind: turn_kind.into(),
                                 },
                             ),
@@ -961,7 +961,7 @@ impl TurnRequestProcessor {
         &self,
         request_id: &ConnectionRequestId,
         thread_id: &str,
-    ) -> Result<Option<(ThreadId, Arc<MidnightCoderThread>)>, JSONRPCErrorError> {
+    ) -> Result<Option<(ThreadId, Arc<SolaiAgentThread>)>, JSONRPCErrorError> {
         let (thread_id, thread) = self.load_thread(thread_id).await?;
 
         match self
@@ -1173,7 +1173,7 @@ impl TurnRequestProcessor {
     async fn start_inline_review(
         &self,
         request_id: &ConnectionRequestId,
-        parent_thread: Arc<MidnightCoderThread>,
+        parent_thread: Arc<SolaiAgentThread>,
         review_request: ReviewRequest,
         display_text: &str,
         parent_thread_id: String,
@@ -1196,7 +1196,7 @@ impl TurnRequestProcessor {
         &self,
         request_id: &ConnectionRequestId,
         parent_thread_id: ThreadId,
-        parent_thread: Arc<MidnightCoderThread>,
+        parent_thread: Arc<SolaiAgentThread>,
         review_request: ReviewRequest,
         display_text: &str,
     ) -> std::result::Result<(), JSONRPCErrorError> {

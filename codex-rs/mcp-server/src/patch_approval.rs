@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use codex_core::MidnightCoderThread;
+use codex_core::SolaiAgentThread;
 use codex_protocol::ThreadId;
 use codex_protocol::protocol::FileChange;
 use codex_protocol::protocol::Op;
@@ -47,7 +47,7 @@ pub(crate) async fn handle_patch_approval_request(
     grant_root: Option<PathBuf>,
     changes: HashMap<PathBuf, FileChange>,
     outgoing: Arc<OutgoingMessageSender>,
-    codex: Arc<MidnightCoderThread>,
+    codex: Arc<SolaiAgentThread>,
     request_id: RequestId,
     tool_call_id: String,
     event_id: String,
@@ -58,7 +58,7 @@ pub(crate) async fn handle_patch_approval_request(
     if let Some(r) = &reason {
         message_lines.push(r.clone());
     }
-    message_lines.push("Allow MidnightCoder to apply proposed code changes?".to_string());
+    message_lines.push("Allow SolaiAgent to apply proposed code changes?".to_string());
 
     let params = PatchApprovalElicitRequestParams {
         message: message_lines.join("\n"),
@@ -103,7 +103,7 @@ pub(crate) async fn handle_patch_approval_request(
 pub(crate) async fn on_patch_approval_response(
     approval_id: String,
     receiver: tokio::sync::oneshot::Receiver<serde_json::Value>,
-    codex: Arc<MidnightCoderThread>,
+    codex: Arc<SolaiAgentThread>,
 ) {
     let response = receiver.await;
     let value = match response {

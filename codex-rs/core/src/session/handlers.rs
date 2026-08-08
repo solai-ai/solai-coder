@@ -32,7 +32,7 @@ use codex_protocol::protocol::GuardianAssessmentEvent;
 use codex_protocol::protocol::GuardianAssessmentStatus;
 use codex_protocol::protocol::InterAgentCommunication;
 use codex_protocol::protocol::McpServerRefreshConfig;
-use codex_protocol::protocol::MidnightCoderErrorInfo;
+use codex_protocol::protocol::SolaiAgentErrorInfo;
 use codex_protocol::protocol::Op;
 use codex_protocol::protocol::RealtimeConversationListVoicesResponseEvent;
 use codex_protocol::protocol::RealtimeVoicesList;
@@ -99,7 +99,7 @@ pub async fn update_thread_settings(
         Ok(()) => thread_settings_applied_event(sess).await,
         Err(err) => EventMsg::Error(ErrorEvent {
             message: format!("invalid thread settings override: {err}"),
-            codex_error_info: Some(MidnightCoderErrorInfo::BadRequest),
+            codex_error_info: Some(SolaiAgentErrorInfo::BadRequest),
         }),
     };
     sess.send_event_raw(Event { id: sub_id, msg }).await;
@@ -454,7 +454,7 @@ pub async fn thread_rollback(sess: &Arc<Session>, sub_id: String, num_turns: u32
             id: sub_id,
             msg: EventMsg::Error(ErrorEvent {
                 message: "num_turns must be >= 1".to_string(),
-                codex_error_info: Some(MidnightCoderErrorInfo::ThreadRollbackFailed),
+                codex_error_info: Some(SolaiAgentErrorInfo::ThreadRollbackFailed),
             }),
         })
         .await;
@@ -467,7 +467,7 @@ pub async fn thread_rollback(sess: &Arc<Session>, sub_id: String, num_turns: u32
             id: sub_id,
             msg: EventMsg::Error(ErrorEvent {
                 message: "Cannot rollback while a turn is in progress.".to_string(),
-                codex_error_info: Some(MidnightCoderErrorInfo::ThreadRollbackFailed),
+                codex_error_info: Some(SolaiAgentErrorInfo::ThreadRollbackFailed),
             }),
         })
         .await;
@@ -482,7 +482,7 @@ pub async fn thread_rollback(sess: &Arc<Session>, sub_id: String, num_turns: u32
                 id: turn_context.sub_id.clone(),
                 msg: EventMsg::Error(ErrorEvent {
                     message: "thread rollback requires persisted thread history".to_string(),
-                    codex_error_info: Some(MidnightCoderErrorInfo::ThreadRollbackFailed),
+                    codex_error_info: Some(SolaiAgentErrorInfo::ThreadRollbackFailed),
                 }),
             })
             .await;
@@ -494,7 +494,7 @@ pub async fn thread_rollback(sess: &Arc<Session>, sub_id: String, num_turns: u32
             id: turn_context.sub_id.clone(),
             msg: EventMsg::Error(ErrorEvent {
                 message: format!("failed to flush thread persistence for rollback replay: {err}"),
-                codex_error_info: Some(MidnightCoderErrorInfo::ThreadRollbackFailed),
+                codex_error_info: Some(SolaiAgentErrorInfo::ThreadRollbackFailed),
             }),
         })
         .await;
@@ -508,7 +508,7 @@ pub async fn thread_rollback(sess: &Arc<Session>, sub_id: String, num_turns: u32
                 id: turn_context.sub_id.clone(),
                 msg: EventMsg::Error(ErrorEvent {
                     message: format!("failed to load thread history for rollback replay: {err}"),
-                    codex_error_info: Some(MidnightCoderErrorInfo::ThreadRollbackFailed),
+                    codex_error_info: Some(SolaiAgentErrorInfo::ThreadRollbackFailed),
                 }),
             })
             .await;
@@ -538,7 +538,7 @@ pub async fn thread_rollback(sess: &Arc<Session>, sub_id: String, num_turns: u32
             turn_context.as_ref(),
             EventMsg::Warning(WarningEvent {
                 message: format!(
-                    "Rolled the thread back, but failed to save the rollback marker. MidnightCoder will continue retrying. Error: {err}"
+                    "Rolled the thread back, but failed to save the rollback marker. SolaiAgent will continue retrying. Error: {err}"
                 ),
             }),
         )
@@ -577,7 +577,7 @@ pub async fn set_thread_memory_mode(sess: &Arc<Session>, sub_id: String, mode: T
             id: sub_id,
             msg: EventMsg::Error(ErrorEvent {
                 message: err.to_string(),
-                codex_error_info: Some(MidnightCoderErrorInfo::Other),
+                codex_error_info: Some(SolaiAgentErrorInfo::Other),
             }),
         };
         sess.send_event_raw(event).await;
@@ -618,7 +618,7 @@ async fn emit_thread_stop_lifecycle(sess: &Session) {
 
 pub async fn shutdown(sess: &Arc<Session>, sub_id: String) -> bool {
     shutdown_session_runtime(sess).await;
-    info!("Shutting down MidnightCoder instance");
+    info!("Shutting down SolaiAgent instance");
     let history = sess.clone_history().await;
     let turn_count = history
         .raw_items()
@@ -643,7 +643,7 @@ pub async fn shutdown(sess: &Arc<Session>, sub_id: String) -> bool {
             id: sub_id.clone(),
             msg: EventMsg::Error(ErrorEvent {
                 message: "Failed to shutdown thread persistence".to_string(),
-                codex_error_info: Some(MidnightCoderErrorInfo::Other),
+                codex_error_info: Some(SolaiAgentErrorInfo::Other),
             }),
         };
         sess.send_event_raw(event).await;
@@ -691,7 +691,7 @@ pub async fn review(
                 id: sub_id,
                 msg: EventMsg::Error(ErrorEvent {
                     message: err.to_string(),
-                    codex_error_info: Some(MidnightCoderErrorInfo::Other),
+                    codex_error_info: Some(SolaiAgentErrorInfo::Other),
                 }),
             };
             sess.send_event(&turn_context, event.msg).await;
@@ -727,7 +727,7 @@ pub(super) async fn submission_loop(
                             id: sub.id.clone(),
                             msg: EventMsg::Error(ErrorEvent {
                                 message: err.to_string(),
-                                codex_error_info: Some(MidnightCoderErrorInfo::Other),
+                                codex_error_info: Some(SolaiAgentErrorInfo::Other),
                             }),
                         })
                         .await;

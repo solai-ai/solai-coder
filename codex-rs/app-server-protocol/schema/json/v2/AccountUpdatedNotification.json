@@ -2,17 +2,17 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "definitions": {
     "AuthMode": {
-      "description": "Authentication mode for Midnight Coder-backed providers.",
+      "description": "Authentication mode for SOLAI Agent-backed providers.",
       "oneOf": [
         {
-          "description": "Midnight Coder API key provided by the caller and stored by Midnight Coder.",
+          "description": "SOLAI Agent API key provided by the caller and stored by SOLAI Agent.",
           "enum": [
             "apikey"
           ],
           "type": "string"
         },
         {
-          "description": "ChatGPT OAuth managed by Midnight Coder (tokens persisted and refreshed by Midnight Coder).",
+          "description": "ChatGPT OAuth managed by SOLAI Agent (tokens persisted and refreshed by SOLAI Agent).",
           "enum": [
             "chatgpt"
           ],
@@ -26,21 +26,21 @@
           "type": "string"
         },
         {
-          "description": "Programmatic Midnight Coder auth backed by a registered Agent Identity.",
+          "description": "Programmatic SOLAI Agent auth backed by a registered Agent Identity.",
           "enum": [
             "agentIdentity"
           ],
           "type": "string"
         },
         {
-          "description": "Programmatic Midnight Coder auth backed by a personal access token.",
+          "description": "Programmatic SOLAI Agent auth backed by a personal access token.",
           "enum": [
             "personalAccessToken"
           ],
           "type": "string"
         },
         {
-          "description": "Amazon Bedrock bearer token managed by Midnight Coder.",
+          "description": "Amazon Bedrock bearer token managed by SOLAI Agent.",
           "enum": [
             "bedrockApiKey"
           ],

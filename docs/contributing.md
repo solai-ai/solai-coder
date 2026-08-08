@@ -2,33 +2,33 @@
 
 **External contributions are by invitation only**
 
-At this time, the Midnight Coder team does not accept unsolicited code contributions.
+At this time, the SOLAI Agent team does not accept unsolicited code contributions.
 
-If you would like to propose a new feature or a change in behavior, please open an issue describing the proposal or upvote an existing enhancement request. We prioritize new features based on community feedback, alignment with our roadmap, and consistency across all Midnight Coder surfaces (CLI, IDE extensions, web, etc.).
+If you would like to propose a new feature or a change in behavior, please open an issue describing the proposal or upvote an existing enhancement request. We prioritize new features based on community feedback, alignment with our roadmap, and consistency across all SOLAI Agent surfaces (CLI, IDE extensions, web, etc.).
 
 If you encounter a bug, please open a bug report or verify that an existing report already covers the issue. If you would like to help, we encourage you to contribute by sharing analysis, reproduction details, root-cause hypotheses, or a high-level outline of a potential fix directly in the issue thread.
 
-The Midnight Coder team may invite an external contributor to submit a pull request when:
+The SOLAI Agent team may invite an external contributor to submit a pull request when:
 
 - the problem is well understood,
 - the proposed approach aligns with the team’s intended solution, and
 - the issue is deemed high-impact and high-priority.
 
-Pull requests that have not been explicitly invited by a member of the Midnight Coder team will be closed without review.
+Pull requests that have not been explicitly invited by a member of the SOLAI Agent team will be closed without review.
 
 **Why we do not generally accept external code contributions**
 
-In the past, the Midnight Coder team accepted external pull requests for bug fixes. While we appreciated the effort and engagement from the community, this model did not scale well.
+In the past, the SOLAI Agent team accepted external pull requests for bug fixes. While we appreciated the effort and engagement from the community, this model did not scale well.
 
-Many contributions were made without full visibility into the architectural context, system-level constraints, or near-term roadmap considerations that guide Midnight Coder development. Others focused on issues that were low priority or affected a very small subset of users. Reviewing and iterating on these PRs often took more time than implementing the fix directly, and diverted attention from higher-priority work.
+Many contributions were made without full visibility into the architectural context, system-level constraints, or near-term roadmap considerations that guide SOLAI Agent development. Others focused on issues that were low priority or affected a very small subset of users. Reviewing and iterating on these PRs often took more time than implementing the fix directly, and diverted attention from higher-priority work.
 
-The most valuable contributions consistently came from community members who demonstrated deep understanding of a problem domain. That expertise is most helpful when shared early -- through detailed bug reports, analysis, and design discussion in issues. Identifying the right solution is typically the hard part; implementing it is comparatively straightforward with the help of Midnight Coder itself.
+The most valuable contributions consistently came from community members who demonstrated deep understanding of a problem domain. That expertise is most helpful when shared early -- through detailed bug reports, analysis, and design discussion in issues. Identifying the right solution is typically the hard part; implementing it is comparatively straightforward with the help of SOLAI Agent itself.
 
 For these reasons, we focus external contributions on discussion, analysis, and feedback, and reserve code changes for cases where a targeted invitation makes sense.
 
 ### Development workflow
 
-If you are invited by a Midnight Coder team member to contribute a PR, here is the recommended development workflow.
+If you are invited by a SOLAI Agent team member to contribute a PR, here is the recommended development workflow.
 
 - Create a _topic branch_ from `main` - e.g. `feat/interactive-prompt`.
 - Keep your changes focused. Multiple unrelated fixes should be opened as separate PRs.
@@ -75,7 +75,7 @@ When a change updates model catalogs or model metadata (`/models` payloads, pres
 
 If you run into problems setting up the project, would like feedback on an idea, or just want to say _hi_ - please open a Discussion topic or jump into the relevant issue. We are happy to help.
 
-Together we can make Midnight Coder an incredible tool. **Happy hacking!** :rocket:
+Together we can make SOLAI Agent an incredible tool. **Happy hacking!** :rocket:
 
 ### Contributor license agreement (CLA)
 

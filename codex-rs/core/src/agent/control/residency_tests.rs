@@ -1,13 +1,13 @@
 use crate::ThreadManager;
 use crate::agent::AgentControl;
-use crate::codex_thread::MidnightCoderThread;
+use crate::codex_thread::SolaiAgentThread;
 use crate::config::Config;
 use crate::config::test_config;
 use crate::thread_manager::ThreadManagerState;
 use codex_features::Feature;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_protocol::ThreadId;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::protocol::EventMsg;
 use codex_protocol::protocol::SessionSource;
 use codex_protocol::protocol::SubAgentSource;
@@ -27,7 +27,7 @@ async fn residency_slot_reservation_unloads_oldest_idle_v2_agent() {
     config.codex_home = temp_home.path().to_path_buf().try_into().unwrap();
     config.cwd = temp_home.path().to_path_buf().try_into().unwrap();
     let manager = ThreadManager::with_models_provider_and_home_for_tests(
-        MidnightCoderAuth::from_api_key("dummy"),
+        SolaiAgentAuth::from_api_key("dummy"),
         config.model_provider.clone(),
         config.codex_home.to_path_buf(),
         Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
@@ -53,7 +53,7 @@ async fn residency_slot_reservation_unloads_oldest_idle_v2_agent() {
         .await
         .expect("second resident slot should evict the first idle agent");
     match manager.get_thread(first.thread_id).await {
-        Err(MidnightCoderErr::ThreadNotFound(thread_id)) => assert_eq!(thread_id, first.thread_id),
+        Err(SolaiAgentErr::ThreadNotFound(thread_id)) => assert_eq!(thread_id, first.thread_id),
         Err(err) => panic!("expected evicted thread to be missing, got {err:?}"),
         Ok(_) => panic!("expected evicted thread to be missing"),
     }
@@ -73,7 +73,7 @@ async fn interrupted_v2_agent_is_lost_after_residency_eviction() {
     config.codex_home = temp_home.path().to_path_buf().try_into().unwrap();
     config.cwd = temp_home.path().to_path_buf().try_into().unwrap();
     let manager = ThreadManager::with_models_provider_and_home_for_tests(
-        MidnightCoderAuth::from_api_key("dummy"),
+        SolaiAgentAuth::from_api_key("dummy"),
         config.model_provider.clone(),
         config.codex_home.to_path_buf(),
         Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
@@ -99,7 +99,7 @@ async fn interrupted_v2_agent_is_lost_after_residency_eviction() {
         .await
         .expect("second resident slot should evict the first interrupted idle agent");
     match manager.get_thread(first.thread_id).await {
-        Err(MidnightCoderErr::ThreadNotFound(thread_id)) => assert_eq!(thread_id, first.thread_id),
+        Err(SolaiAgentErr::ThreadNotFound(thread_id)) => assert_eq!(thread_id, first.thread_id),
         Err(err) => panic!("expected evicted thread to be missing, got {err:?}"),
         Ok(_) => panic!("expected evicted thread to be missing"),
     }
@@ -113,14 +113,14 @@ async fn interrupted_v2_agent_is_lost_after_residency_eviction() {
         .await
         .expect_err("evicted interrupted agent should stay lost");
     match err {
-        MidnightCoderErr::ThreadNotFound(thread_id) => assert_eq!(thread_id, first.thread_id),
+        SolaiAgentErr::ThreadNotFound(thread_id) => assert_eq!(thread_id, first.thread_id),
         err => panic!("expected ThreadNotFound, got {err:?}"),
     }
 
     assert!(manager.get_thread(root.thread_id).await.is_ok());
     assert!(manager.get_thread(second.thread_id).await.is_ok());
     match manager.get_thread(first.thread_id).await {
-        Err(MidnightCoderErr::ThreadNotFound(thread_id)) => assert_eq!(thread_id, first.thread_id),
+        Err(SolaiAgentErr::ThreadNotFound(thread_id)) => assert_eq!(thread_id, first.thread_id),
         Err(err) => panic!("expected evicted thread to be missing, got {err:?}"),
         Ok(_) => panic!("expected evicted thread to be missing"),
     }
@@ -150,7 +150,7 @@ async fn spawn_v2_subagent(
         .expect("spawn v2 subagent")
 }
 
-async fn mark_thread_completed(thread: &MidnightCoderThread) {
+async fn mark_thread_completed(thread: &SolaiAgentThread) {
     let turn = thread.codex.session.new_default_turn().await;
     thread
         .codex
@@ -169,7 +169,7 @@ async fn mark_thread_completed(thread: &MidnightCoderThread) {
     clear_active_turn(thread).await;
 }
 
-async fn mark_thread_interrupted(thread: &MidnightCoderThread) {
+async fn mark_thread_interrupted(thread: &SolaiAgentThread) {
     let turn = thread.codex.session.new_default_turn().await;
     thread
         .codex
@@ -187,7 +187,7 @@ async fn mark_thread_interrupted(thread: &MidnightCoderThread) {
     clear_active_turn(thread).await;
 }
 
-async fn clear_active_turn(thread: &MidnightCoderThread) {
+async fn clear_active_turn(thread: &SolaiAgentThread) {
     // The fixture has no task runner to clear the turn after the terminal event.
     *thread.codex.session.active_turn.lock().await = None;
 }

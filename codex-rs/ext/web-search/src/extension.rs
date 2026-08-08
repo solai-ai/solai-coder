@@ -150,7 +150,7 @@ mod tests {
     use codex_extension_api::ExtensionData;
     use codex_extension_api::ExtensionRegistryBuilder;
     use codex_extension_api::ToolName;
-    use codex_login::MidnightCoderAuth;
+    use codex_login::SolaiAgentAuth;
     use codex_model_provider_info::ModelProviderInfo;
     use pretty_assertions::assert_eq;
 
@@ -189,7 +189,7 @@ mod tests {
         let mut builder = ExtensionRegistryBuilder::<Config>::new();
         install(
             &mut builder,
-            AuthManager::from_auth_for_testing(MidnightCoderAuth::from_api_key("dummy")),
+            AuthManager::from_auth_for_testing(SolaiAgentAuth::from_api_key("dummy")),
         );
         let registry = builder.build();
         let session_store = ExtensionData::new("session");

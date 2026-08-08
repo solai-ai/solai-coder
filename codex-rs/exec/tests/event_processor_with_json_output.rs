@@ -59,7 +59,7 @@ use codex_exec::McpToolCallItem;
 use codex_exec::McpToolCallItemError;
 use codex_exec::McpToolCallItemResult;
 use codex_exec::McpToolCallStatus;
-use codex_exec::MidnightCoderStatus;
+use codex_exec::SolaiAgentStatus;
 use codex_exec::PatchApplyStatus;
 use codex_exec::PatchChangeKind;
 use codex_exec::ReasoningItem;
@@ -159,7 +159,7 @@ fn turn_started_emits_turn_started_event() {
         collected,
         CollectedThreadEvents {
             events: vec![ThreadEvent::TurnStarted(TurnStartedEvent {})],
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
 }
@@ -201,7 +201,7 @@ fn command_execution_started_and_completed_translate_to_thread_events() {
                     }),
                 },
             })],
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
 
@@ -238,7 +238,7 @@ fn command_execution_started_and_completed_translate_to_thread_events() {
                     }),
                 },
             })],
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
 }
@@ -264,7 +264,7 @@ fn empty_reasoning_items_are_ignored() {
         collected,
         CollectedThreadEvents {
             events: Vec::new(),
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
 }
@@ -289,7 +289,7 @@ fn unsupported_items_do_not_consume_synthetic_ids() {
         ignored,
         CollectedThreadEvents {
             events: Vec::new(),
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
 
@@ -318,7 +318,7 @@ fn unsupported_items_do_not_consume_synthetic_ids() {
                     }),
                 },
             })],
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
 }
@@ -351,7 +351,7 @@ fn reasoning_items_emit_summary_not_raw_content() {
                     }),
                 },
             })],
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
 }
@@ -392,7 +392,7 @@ fn web_search_completion_preserves_query_and_action() {
                     }),
                 },
             })],
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
 }
@@ -442,7 +442,7 @@ fn web_search_start_and_completion_reuse_item_id() {
                     }),
                 },
             })],
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
     assert_eq!(
@@ -461,7 +461,7 @@ fn web_search_start_and_completion_reuse_item_id() {
                     }),
                 },
             })],
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
 }
@@ -530,7 +530,7 @@ fn mcp_tool_call_begin_and_end_emit_item_events() {
                     }),
                 },
             })],
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
     assert_eq!(
@@ -553,7 +553,7 @@ fn mcp_tool_call_begin_and_end_emit_item_events() {
                     }),
                 },
             })],
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
 }
@@ -603,7 +603,7 @@ fn mcp_tool_call_failure_sets_failed_status() {
                     }),
                 },
             })],
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
 }
@@ -675,7 +675,7 @@ fn mcp_tool_call_defaults_arguments_and_preserves_structured_content() {
                     }),
                 },
             })],
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
     assert_eq!(
@@ -701,7 +701,7 @@ fn mcp_tool_call_defaults_arguments_and_preserves_structured_content() {
                     }),
                 },
             })],
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
 }
@@ -768,7 +768,7 @@ fn collab_spawn_begin_and_end_emit_item_events() {
                     },),
                 },
             })],
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
     assert_eq!(
@@ -793,7 +793,7 @@ fn collab_spawn_begin_and_end_emit_item_events() {
                     },),
                 },
             })],
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
 }
@@ -856,7 +856,7 @@ fn file_change_completion_maps_change_kinds() {
                     }),
                 },
             })],
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
 }
@@ -897,7 +897,7 @@ fn file_change_declined_maps_to_failed_status() {
                     }),
                 },
             })],
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
 }
@@ -931,7 +931,7 @@ fn agent_message_item_updates_final_message() {
                     }),
                 },
             })],
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
     assert_eq!(processor.final_message(), Some("hello"));
@@ -958,7 +958,7 @@ fn agent_message_item_started_is_ignored() {
         collected,
         CollectedThreadEvents {
             events: Vec::new(),
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
 }
@@ -991,7 +991,7 @@ fn reasoning_item_completed_uses_synthetic_id() {
                     }),
                 },
             })],
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
 }
@@ -1015,7 +1015,7 @@ fn warning_event_produces_error_item() {
                     }),
                 },
             })],
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
 }
@@ -1061,7 +1061,7 @@ fn plan_update_emits_started_then_updated_then_completed() {
                     }),
                 },
             })],
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
 
@@ -1102,7 +1102,7 @@ fn plan_update_emits_started_then_updated_then_completed() {
                     }),
                 },
             })],
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
 
@@ -1146,7 +1146,7 @@ fn plan_update_emits_started_then_updated_then_completed() {
                     usage: Usage::default(),
                 }),
             ],
-            status: MidnightCoderStatus::InitiateShutdown,
+            status: SolaiAgentStatus::InitiateShutdown,
         }
     );
 }
@@ -1208,7 +1208,7 @@ fn plan_update_after_completion_starts_new_todo_list_with_new_id() {
                     }),
                 },
             })],
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
 }
@@ -1245,7 +1245,7 @@ fn token_usage_update_is_emitted_on_turn_completion() {
         usage_update,
         CollectedThreadEvents {
             events: Vec::new(),
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
 
@@ -1275,7 +1275,7 @@ fn token_usage_update_is_emitted_on_turn_completion() {
                     reasoning_output_tokens: 7,
                 },
             })],
-            status: MidnightCoderStatus::InitiateShutdown,
+            status: SolaiAgentStatus::InitiateShutdown,
         }
     );
 }
@@ -1311,7 +1311,7 @@ fn turn_completion_recovers_final_message_from_turn_items() {
             events: vec![ThreadEvent::TurnCompleted(TurnCompletedEvent {
                 usage: Usage::default(),
             })],
-            status: MidnightCoderStatus::InitiateShutdown,
+            status: SolaiAgentStatus::InitiateShutdown,
         }
     );
     assert_eq!(processor.final_message(), Some("final answer"));
@@ -1353,7 +1353,7 @@ fn turn_completion_reconciles_started_items_from_turn_items() {
                     }),
                 },
             })],
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
 
@@ -1403,7 +1403,7 @@ fn turn_completion_reconciles_started_items_from_turn_items() {
                     usage: Usage::default(),
                 }),
             ],
-            status: MidnightCoderStatus::InitiateShutdown,
+            status: SolaiAgentStatus::InitiateShutdown,
         }
     );
 }
@@ -1452,7 +1452,7 @@ fn turn_completion_overwrites_stale_final_message_from_turn_items() {
             events: vec![ThreadEvent::TurnCompleted(TurnCompletedEvent {
                 usage: Usage::default(),
             })],
-            status: MidnightCoderStatus::InitiateShutdown,
+            status: SolaiAgentStatus::InitiateShutdown,
         }
     );
     assert_eq!(processor.final_message(), Some("final answer"));
@@ -1497,7 +1497,7 @@ fn turn_completion_preserves_streamed_final_message_when_turn_items_are_empty() 
             events: vec![ThreadEvent::TurnCompleted(TurnCompletedEvent {
                 usage: Usage::default(),
             })],
-            status: MidnightCoderStatus::InitiateShutdown,
+            status: SolaiAgentStatus::InitiateShutdown,
         }
     );
     assert_eq!(processor.final_message(), Some("streamed answer"));
@@ -1521,7 +1521,7 @@ fn failed_turn_clears_stale_final_message() {
         },
     ));
 
-    assert_eq!(collected.status, MidnightCoderStatus::Running);
+    assert_eq!(collected.status, SolaiAgentStatus::Running);
     assert_eq!(processor.final_message(), Some("partial answer"));
 
     let collected = processor.collect_thread_events(ServerNotification::TurnCompleted(
@@ -1544,7 +1544,7 @@ fn failed_turn_clears_stale_final_message() {
         },
     ));
 
-    assert_eq!(collected.status, MidnightCoderStatus::InitiateShutdown);
+    assert_eq!(collected.status, SolaiAgentStatus::InitiateShutdown);
     assert_eq!(processor.final_message(), None);
 }
 
@@ -1577,7 +1577,7 @@ fn turn_completion_falls_back_to_final_plan_text() {
             events: vec![ThreadEvent::TurnCompleted(TurnCompletedEvent {
                 usage: Usage::default(),
             })],
-            status: MidnightCoderStatus::InitiateShutdown,
+            status: SolaiAgentStatus::InitiateShutdown,
         }
     );
     assert_eq!(processor.final_message(), Some("ship the typed adapter"));
@@ -1603,7 +1603,7 @@ fn turn_failure_prefers_structured_error_message() {
             events: vec![ThreadEvent::Error(ThreadErrorEvent {
                 message: "backend failed (request id abc)".to_string(),
             })],
-            status: MidnightCoderStatus::Running,
+            status: SolaiAgentStatus::Running,
         }
     );
 
@@ -1630,7 +1630,7 @@ fn turn_failure_prefers_structured_error_message() {
                     message: "backend failed (request id abc)".to_string(),
                 },
             })],
-            status: MidnightCoderStatus::InitiateShutdown,
+            status: SolaiAgentStatus::InitiateShutdown,
         }
     );
 }
@@ -1649,7 +1649,7 @@ fn model_reroute_surfaces_as_error_item() {
         },
     ));
 
-    assert_eq!(collected.status, MidnightCoderStatus::Running);
+    assert_eq!(collected.status, SolaiAgentStatus::Running);
     assert_eq!(collected.events.len(), 1);
     let ThreadEvent::ItemCompleted(ItemCompletedEvent { item }) = &collected.events[0] else {
         panic!("expected ItemCompleted");

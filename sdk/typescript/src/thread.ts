@@ -1,6 +1,6 @@
-import { MidnightCoderOptions } from "./codexOptions";
+import { SolaiAgentOptions } from "./codexOptions";
 import { ThreadEvent, ThreadError, Usage } from "./events";
-import { MidnightCoderExec } from "./exec";
+import { SolaiAgentExec } from "./exec";
 import { ThreadItem } from "./items";
 import { ThreadOptions } from "./threadOptions";
 import { TurnOptions } from "./turnOptions";
@@ -39,8 +39,8 @@ export type Input = string | UserInput[];
 
 /** Represent a thread of conversation with the agent. One thread can have multiple consecutive turns. */
 export class Thread {
-  private _exec: MidnightCoderExec;
-  private _options: MidnightCoderOptions;
+  private _exec: SolaiAgentExec;
+  private _options: SolaiAgentOptions;
   private _id: string | null;
   private _threadOptions: ThreadOptions;
 
@@ -51,8 +51,8 @@ export class Thread {
 
   /* @internal */
   constructor(
-    exec: MidnightCoderExec,
-    options: MidnightCoderOptions,
+    exec: SolaiAgentExec,
+    options: SolaiAgentOptions,
     threadOptions: ThreadOptions,
     id: string | null = null,
   ) {

@@ -5,6 +5,6 @@ import type { ModeKind } from "./ModeKind";
 import type { Settings } from "./Settings";
 
 /**
- * Collaboration mode for a MidnightCoder session.
+ * Collaboration mode for a SolaiAgent session.
  */
 export type CollaborationMode = { mode: ModeKind, settings: Settings, };

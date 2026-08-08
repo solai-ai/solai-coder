@@ -5,14 +5,14 @@ expression: popup
 ---
   Update Model Permissions
 
-› 1. Read Only (current)                   Midnight Coder can read files in the current
+› 1. Read Only (current)                   SOLAI Agent can read files in the current
                                            workspace. Approval is required to
                                            edit files or access the internet.
-  2. Ask for approval (non-admin sandbox)  Midnight Coder can read and edit files in the
+  2. Ask for approval (non-admin sandbox)  SOLAI Agent can read and edit files in the
                                            current workspace, and run commands.
                                            Approval is required to access the
                                            internet or edit other files.
-  3. Full Access                           Midnight Coder can edit files outside this
+  3. Full Access                           SOLAI Agent can edit files outside this
                                            workspace and access the internet
                                            without asking for approval. Exercise
                                            caution when using.

@@ -1,8 +1,8 @@
 //! Types used when representing Model Context Protocol (MCP) values inside the
-//! MidnightCoder protocol.
+//! SolaiAgent protocol.
 //!
 //! We intentionally keep these types TS/JSON-schema friendly (via `ts-rs` and
-//! `schemars`) so they can be embedded in MidnightCoder's own protocol structures.
+//! `schemars`) so they can be embedded in SolaiAgent's own protocol structures.
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;

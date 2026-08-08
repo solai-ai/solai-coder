@@ -745,7 +745,7 @@ impl ServerHandler for ElicitationAppsMcpServer {
                     }
                     result => {
                         return Err(rmcp::ErrorData::internal_error(
-                            format!("unexpected MidnightCoder form response: {result:?}"),
+                            format!("unexpected SolaiAgent form response: {result:?}"),
                             None,
                         ));
                     }

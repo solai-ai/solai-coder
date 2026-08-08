@@ -1,6 +1,6 @@
 ---
 name: "imagegen"
-description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, illustrations, textures, sprites, mockups, or transparent-background cutouts. Use when Midnight Coder should create a brand-new image, transform an existing image, or derive visual variants from references, and the output should be a bitmap asset rather than repo-native code or vector. Do not use when the task is better handled by editing existing SVG/vector/code-native assets, extending an established icon or logo system, or building the visual directly in HTML/CSS/canvas."
+description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, illustrations, textures, sprites, mockups, or transparent-background cutouts. Use when SOLAI Agent should create a brand-new image, transform an existing image, or derive visual variants from references, and the output should be a bitmap asset rather than repo-native code or vector. Do not use when the task is better handled by editing existing SVG/vector/code-native assets, extending an established icon or logo system, or building the visual directly in HTML/CSS/canvas."
 ---
 
 # Image Generation Skill
@@ -32,7 +32,7 @@ Rules:
 - Never modify `scripts/image_gen.py`. If something is missing, ask the user before doing anything else.
 
 Built-in save-path policy:
-- In built-in tool mode, Midnight Coder saves generated images under `$CODEX_HOME/*` by default.
+- In built-in tool mode, SOLAI Agent saves generated images under `$CODEX_HOME/*` by default.
 - Do not describe or rely on OS temp as the default built-in destination.
 - Do not describe or rely on a destination-path argument (if any) on the built-in `image_gen` tool. If a specific location is needed, generate first and then move or copy the selected output from `$CODEX_HOME/generated_images/...`.
 - Save-path precedence in built-in mode:
@@ -335,7 +335,7 @@ Portability note:
 - Never ask the user to paste the full key in chat. Ask them to set it locally and confirm when ready.
 
 If the key is missing, give the user these steps:
-1. Create an API key in the Midnight Coder platform UI: https://platform.openai.com/api-keys
+1. Create an API key in the SOLAI Agent platform UI: https://platform.openai.com/api-keys
 2. Set `OPENAI_API_KEY` as an environment variable in their system.
 3. Offer to guide them through setting the environment variable for their OS/shell if needed.
 

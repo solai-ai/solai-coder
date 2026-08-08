@@ -1,7 +1,7 @@
-//! Registry of model providers supported by MidnightCoder.
+//! Registry of model providers supported by SolaiAgent.
 //!
 //! Providers can be defined in two places:
-//!   1. Built-in defaults compiled into the binary so MidnightCoder works out-of-the-box.
+//!   1. Built-in defaults compiled into the binary so SolaiAgent works out-of-the-box.
 //!   2. User-defined entries inside `~/.midCoder/config.toml` under the `model_providers`
 //!      key. These override or extend the defaults at runtime.
 
@@ -11,8 +11,8 @@ use codex_api::is_azure_responses_provider;
 use codex_protocol::auth::AuthMode;
 use codex_protocol::config_types::ModelProviderAuthInfo;
 use codex_protocol::error::EnvVarError;
-use codex_protocol::error::MidnightCoderErr;
-use codex_protocol::error::Result as MidnightCoderResult;
+use codex_protocol::error::SolaiAgentErr;
+use codex_protocol::error::Result as SolaiAgentResult;
 use http::HeaderMap;
 use http::header::HeaderName;
 use http::header::HeaderValue;
@@ -32,7 +32,7 @@ const MAX_STREAM_MAX_RETRIES: u64 = 100;
 /// Hard cap for user-configured `request_max_retries`.
 const MAX_REQUEST_MAX_RETRIES: u64 = 100;
 
-const OPENAI_PROVIDER_NAME: &str = "MidnightCoder";
+const OPENAI_PROVIDER_NAME: &str = "SolaiAgent";
 const OPENAI_ACTOR_AUTHORIZATION_HEADER: &str = "x-openai-actor-authorization";
 pub const OPENAI_PROVIDER_ID: &str = "openai";
 pub const CHATGPT_CODEX_BASE_URL: &str = "https://chatgpt.com/backend-api/codex";
@@ -55,7 +55,7 @@ pub const OLLAMA_CHAT_PROVIDER_REMOVED_ERROR: &str = "`ollama-chat` is no longer
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum WireApi {
-    /// The Responses API exposed by MidnightCoder at `/v1/responses`.
+    /// The Responses API exposed by SolaiAgent at `/v1/responses`.
     #[default]
     Responses,
 }
@@ -90,7 +90,7 @@ pub struct ModelProviderInfo {
     /// Friendly display name.
     #[serde(default)]
     pub name: String,
-    /// Base URL for the provider's MidnightCoder-compatible API.
+    /// Base URL for the provider's SolaiAgent-compatible API.
     pub base_url: Option<String>,
     /// Environment variable that stores the user's API key for this provider.
     pub env_key: Option<String>,
@@ -129,7 +129,7 @@ pub struct ModelProviderInfo {
     /// Maximum time (in milliseconds) to wait for a websocket connection attempt before treating
     /// it as failed.
     pub websocket_connect_timeout_ms: Option<u64>,
-    /// Does this provider require an MidnightCoder API Key or ChatGPT login token? If true,
+    /// Does this provider require an SolaiAgent API Key or ChatGPT login token? If true,
     /// user is presented with login screen on first run, and login preference and token/key
     /// are stored in auth.json. If false (which is the default), login screen is skipped,
     /// and API key (if needed) comes from the "env_key" environment variable.
@@ -211,7 +211,7 @@ impl ModelProviderInfo {
         }
     }
 
-    fn build_header_map(&self) -> MidnightCoderResult<HeaderMap> {
+    fn build_header_map(&self) -> SolaiAgentResult<HeaderMap> {
         let capacity = self.http_headers.as_ref().map_or(0, HashMap::len)
             + self.env_http_headers.as_ref().map_or(0, HashMap::len);
         let mut headers = HeaderMap::with_capacity(capacity);
@@ -238,7 +238,7 @@ impl ModelProviderInfo {
         Ok(headers)
     }
 
-    pub fn to_api_provider(&self, auth_mode: Option<AuthMode>) -> MidnightCoderResult<ApiProvider> {
+    pub fn to_api_provider(&self, auth_mode: Option<AuthMode>) -> SolaiAgentResult<ApiProvider> {
         let default_base_url = if matches!(
             auth_mode,
             Some(
@@ -279,14 +279,14 @@ impl ModelProviderInfo {
     /// If `env_key` is Some, returns the API key for this provider if present
     /// (and non-empty) in the environment. If `env_key` is required but
     /// cannot be found, returns an error.
-    pub fn api_key(&self) -> MidnightCoderResult<Option<String>> {
+    pub fn api_key(&self) -> SolaiAgentResult<Option<String>> {
         match &self.env_key {
             Some(env_key) => {
                 let api_key = std::env::var(env_key)
                     .ok()
                     .filter(|v| !v.trim().is_empty())
                     .ok_or_else(|| {
-                        MidnightCoderErr::EnvVar(EnvVarError {
+                        SolaiAgentErr::EnvVar(EnvVarError {
                             var: env_key.clone(),
                             instructions: self.env_key_instructions.clone(),
                         })
@@ -344,11 +344,11 @@ impl ModelProviderInfo {
             env_http_headers: Some(
                 [
                     (
-                        "MidnightCoder-Organization".to_string(),
+                        "SolaiAgent-Organization".to_string(),
                         "OPENAI_ORGANIZATION".to_string(),
                     ),
                     (
-                        "MidnightCoder-Project".to_string(),
+                        "SolaiAgent-Project".to_string(),
                         "OPENAI_PROJECT".to_string(),
                     ),
                 ]
@@ -437,7 +437,7 @@ pub fn built_in_model_providers(
     let amazon_bedrock_provider = P::create_amazon_bedrock_provider(/*aws*/ None);
 
     // Keep the local providers bundled by default. Users can still add custom
-    // MidnightCoder-compatible local providers under `model_providers` in config.toml.
+    // SolaiAgent-compatible local providers under `model_providers` in config.toml.
     [
         (OPENAI_PROVIDER_ID, openai_provider),
         (AMAZON_BEDROCK_PROVIDER_ID, amazon_bedrock_provider),

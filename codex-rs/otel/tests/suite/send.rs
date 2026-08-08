@@ -15,7 +15,7 @@ fn send_builds_payload_with_tags_and_histograms() -> Result<()> {
 
     metrics.counter_with_description(
         "codex.turns",
-        "Total number of MidnightCoder turns.",
+        "Total number of SolaiAgent turns.",
         /*inc*/ 1,
         &[("model", "gpt-5.1"), ("env", "dev")],
     )?;
@@ -26,7 +26,7 @@ fn send_builds_payload_with_tags_and_histograms() -> Result<()> {
     )?;
     metrics.gauge_with_description(
         "codex.active",
-        "Number of active MidnightCoder operations.",
+        "Number of active SolaiAgent operations.",
         /*value*/ 2,
         &[("component", "test")],
     )?;
@@ -37,7 +37,7 @@ fn send_builds_payload_with_tags_and_histograms() -> Result<()> {
     let counter = find_metric(&resource_metrics, "codex.turns").expect("counter metric missing");
     assert_eq!(
         counter.description(),
-        "Total number of MidnightCoder turns."
+        "Total number of SolaiAgent turns."
     );
     let counter_attributes = match counter.data() {
         opentelemetry_sdk::metrics::data::AggregatedMetrics::U64(data) => match data {
@@ -89,7 +89,7 @@ fn send_builds_payload_with_tags_and_histograms() -> Result<()> {
     let gauge = find_metric(&resource_metrics, "codex.active").expect("gauge metric missing");
     assert_eq!(
         gauge.description(),
-        "Number of active MidnightCoder operations."
+        "Number of active SolaiAgent operations."
     );
     let gauge_point = match gauge.data() {
         opentelemetry_sdk::metrics::data::AggregatedMetrics::I64(data) => match data {

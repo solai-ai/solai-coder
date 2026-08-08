@@ -48,10 +48,10 @@ fn create_codex_apps_tools_cache_context(
     codex_home: PathBuf,
     account_id: Option<&str>,
     chatgpt_user_id: Option<&str>,
-) -> MidnightCoderAppsToolsCacheContext {
-    MidnightCoderAppsToolsCache::default().context(
+) -> SolaiAgentAppsToolsCacheContext {
+    SolaiAgentAppsToolsCache::default().context(
         codex_home,
-        MidnightCoderAppsToolsCacheKey {
+        SolaiAgentAppsToolsCacheKey {
             account_id: account_id.map(ToOwned::to_owned),
             chatgpt_user_id: chatgpt_user_id.map(ToOwned::to_owned),
             is_workspace_account: false,
@@ -226,7 +226,7 @@ fn startup_cached_codex_apps_tools_loads_from_disk_cache() {
         CODEX_APPS_MCP_SERVER_NAME,
         "calendar_search",
     )];
-    let server_info = create_test_server_info("MidnightCoder Apps");
+    let server_info = create_test_server_info("SolaiAgent Apps");
     write_cached_codex_apps_tools_for_test(&writer_cache_context, &server_info, &cached_tools);
     let cache_context = create_codex_apps_tools_cache_context(
         codex_home.path().to_path_buf(),
@@ -287,7 +287,7 @@ fn codex_apps_server_info_cache_survives_legacy_tools_cache_write() {
         Some("account-one"),
         Some("user-one"),
     );
-    let server_info = create_test_server_info("MidnightCoder Apps");
+    let server_info = create_test_server_info("SolaiAgent Apps");
     write_cached_codex_apps_tools_for_test(
         &cache_context,
         &server_info,
@@ -354,10 +354,10 @@ fn codex_apps_tools_cache_context_does_not_reread_disk_after_creation() {
 #[test]
 fn codex_apps_tools_cache_publishes_newest_shared_snapshot() {
     let codex_home = tempdir().expect("tempdir");
-    let cache = MidnightCoderAppsToolsCache::default();
+    let cache = SolaiAgentAppsToolsCache::default();
     let cache_context_1 = cache.context(
         codex_home.path().to_path_buf(),
-        MidnightCoderAppsToolsCacheKey {
+        SolaiAgentAppsToolsCacheKey {
             account_id: Some("account-one".to_string()),
             chatgpt_user_id: Some("user-one".to_string()),
             is_workspace_account: false,
@@ -365,15 +365,15 @@ fn codex_apps_tools_cache_publishes_newest_shared_snapshot() {
     );
     let cache_context_2 = cache.context(
         codex_home.path().to_path_buf(),
-        MidnightCoderAppsToolsCacheKey {
+        SolaiAgentAppsToolsCacheKey {
             account_id: Some("account-one".to_string()),
             chatgpt_user_id: Some("user-one".to_string()),
             is_workspace_account: false,
         },
     );
-    let older_ticket = cache_context_1.begin_fetch(MidnightCoderAppsToolsFetchSource::Startup);
-    let newer_ticket = cache_context_2.begin_fetch(MidnightCoderAppsToolsFetchSource::HardRefresh);
-    let server_info = create_test_server_info("MidnightCoder Apps");
+    let older_ticket = cache_context_1.begin_fetch(SolaiAgentAppsToolsFetchSource::Startup);
+    let newer_ticket = cache_context_2.begin_fetch(SolaiAgentAppsToolsFetchSource::HardRefresh);
+    let server_info = create_test_server_info("SolaiAgent Apps");
     let newer_tools = vec![create_test_tool(CODEX_APPS_MCP_SERVER_NAME, "newer")];
     let older_tools = vec![create_test_tool(CODEX_APPS_MCP_SERVER_NAME, "older")];
 
@@ -407,9 +407,9 @@ fn codex_apps_tools_cache_keeps_live_publish_when_disk_persistence_fails() {
     let codex_home = tempdir().expect("tempdir");
     let codex_home_file = codex_home.path().join("not-a-directory");
     std::fs::write(&codex_home_file, b"occupied").expect("create codex home file");
-    let cache_context = MidnightCoderAppsToolsCache::default().context(
+    let cache_context = SolaiAgentAppsToolsCache::default().context(
         codex_home_file,
-        MidnightCoderAppsToolsCacheKey {
+        SolaiAgentAppsToolsCacheKey {
             account_id: Some("account-one".to_string()),
             chatgpt_user_id: Some("user-one".to_string()),
             is_workspace_account: false,
@@ -417,8 +417,8 @@ fn codex_apps_tools_cache_keeps_live_publish_when_disk_persistence_fails() {
     );
     let tools = vec![create_test_tool(CODEX_APPS_MCP_SERVER_NAME, "live")];
     let published_tools = cache_context.publish_if_newest_accepted(
-        cache_context.begin_fetch(MidnightCoderAppsToolsFetchSource::HardRefresh),
-        &create_test_server_info("MidnightCoder Apps"),
+        cache_context.begin_fetch(SolaiAgentAppsToolsFetchSource::HardRefresh),
+        &create_test_server_info("SolaiAgent Apps"),
         tools.clone(),
     );
 
@@ -435,10 +435,10 @@ fn codex_apps_tools_cache_scopes_non_utf8_home_disk_paths() {
     let codex_home = PathBuf::from(std::ffi::OsString::from_vec(
         b"/tmp/codex-home-\xff".to_vec(),
     ));
-    let cache = MidnightCoderAppsToolsCache::default();
+    let cache = SolaiAgentAppsToolsCache::default();
     let user_one_context = cache.context(
         codex_home.clone(),
-        MidnightCoderAppsToolsCacheKey {
+        SolaiAgentAppsToolsCacheKey {
             account_id: Some("account-one".to_string()),
             chatgpt_user_id: Some("user-one".to_string()),
             is_workspace_account: false,
@@ -446,7 +446,7 @@ fn codex_apps_tools_cache_scopes_non_utf8_home_disk_paths() {
     );
     let user_two_context = cache.context(
         codex_home,
-        MidnightCoderAppsToolsCacheKey {
+        SolaiAgentAppsToolsCacheKey {
             account_id: Some("account-two".to_string()),
             chatgpt_user_id: Some("user-two".to_string()),
             is_workspace_account: false,

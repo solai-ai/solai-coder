@@ -2,8 +2,8 @@
 
 Small, dependency-free utilities for parsing streamed text incrementally.
 
-**Disclaimer**: This code is pretty complex and Midnight Coder did not manage to write it so before updating the code, make
-sure to deeply understand it and don't blindly trust Midnight Coder on it. Feel free to update the documentation as you
+**Disclaimer**: This code is pretty complex and SOLAI Agent did not manage to write it so before updating the code, make
+sure to deeply understand it and don't blindly trust SOLAI Agent on it. Feel free to update the documentation as you
 modify the code
 
 ## What it provides

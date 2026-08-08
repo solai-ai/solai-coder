@@ -101,7 +101,7 @@ pub(super) fn resolve(request_url: &str, origin: &RequestOrigin) -> SystemProxyD
 }
 
 fn system_proxy_settings() -> Option<CFDictionary<CFString, CFType>> {
-    let store = SCDynamicStoreBuilder::new("MidnightCoder").build()?;
+    let store = SCDynamicStoreBuilder::new("SolaiAgent").build()?;
     store.get_proxies()
 }
 

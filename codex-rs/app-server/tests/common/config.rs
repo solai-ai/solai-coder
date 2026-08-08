@@ -35,7 +35,7 @@ pub fn write_mock_responses_config_toml(
         Some(false) | None => String::new(),
     };
     let provider_name = if matches!(requires_openai_auth, Some(true)) {
-        "MidnightCoder"
+        "SolaiAgent"
     } else {
         "Mock provider for test"
     };

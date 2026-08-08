@@ -707,7 +707,7 @@ async fn plugin_install_rejects_when_workspace_codex_plugins_disabled() -> Resul
     assert!(
         err.error
             .message
-            .contains("MidnightCoder plugins are disabled for this workspace")
+            .contains("SolaiAgent plugins are disabled for this workspace")
     );
     Ok(())
 }

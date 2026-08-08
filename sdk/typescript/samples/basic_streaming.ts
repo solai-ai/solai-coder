@@ -3,11 +3,11 @@
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 
-import { MidnightCoder } from "@openai/codex-sdk";
-import type { ThreadEvent, ThreadItem } from "@openai/codex-sdk";
+import { SolaiAgent } from "solai-sdk";
+import type { ThreadEvent, ThreadItem } from "solai-sdk";
 import { codexPathOverride } from "./helpers.ts";
 
-const codex = new MidnightCoder({ codexPathOverride: codexPathOverride() });
+const codex = new SolaiAgent({ codexPathOverride: codexPathOverride() });
 const thread = codex.startThread();
 const rl = createInterface({ input, output });
 

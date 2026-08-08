@@ -15,7 +15,7 @@ use codex_file_system::FileSystemSandboxContext;
 use codex_network_proxy::NetworkProxy;
 use codex_protocol::approvals::ExecPolicyAmendment;
 use codex_protocol::approvals::NetworkApprovalContext;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::permissions::FileSystemSandboxKind;
 use codex_protocol::permissions::FileSystemSandboxPolicy;
 use codex_protocol::protocol::AskForApproval;
@@ -387,7 +387,7 @@ pub(crate) struct ToolCtx {
 #[derive(Debug)]
 pub(crate) enum ToolError {
     Rejected(String),
-    MidnightCoder(MidnightCoderErr),
+    SolaiAgent(SolaiAgentErr),
 }
 
 pub(crate) trait ToolRuntime<Req, Out>: Approvable<Req> + Sandboxable {
@@ -432,7 +432,7 @@ impl<'a> SandboxAttempt<'a> {
         options: ExecOptions,
         network: Option<&NetworkProxy>,
         environment_id: Option<&str>,
-    ) -> Result<crate::sandboxing::ExecRequest, MidnightCoderErr> {
+    ) -> Result<crate::sandboxing::ExecRequest, SolaiAgentErr> {
         let request = self
             .manager
             .transform(SandboxTransformRequest {
@@ -450,7 +450,7 @@ impl<'a> SandboxAttempt<'a> {
                 windows_sandbox_level: self.windows_sandbox_level,
                 windows_sandbox_private_desktop: self.windows_sandbox_private_desktop,
             })
-            .map_err(MidnightCoderErr::from)?;
+            .map_err(SolaiAgentErr::from)?;
         Ok(crate::sandboxing::ExecRequest::from_sandbox_exec_request(
             request,
             options,
@@ -464,7 +464,7 @@ impl<'a> SandboxAttempt<'a> {
         options: ExecOptions,
         network: Option<&NetworkProxy>,
         environment_id: Option<&str>,
-    ) -> Result<crate::sandboxing::ExecRequest, MidnightCoderErr> {
+    ) -> Result<crate::sandboxing::ExecRequest, SolaiAgentErr> {
         let managed_network = command.managed_network.clone();
         let exec_server_permissions = effective_permission_profile(
             self.exec_server_permissions,
@@ -486,7 +486,7 @@ impl<'a> SandboxAttempt<'a> {
                 windows_sandbox_level: self.windows_sandbox_level,
                 windows_sandbox_private_desktop: self.windows_sandbox_private_desktop,
             })
-            .map_err(MidnightCoderErr::from)?;
+            .map_err(SolaiAgentErr::from)?;
         let mut exec_request = crate::sandboxing::ExecRequest::from_sandbox_exec_request(
             request,
             options,

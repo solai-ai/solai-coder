@@ -24,7 +24,7 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
 
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::error::Result;
 use codex_protocol::permissions::is_protected_metadata_name;
 use codex_protocol::protocol::FileSystemAccessMode;
@@ -732,7 +732,7 @@ fn expand_unreadable_globs_with_ripgrep(
             }
             expanded_paths.insert(path);
             if expanded_paths.len() > MAX_UNREADABLE_GLOB_MATCHES {
-                return Err(MidnightCoderErr::Fatal(format!(
+                return Err(SolaiAgentErr::Fatal(format!(
                     "unreadable glob expansion for {} matched more than {MAX_UNREADABLE_GLOB_MATCHES} paths",
                     search_root.display()
                 )));
@@ -851,7 +851,7 @@ fn ripgrep_files(
         }
 
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(MidnightCoderErr::Fatal(format!(
+        return Err(SolaiAgentErr::Fatal(format!(
             "ripgrep unreadable glob scan failed for {}: {stderr}",
             search_root.display()
         )));
@@ -886,7 +886,7 @@ fn glob_files(
             .allow_unclosed_class(true)
             .build()
             .map_err(|err| {
-                MidnightCoderErr::Fatal(format!(
+                SolaiAgentErr::Fatal(format!(
                     "unreadable glob pattern is invalid for {}: {err}",
                     search_root.display()
                 ))
@@ -894,7 +894,7 @@ fn glob_files(
         builder.add(glob);
     }
     let glob_set = builder.build().map_err(|err| {
-        MidnightCoderErr::Fatal(format!(
+        SolaiAgentErr::Fatal(format!(
             "unreadable glob matcher failed for {}: {err}",
             search_root.display()
         ))
@@ -1030,7 +1030,7 @@ fn append_read_only_subpath_args(
          * only protect a startup-time snapshot; the sandboxed process could
          * replace the writable symlink before it reads through the logical path.
          */
-        return Err(MidnightCoderErr::Fatal(format!(
+        return Err(SolaiAgentErr::Fatal(format!(
             "cannot enforce sandbox read-only path {} because it crosses writable symlink {}",
             subpath.display(),
             symlink.display()
@@ -1151,7 +1151,7 @@ fn append_unreadable_root_args(
          * protect the old target while the logical path could later point
          * somewhere else.
          */
-        return Err(MidnightCoderErr::Fatal(format!(
+        return Err(SolaiAgentErr::Fatal(format!(
             "cannot enforce sandbox deny-read path {} because it crosses writable symlink {}",
             unreadable_root.display(),
             symlink.display()

@@ -1,6 +1,6 @@
 # codex-client
 
-Generic transport layer that wraps HTTP requests, retries, and streaming primitives without any Midnight Coder/Midnight Coder awareness.
+Generic transport layer that wraps HTTP requests, retries, and streaming primitives without any SOLAI Agent/SOLAI Agent awareness.
 
 - Defines `HttpTransport` and a default `ReqwestTransport` plus thin `Request`/`Response` types.
 - Provides retry utilities (`RetryPolicy`, `RetryOn`, `run_with_retry`, `backoff`) that callers plug into for unary and streaming calls.

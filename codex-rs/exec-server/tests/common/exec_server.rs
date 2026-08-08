@@ -33,7 +33,7 @@ const EVENT_TIMEOUT: Duration = Duration::from_secs(5);
 
 pub(crate) struct ExecServerHarness {
     _codex_home: TempDir,
-    _helper_paths: TestMidnightCoderHelperPaths,
+    _helper_paths: TestSolaiAgentHelperPaths,
     child: Child,
     websocket_url: String,
     websocket: tokio_tungstenite::WebSocketStream<
@@ -48,7 +48,7 @@ impl Drop for ExecServerHarness {
     }
 }
 
-pub(crate) struct TestMidnightCoderHelperPaths {
+pub(crate) struct TestSolaiAgentHelperPaths {
     pub(crate) codex_exe: PathBuf,
     pub(crate) codex_linux_sandbox_exe: Option<PathBuf>,
 }
@@ -67,9 +67,9 @@ impl Drop for DisconnectableWebSocketProxy {
     }
 }
 
-pub(crate) fn test_codex_helper_paths() -> anyhow::Result<TestMidnightCoderHelperPaths> {
+pub(crate) fn test_codex_helper_paths() -> anyhow::Result<TestSolaiAgentHelperPaths> {
     let (helper_binary, codex_linux_sandbox_exe) = super::current_test_binary_helper_paths()?;
-    Ok(TestMidnightCoderHelperPaths {
+    Ok(TestSolaiAgentHelperPaths {
         codex_exe: helper_binary,
         codex_linux_sandbox_exe,
     })

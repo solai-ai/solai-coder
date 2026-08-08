@@ -54,7 +54,7 @@ pub enum ReasoningSummary {
 }
 
 /// Controls output length/detail on GPT-5 models via the Responses API.
-/// Serialized with lowercase values to match the MidnightCoder API.
+/// Serialized with lowercase values to match the SolaiAgent API.
 #[derive(
     Hash,
     Debug,
@@ -634,7 +634,7 @@ impl ModeKind {
     }
 }
 
-/// Collaboration mode for a MidnightCoder session.
+/// Collaboration mode for a SolaiAgent session.
 #[derive(Clone, PartialEq, Eq, Hash, Debug, Serialize, Deserialize, JsonSchema, TS)]
 #[serde(rename_all = "lowercase")]
 pub struct CollaborationMode {

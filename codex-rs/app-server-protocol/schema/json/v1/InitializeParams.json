@@ -31,7 +31,7 @@
           "type": "boolean"
         },
         "mcpServerOpenaiFormElicitation": {
-          "description": "Allow downstream MCP servers to request Midnight Coder extended form elicitations.",
+          "description": "Allow downstream MCP servers to request SOLAI Agent extended form elicitations.",
           "type": "boolean"
         },
         "optOutNotificationMethods": {

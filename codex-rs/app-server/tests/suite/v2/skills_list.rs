@@ -501,7 +501,7 @@ async fn skills_list_excludes_plugin_skills_when_workspace_codex_plugins_disable
             .skills
             .iter()
             .all(|skill| skill.name != "demo-plugin:plugin-skill"),
-        "plugin skills should be hidden when workspace MidnightCoder plugins are disabled"
+        "plugin skills should be hidden when workspace SolaiAgent plugins are disabled"
     );
     Ok(())
 }

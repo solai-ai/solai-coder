@@ -42,7 +42,7 @@ pub enum RawPayloadKind {
     /// Raw terminal runtime event or stream shard.
     TerminalRuntimeEvent,
     ProtocolEvent,
-    /// One-shot metadata captured when a MidnightCoder session/thread starts.
+    /// One-shot metadata captured when a SolaiAgent session/thread starts.
     SessionMetadata,
     /// Runtime notification payload carried when a child agent reports back to its parent.
     AgentResult,

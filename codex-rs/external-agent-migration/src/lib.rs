@@ -1,4 +1,4 @@
-//! Migration helpers for importing external-agent configuration into MidnightCoder.
+//! Migration helpers for importing external-agent configuration into SolaiAgent.
 
 use codex_hooks::HOOK_EVENT_NAMES;
 use codex_hooks::HOOK_EVENT_NAMES_WITH_MATCHERS;
@@ -1298,7 +1298,7 @@ fn rewrite_external_agent_terms(content: &str) -> String {
         "AGENTS.md",
     );
     for from in external_agent_term_variants() {
-        rewritten = replace_case_insensitive_with_boundaries(&rewritten, &from, "MidnightCoder");
+        rewritten = replace_case_insensitive_with_boundaries(&rewritten, &from, "SolaiAgent");
     }
     rewritten
 }

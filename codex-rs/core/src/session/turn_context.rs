@@ -666,9 +666,9 @@ impl Session {
         &self,
         sub_id: String,
         updates: SessionSettingsUpdate,
-    ) -> MidnightCoderResult<Arc<TurnContext>> {
+    ) -> SolaiAgentResult<Arc<TurnContext>> {
         let notify_config_contributors = !self.services.extensions.config_contributors().is_empty();
-        let update_result: MidnightCoderResult<_> = {
+        let update_result: SolaiAgentResult<_> = {
             let mut state = self.state.lock().await;
             match state.session_configuration.clone().apply(&updates) {
                 Ok(next) => {
@@ -695,7 +695,7 @@ impl Session {
                         new_config,
                     ))
                 }
-                Err(err) => Err(MidnightCoderErr::InvalidRequest(err.to_string())),
+                Err(err) => Err(SolaiAgentErr::InvalidRequest(err.to_string())),
             }
         };
 
@@ -708,11 +708,11 @@ impl Session {
                         id: sub_id.clone(),
                         msg: EventMsg::Error(ErrorEvent {
                             message: message.clone(),
-                            codex_error_info: Some(MidnightCoderErrorInfo::BadRequest),
+                            codex_error_info: Some(SolaiAgentErrorInfo::BadRequest),
                         }),
                     })
                     .await;
-                    return Err(MidnightCoderErr::InvalidRequest(message));
+                    return Err(SolaiAgentErr::InvalidRequest(message));
                 }
             };
         self.emit_config_changed_contributors(previous_config.as_ref(), new_config.as_ref());

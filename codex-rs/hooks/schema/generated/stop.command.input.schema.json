@@ -43,7 +43,7 @@
       "$ref": "#/definitions/NullableString"
     },
     "turn_id": {
-      "description": "Midnight Coder extension: expose the active turn id to internal turn-scoped hooks.",
+      "description": "SOLAI Agent extension: expose the active turn id to internal turn-scoped hooks.",
       "type": "string"
     }
   },

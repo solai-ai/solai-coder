@@ -9,7 +9,7 @@ use codex_extension_api::ExtensionRegistryBuilder;
 use codex_extension_api::McpServerContribution;
 use codex_extension_api::McpServerContributionContext;
 use codex_extension_api::McpServerContributor;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_mcp::CODEX_APPS_MCP_SERVER_NAME;
 use pretty_assertions::assert_eq;
 
@@ -27,7 +27,7 @@ async fn contributes_hosted_plugin_runtime_without_an_executor() -> TestResult {
         ])
         .build()
         .await?;
-    let auth = MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing();
     let manager = installed_manager(&config);
 
     let servers = manager.effective_servers(&config, Some(&auth)).await;
@@ -59,7 +59,7 @@ async fn runtime_overlay_preserves_disabled_server() -> TestResult {
         ])
         .build()
         .await?;
-    let auth = MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing();
     let manager = installed_manager(&config);
 
     let servers = manager.effective_servers(&config, Some(&auth)).await;
@@ -86,7 +86,7 @@ async fn legacy_fallback_overwrites_reserved_config_without_an_extension() -> Te
         ])
         .build()
         .await?;
-    let auth = MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing();
     let manager = McpManager::new(Arc::new(PluginsManager::new(
         config.codex_home.to_path_buf(),
     )));
@@ -113,10 +113,10 @@ async fn later_extension_can_remove_same_name_registration() -> TestResult {
         .cli_overrides(vec![("features.apps".to_string(), true.into())])
         .build()
         .await?;
-    let auth = MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing();
     let mut builder = ExtensionRegistryBuilder::new();
     codex_mcp_extension::install(&mut builder);
-    builder.mcp_server_contributor(Arc::new(RemoveMidnightCoderApps));
+    builder.mcp_server_contributor(Arc::new(RemoveSolaiAgentApps));
     let manager = McpManager::new_with_extensions(
         Arc::new(PluginsManager::new(config.codex_home.to_path_buf())),
         Arc::new(builder.build()),
@@ -137,7 +137,7 @@ async fn hosted_apps_mcp_requires_chatgpt_auth() -> TestResult {
         .cli_overrides(vec![("features.apps".to_string(), true.into())])
         .build()
         .await?;
-    let auth = MidnightCoderAuth::from_api_key("test");
+    let auth = SolaiAgentAuth::from_api_key("test");
     let manager = installed_manager(&config);
 
     let servers = manager.effective_servers(&config, Some(&auth)).await;
@@ -183,9 +183,9 @@ fn installed_manager(config: &Config) -> McpManager {
     )
 }
 
-struct RemoveMidnightCoderApps;
+struct RemoveSolaiAgentApps;
 
-impl McpServerContributor<Config> for RemoveMidnightCoderApps {
+impl McpServerContributor<Config> for RemoveSolaiAgentApps {
     fn id(&self) -> &'static str {
         "remove_codex_apps"
     }

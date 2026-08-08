@@ -3,7 +3,7 @@ source: tui/src/chatwidget/tests/popups_and_settings.rs
 expression: popup
 ---
   Memories
-  Choose how MidnightCoder uses and creates memories. Changes are saved to con
+  Choose how SolaiAgent uses and creates memories. Changes are saved to con
 
 › [x] Use memories       Use memories in the following threads. Applied at
                          next thread.

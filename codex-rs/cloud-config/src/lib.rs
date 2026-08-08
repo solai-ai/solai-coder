@@ -1,4 +1,4 @@
-//! Cloud-hosted configuration data for MidnightCoder.
+//! Cloud-hosted configuration data for SolaiAgent.
 //!
 //! This crate owns transport, caching, and refresh behavior for cloud-delivered
 //! config data. Parsing and composition remain in `codex-config`.

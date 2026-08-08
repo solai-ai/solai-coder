@@ -6,7 +6,7 @@ pub use crate::auth::RefreshTokenFailedReason;
 use crate::exec_output::ExecToolCallOutput;
 use crate::network_policy::NetworkPolicyDecisionPayload;
 use crate::protocol::ErrorEvent;
-use crate::protocol::MidnightCoderErrorInfo;
+use crate::protocol::SolaiAgentErrorInfo;
 use crate::protocol::RateLimitReachedType;
 use crate::protocol::RateLimitSnapshot;
 use crate::protocol::TruncationPolicy;
@@ -24,7 +24,7 @@ use std::time::Duration;
 use thiserror::Error;
 use tokio::task::JoinError;
 
-pub type Result<T> = std::result::Result<T, MidnightCoderErr>;
+pub type Result<T> = std::result::Result<T, SolaiAgentErr>;
 
 /// Limit UI error messages to a reasonable size while keeping useful context.
 const ERROR_MESSAGE_UI_MAX_BYTES: usize = 2 * 1024;
@@ -65,7 +65,7 @@ pub enum SandboxErr {
 }
 
 #[derive(Error, Debug)]
-pub enum MidnightCoderErr {
+pub enum SolaiAgentErr {
     #[error("turn aborted. Something went wrong? Hit `/feedback` to report the issue.")]
     TurnAborted,
 
@@ -81,7 +81,7 @@ pub enum MidnightCoderErr {
     #[error("stream disconnected before completion: {0}")]
     Stream(String, Option<Duration>),
     #[error(
-        "MidnightCoder ran out of room in the model's context window. Start a new thread or clear earlier history before retrying."
+        "SolaiAgent ran out of room in the model's context window. Start a new thread or clear earlier history before retrying."
     )]
     ContextWindowExceeded,
     #[error("no thread with id: {0}")]
@@ -96,7 +96,7 @@ pub enum MidnightCoderErr {
     #[error("request timed out")]
     RequestTimeout,
     /// Returned by run_command_stream when the child could not be spawned (its stdout/stderr pipes
-    /// could not be captured). Analogous to the previous `MidnightCoderError::Spawn` variant.
+    /// could not be captured). Analogous to the previous `SolaiAgentError::Spawn` variant.
     #[error("spawn failed: child stdout/stderr not captured")]
     Spawn,
     /// Returned by run_command_stream when the user pressed Ctrl-C (SIGINT). Session uses this to
@@ -125,7 +125,7 @@ pub enum MidnightCoderErr {
     #[error("Quota exceeded. Check your plan and billing details.")]
     QuotaExceeded,
     #[error(
-        "To use MidnightCoder with your ChatGPT plan, upgrade to Plus: https://chatgpt.com/explore/plus."
+        "To use SolaiAgent with your ChatGPT plan, upgrade to Plus: https://chatgpt.com/explore/plus."
     )]
     UsageNotIncluded,
     #[error("We're currently experiencing high demand, which may cause temporary errors.")]
@@ -166,54 +166,54 @@ pub enum MidnightCoderErr {
     EnvVar(EnvVarError),
 }
 
-impl From<CancelErr> for MidnightCoderErr {
+impl From<CancelErr> for SolaiAgentErr {
     fn from(_: CancelErr) -> Self {
-        MidnightCoderErr::TurnAborted
+        SolaiAgentErr::TurnAborted
     }
 }
 
-impl MidnightCoderErr {
+impl SolaiAgentErr {
     pub fn is_retryable(&self) -> bool {
         match self {
-            MidnightCoderErr::TurnAborted
-            | MidnightCoderErr::SessionBudgetExceeded
-            | MidnightCoderErr::Interrupted
-            | MidnightCoderErr::EnvVar(_)
-            | MidnightCoderErr::Fatal(_)
-            | MidnightCoderErr::UsageNotIncluded
-            | MidnightCoderErr::QuotaExceeded
-            | MidnightCoderErr::InvalidImageRequest()
-            | MidnightCoderErr::InvalidRequest(_)
-            | MidnightCoderErr::RefreshTokenFailed(_)
-            | MidnightCoderErr::UnsupportedOperation(_)
-            | MidnightCoderErr::Sandbox(_)
-            | MidnightCoderErr::LandlockSandboxExecutableNotProvided
-            | MidnightCoderErr::RetryLimit(_)
-            | MidnightCoderErr::ContextWindowExceeded
-            | MidnightCoderErr::ThreadNotFound(_)
-            | MidnightCoderErr::AgentLimitReached { .. }
-            | MidnightCoderErr::Spawn
-            | MidnightCoderErr::SessionConfiguredNotFirstEvent
-            | MidnightCoderErr::UsageLimitReached(_)
-            | MidnightCoderErr::ServerOverloaded
-            | MidnightCoderErr::CyberPolicy { .. } => false,
-            MidnightCoderErr::Stream(..)
-            | MidnightCoderErr::Timeout
-            | MidnightCoderErr::RequestTimeout
-            | MidnightCoderErr::UnexpectedStatus(_)
-            | MidnightCoderErr::ResponseStreamFailed(_)
-            | MidnightCoderErr::ConnectionFailed(_)
-            | MidnightCoderErr::InternalServerError
-            | MidnightCoderErr::InternalAgentDied
-            | MidnightCoderErr::Io(_)
-            | MidnightCoderErr::Json(_)
-            | MidnightCoderErr::TokioJoin(_) => true,
+            SolaiAgentErr::TurnAborted
+            | SolaiAgentErr::SessionBudgetExceeded
+            | SolaiAgentErr::Interrupted
+            | SolaiAgentErr::EnvVar(_)
+            | SolaiAgentErr::Fatal(_)
+            | SolaiAgentErr::UsageNotIncluded
+            | SolaiAgentErr::QuotaExceeded
+            | SolaiAgentErr::InvalidImageRequest()
+            | SolaiAgentErr::InvalidRequest(_)
+            | SolaiAgentErr::RefreshTokenFailed(_)
+            | SolaiAgentErr::UnsupportedOperation(_)
+            | SolaiAgentErr::Sandbox(_)
+            | SolaiAgentErr::LandlockSandboxExecutableNotProvided
+            | SolaiAgentErr::RetryLimit(_)
+            | SolaiAgentErr::ContextWindowExceeded
+            | SolaiAgentErr::ThreadNotFound(_)
+            | SolaiAgentErr::AgentLimitReached { .. }
+            | SolaiAgentErr::Spawn
+            | SolaiAgentErr::SessionConfiguredNotFirstEvent
+            | SolaiAgentErr::UsageLimitReached(_)
+            | SolaiAgentErr::ServerOverloaded
+            | SolaiAgentErr::CyberPolicy { .. } => false,
+            SolaiAgentErr::Stream(..)
+            | SolaiAgentErr::Timeout
+            | SolaiAgentErr::RequestTimeout
+            | SolaiAgentErr::UnexpectedStatus(_)
+            | SolaiAgentErr::ResponseStreamFailed(_)
+            | SolaiAgentErr::ConnectionFailed(_)
+            | SolaiAgentErr::InternalServerError
+            | SolaiAgentErr::InternalAgentDied
+            | SolaiAgentErr::Io(_)
+            | SolaiAgentErr::Json(_)
+            | SolaiAgentErr::TokioJoin(_) => true,
             #[cfg(target_os = "linux")]
-            MidnightCoderErr::LandlockRuleset(_) | MidnightCoderErr::LandlockPathFd(_) => false,
+            SolaiAgentErr::LandlockRuleset(_) | SolaiAgentErr::LandlockPathFd(_) => false,
         }
     }
 
-    /// Minimal shim so that existing `e.downcast_ref::<MidnightCoderErr>()` checks continue to compile
+    /// Minimal shim so that existing `e.downcast_ref::<SolaiAgentErr>()` checks continue to compile
     /// after replacing `anyhow::Error` in the return signature. This mirrors the behavior of
     /// `anyhow::Error::downcast_ref` but works directly on our concrete enum.
     pub fn downcast_ref<T: std::any::Any>(&self) -> Option<&T> {
@@ -221,41 +221,41 @@ impl MidnightCoderErr {
     }
 
     /// Translate core error to client-facing protocol error.
-    pub fn to_codex_protocol_error(&self) -> MidnightCoderErrorInfo {
+    pub fn to_codex_protocol_error(&self) -> SolaiAgentErrorInfo {
         match self {
-            MidnightCoderErr::ContextWindowExceeded => {
-                MidnightCoderErrorInfo::ContextWindowExceeded
+            SolaiAgentErr::ContextWindowExceeded => {
+                SolaiAgentErrorInfo::ContextWindowExceeded
             }
-            MidnightCoderErr::SessionBudgetExceeded => {
-                MidnightCoderErrorInfo::SessionBudgetExceeded
+            SolaiAgentErr::SessionBudgetExceeded => {
+                SolaiAgentErrorInfo::SessionBudgetExceeded
             }
-            MidnightCoderErr::UsageLimitReached(_)
-            | MidnightCoderErr::QuotaExceeded
-            | MidnightCoderErr::UsageNotIncluded => MidnightCoderErrorInfo::UsageLimitExceeded,
-            MidnightCoderErr::ServerOverloaded => MidnightCoderErrorInfo::ServerOverloaded,
-            MidnightCoderErr::CyberPolicy { .. } => MidnightCoderErrorInfo::CyberPolicy,
-            MidnightCoderErr::RetryLimit(_) => {
-                MidnightCoderErrorInfo::ResponseTooManyFailedAttempts {
+            SolaiAgentErr::UsageLimitReached(_)
+            | SolaiAgentErr::QuotaExceeded
+            | SolaiAgentErr::UsageNotIncluded => SolaiAgentErrorInfo::UsageLimitExceeded,
+            SolaiAgentErr::ServerOverloaded => SolaiAgentErrorInfo::ServerOverloaded,
+            SolaiAgentErr::CyberPolicy { .. } => SolaiAgentErrorInfo::CyberPolicy,
+            SolaiAgentErr::RetryLimit(_) => {
+                SolaiAgentErrorInfo::ResponseTooManyFailedAttempts {
                     http_status_code: self.http_status_code_value(),
                 }
             }
-            MidnightCoderErr::ConnectionFailed(_) => MidnightCoderErrorInfo::HttpConnectionFailed {
+            SolaiAgentErr::ConnectionFailed(_) => SolaiAgentErrorInfo::HttpConnectionFailed {
                 http_status_code: self.http_status_code_value(),
             },
-            MidnightCoderErr::ResponseStreamFailed(_) => {
-                MidnightCoderErrorInfo::ResponseStreamConnectionFailed {
+            SolaiAgentErr::ResponseStreamFailed(_) => {
+                SolaiAgentErrorInfo::ResponseStreamConnectionFailed {
                     http_status_code: self.http_status_code_value(),
                 }
             }
-            MidnightCoderErr::RefreshTokenFailed(_) => MidnightCoderErrorInfo::Unauthorized,
-            MidnightCoderErr::SessionConfiguredNotFirstEvent
-            | MidnightCoderErr::InternalServerError
-            | MidnightCoderErr::InternalAgentDied => MidnightCoderErrorInfo::InternalServerError,
-            MidnightCoderErr::UnsupportedOperation(_)
-            | MidnightCoderErr::ThreadNotFound(_)
-            | MidnightCoderErr::AgentLimitReached { .. } => MidnightCoderErrorInfo::BadRequest,
-            MidnightCoderErr::Sandbox(_) => MidnightCoderErrorInfo::SandboxError,
-            _ => MidnightCoderErrorInfo::Other,
+            SolaiAgentErr::RefreshTokenFailed(_) => SolaiAgentErrorInfo::Unauthorized,
+            SolaiAgentErr::SessionConfiguredNotFirstEvent
+            | SolaiAgentErr::InternalServerError
+            | SolaiAgentErr::InternalAgentDied => SolaiAgentErrorInfo::InternalServerError,
+            SolaiAgentErr::UnsupportedOperation(_)
+            | SolaiAgentErr::ThreadNotFound(_)
+            | SolaiAgentErr::AgentLimitReached { .. } => SolaiAgentErrorInfo::BadRequest,
+            SolaiAgentErr::Sandbox(_) => SolaiAgentErrorInfo::SandboxError,
+            _ => SolaiAgentErrorInfo::Other,
         }
     }
 
@@ -273,10 +273,10 @@ impl MidnightCoderErr {
 
     pub fn http_status_code_value(&self) -> Option<u16> {
         let http_status_code = match self {
-            MidnightCoderErr::RetryLimit(err) => Some(err.status),
-            MidnightCoderErr::UnexpectedStatus(err) => Some(err.status),
-            MidnightCoderErr::ConnectionFailed(err) => err.source.status(),
-            MidnightCoderErr::ResponseStreamFailed(err) => err.source.status(),
+            SolaiAgentErr::RetryLimit(err) => Some(err.status),
+            SolaiAgentErr::UnexpectedStatus(err) => Some(err.status),
+            SolaiAgentErr::ConnectionFailed(err) => err.source.status(),
+            SolaiAgentErr::ResponseStreamFailed(err) => err.source.status(),
             _ => None,
         };
         http_status_code.as_ref().map(StatusCode::as_u16)
@@ -512,7 +512,7 @@ impl std::fmt::Display for UsageLimitReachedError {
             }
             Some(PlanType::Known(KnownPlan::Free)) | Some(PlanType::Known(KnownPlan::Go)) => {
                 format!(
-                    "You've hit your usage limit. Upgrade to Plus to continue using MidnightCoder (https://chatgpt.com/explore/plus),{}",
+                    "You've hit your usage limit. Upgrade to Plus to continue using SolaiAgent (https://chatgpt.com/explore/plus),{}",
                     retry_suffix_after_or(self.resets_at.as_ref())
                 )
             }
@@ -613,9 +613,9 @@ impl std::fmt::Display for EnvVarError {
     }
 }
 
-pub fn get_error_message_ui(e: &MidnightCoderErr) -> String {
+pub fn get_error_message_ui(e: &SolaiAgentErr) -> String {
     let message = match e {
-        MidnightCoderErr::Sandbox(SandboxErr::Denied { output, .. }) => {
+        SolaiAgentErr::Sandbox(SandboxErr::Denied { output, .. }) => {
             let aggregated = output.aggregated_output.text.trim();
             if !aggregated.is_empty() {
                 output.aggregated_output.text.clone()
@@ -634,7 +634,7 @@ pub fn get_error_message_ui(e: &MidnightCoderErr) -> String {
             }
         }
         // Timeouts are not sandbox errors from a UX perspective; present them plainly.
-        MidnightCoderErr::Sandbox(SandboxErr::Timeout { output }) => {
+        SolaiAgentErr::Sandbox(SandboxErr::Timeout { output }) => {
             format!(
                 "error: command timed out after {} ms",
                 output.duration.as_millis()

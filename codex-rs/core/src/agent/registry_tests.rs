@@ -91,8 +91,8 @@ fn commit_holds_slot_until_release() {
         Ok(_) => panic!("limit should be enforced"),
         Err(err) => err,
     };
-    let MidnightCoderErr::AgentLimitReached { max_threads } = err else {
-        panic!("expected MidnightCoderErr::AgentLimitReached");
+    let SolaiAgentErr::AgentLimitReached { max_threads } = err else {
+        panic!("expected SolaiAgentErr::AgentLimitReached");
     };
     assert_eq!(max_threads, 1);
 
@@ -116,8 +116,8 @@ fn release_ignores_unknown_thread_id() {
         Ok(_) => panic!("limit should still be enforced"),
         Err(err) => err,
     };
-    let MidnightCoderErr::AgentLimitReached { max_threads } = err else {
-        panic!("expected MidnightCoderErr::AgentLimitReached");
+    let SolaiAgentErr::AgentLimitReached { max_threads } = err else {
+        panic!("expected SolaiAgentErr::AgentLimitReached");
     };
     assert_eq!(max_threads, 1);
 
@@ -147,8 +147,8 @@ fn release_is_idempotent_for_registered_threads() {
         Ok(_) => panic!("limit should still be enforced"),
         Err(err) => err,
     };
-    let MidnightCoderErr::AgentLimitReached { max_threads } = err else {
-        panic!("expected MidnightCoderErr::AgentLimitReached");
+    let SolaiAgentErr::AgentLimitReached { max_threads } = err else {
+        panic!("expected SolaiAgentErr::AgentLimitReached");
     };
     assert_eq!(max_threads, 1);
 

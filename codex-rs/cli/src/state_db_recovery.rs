@@ -34,9 +34,9 @@ fn sqlite_home_is_blocking_file(startup_error: &LocalStateDbStartupError) -> boo
 }
 
 pub(crate) fn print_auto_backup_start(startup_error: &LocalStateDbStartupError) {
-    eprintln!("MidnightCoder couldn't start because its local database appears to be damaged.");
+    eprintln!("SolaiAgent couldn't start because its local database appears to be damaged.");
     eprintln!(
-        "Moving the damaged local database aside so MidnightCoder can rebuild it from saved data."
+        "Moving the damaged local database aside so SolaiAgent can rebuild it from saved data."
     );
     print_technical_details(startup_error);
 }
@@ -51,9 +51,9 @@ pub(crate) fn confirm_fresh_start_rebuild(
     startup_error: &LocalStateDbStartupError,
     backups: &[RuntimeDbBackup],
 ) -> std::io::Result<()> {
-    eprintln!("MidnightCoder rebuilt its local database.");
+    eprintln!("SolaiAgent rebuilt its local database.");
     eprintln!(
-        "MidnightCoder detected a damaged local database, moved it into a backup folder, and will continue startup with a fresh database."
+        "SolaiAgent detected a damaged local database, moved it into a backup folder, and will continue startup with a fresh database."
     );
     eprintln!("Database path: {}", startup_error.database_path().display());
     if let Some(backup_folder) = backup_folder(backups) {
@@ -73,7 +73,7 @@ pub(crate) fn confirm_fresh_start_rebuild(
 }
 
 pub(crate) fn print_diagnostic_guidance(startup_error: &LocalStateDbStartupError) {
-    eprintln!("MidnightCoder couldn't start because its local database appears to be damaged.");
+    eprintln!("SolaiAgent couldn't start because its local database appears to be damaged.");
     eprintln!("Run `codex doctor` to check your setup and get next-step guidance.");
     eprintln!("If this keeps happening, share the technical details below when asking for help.");
     print_technical_details(startup_error);
@@ -81,9 +81,9 @@ pub(crate) fn print_diagnostic_guidance(startup_error: &LocalStateDbStartupError
 
 pub(crate) fn print_locked_guidance(startup_error: &LocalStateDbStartupError) {
     eprintln!(
-        "MidnightCoder couldn't start because another MidnightCoder process is using its local data."
+        "SolaiAgent couldn't start because another SolaiAgent process is using its local data."
     );
-    eprintln!("Quit any other copies of MidnightCoder that may still be running, then try again.");
+    eprintln!("Quit any other copies of SolaiAgent that may still be running, then try again.");
     print_technical_details(startup_error);
 }
 

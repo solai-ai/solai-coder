@@ -5,7 +5,7 @@ use crate::metrics::MEMORY_STARTUP;
 use crate::phase1;
 use crate::phase2;
 use crate::runtime::MemoryStartupContext;
-use codex_core::MidnightCoderThread;
+use codex_core::SolaiAgentThread;
 use codex_core::ThreadManager;
 use codex_core::config::Config;
 use codex_features::Feature;
@@ -23,7 +23,7 @@ pub fn start_memories_startup_task(
     thread_manager: Arc<ThreadManager>,
     auth_manager: Arc<AuthManager>,
     thread_id: ThreadId,
-    thread: Arc<MidnightCoderThread>,
+    thread: Arc<SolaiAgentThread>,
     config: Arc<Config>,
     source: &SessionSource,
 ) {

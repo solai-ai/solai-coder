@@ -10,7 +10,7 @@ use codex_protocol::config_types::WebSearchUserLocationType;
 use serde::Serialize;
 use serde_json::Value;
 
-/// When serialized as JSON, this produces a valid "Tool" in the MidnightCoder
+/// When serialized as JSON, this produces a valid "Tool" in the SolaiAgent
 /// Responses API.
 #[derive(Debug, Clone, Serialize, PartialEq)]
 #[serde(tag = "type")]

@@ -1829,7 +1829,7 @@ mod tests {
     use codex_core::test_support::auth_manager_from_auth;
     use codex_login::AuthDotJson;
     use codex_login::AuthKeyringBackendKind;
-    use codex_login::MidnightCoderAuth;
+    use codex_login::SolaiAgentAuth;
     use codex_login::save_auth;
     use codex_login::token_data::TokenData;
     use codex_login::token_data::parse_chatgpt_jwt_claims;
@@ -1999,7 +1999,7 @@ mod tests {
     }
 
     pub(super) fn remote_control_auth_manager() -> Arc<AuthManager> {
-        auth_manager_from_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        auth_manager_from_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
     }
 
     pub(super) fn remote_control_url_for_listener(listener: &TcpListener) -> String {

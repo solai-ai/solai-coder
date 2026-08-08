@@ -1,14 +1,14 @@
 #![allow(clippy::unwrap_used)]
 use codex_api::WS_REQUEST_HEADER_TRACEPARENT_CLIENT_METADATA_KEY;
 use codex_api::WS_REQUEST_HEADER_TRACESTATE_CLIENT_METADATA_KEY;
-use codex_core::MidnightCoderResponsesMetadata;
+use codex_core::SolaiAgentResponsesMetadata;
 use codex_core::ModelClient;
 use codex_core::ModelClientSession;
 use codex_core::Prompt;
 use codex_core::ResponseEvent;
 use codex_core::X_RESPONSESAPI_INCLUDE_TIMING_METRICS_HEADER;
 use codex_features::Feature;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_login::auth::AgentIdentityAuthPolicy;
 use codex_model_provider_info::ModelProviderInfo;
 use codex_model_provider_info::WireApi;
@@ -37,7 +37,7 @@ use codex_rollout_trace::InferenceTraceContext;
 use codex_rollout_trace::RawTraceEventPayload;
 use codex_rollout_trace::TraceWriter;
 use codex_rollout_trace::replay_bundle;
-use core_test_support::TestMidnightCoderResponsesRequestKind;
+use core_test_support::TestSolaiAgentResponsesRequestKind;
 use core_test_support::load_default_config_for_test;
 use core_test_support::responses::WebSocketConnectionConfig;
 use core_test_support::responses::WebSocketTestServer;
@@ -62,7 +62,7 @@ use tracing::Instrument;
 use tracing_test::traced_test;
 
 const MODEL: &str = "gpt-5.3-codex";
-const OPENAI_BETA_HEADER: &str = "MidnightCoder-Beta";
+const OPENAI_BETA_HEADER: &str = "SolaiAgent-Beta";
 const USER_AGENT_HEADER: &str = "user-agent";
 const WS_V2_BETA_HEADER_VALUE: &str = "responses_websockets=2026-02-06";
 const X_CLIENT_REQUEST_ID_HEADER: &str = "x-client-request-id";
@@ -113,8 +113,8 @@ struct WebsocketTestHarness {
 fn responses_metadata(
     harness: &WebsocketTestHarness,
     turn_id: Option<&str>,
-    request_kind: TestMidnightCoderResponsesRequestKind,
-) -> MidnightCoderResponsesMetadata {
+    request_kind: TestSolaiAgentResponsesRequestKind,
+) -> SolaiAgentResponsesMetadata {
     test_responses_metadata(
         TEST_INSTALLATION_ID,
         &harness.session_id.to_string(),
@@ -130,30 +130,30 @@ fn responses_metadata(
 fn turn_metadata(
     harness: &WebsocketTestHarness,
     turn_id: Option<&str>,
-) -> MidnightCoderResponsesMetadata {
+) -> SolaiAgentResponsesMetadata {
     responses_metadata(
         harness,
         turn_id,
-        TestMidnightCoderResponsesRequestKind::Turn,
+        TestSolaiAgentResponsesRequestKind::Turn,
     )
 }
 
 fn prewarm_metadata(
     harness: &WebsocketTestHarness,
     turn_id: Option<&str>,
-) -> MidnightCoderResponsesMetadata {
+) -> SolaiAgentResponsesMetadata {
     responses_metadata(
         harness,
         turn_id,
-        TestMidnightCoderResponsesRequestKind::Prewarm,
+        TestSolaiAgentResponsesRequestKind::Prewarm,
     )
 }
 
-fn websocket_connection_metadata(harness: &WebsocketTestHarness) -> MidnightCoderResponsesMetadata {
+fn websocket_connection_metadata(harness: &WebsocketTestHarness) -> SolaiAgentResponsesMetadata {
     responses_metadata(
         harness,
         /*turn_id*/ None,
-        TestMidnightCoderResponsesRequestKind::WebsocketConnection,
+        TestSolaiAgentResponsesRequestKind::WebsocketConnection,
     )
 }
 
@@ -540,7 +540,7 @@ async fn responses_websocket_request_prewarm_traces_logical_request() {
         })
         .expect("thread started");
     writer
-        .append(RawTraceEventPayload::MidnightCoderTurnStarted {
+        .append(RawTraceEventPayload::SolaiAgentTurnStarted {
             codex_turn_id: "turn-1".to_string(),
             thread_id: harness.thread_id.to_string(),
         })
@@ -859,7 +859,7 @@ async fn responses_websocket_prewarm_uses_v2_when_provider_supports_websockets()
     let handshake = server.single_handshake();
     let openai_beta_header = handshake
         .header(OPENAI_BETA_HEADER)
-        .expect("missing MidnightCoder-Beta header");
+        .expect("missing SolaiAgent-Beta header");
     assert!(
         openai_beta_header
             .split(',')
@@ -917,7 +917,7 @@ async fn responses_websocket_preconnect_runs_when_only_v2_feature_enabled() {
     let handshake = server.single_handshake();
     let openai_beta_header = handshake
         .header(OPENAI_BETA_HEADER)
-        .expect("missing MidnightCoder-Beta header");
+        .expect("missing SolaiAgent-Beta header");
     assert!(
         openai_beta_header
             .split(',')
@@ -966,7 +966,7 @@ async fn responses_websocket_v2_requests_use_v2_when_provider_supports_websocket
     let handshake = server.single_handshake();
     let openai_beta_header = handshake
         .header(OPENAI_BETA_HEADER)
-        .expect("missing MidnightCoder-Beta header");
+        .expect("missing SolaiAgent-Beta header");
     assert!(
         openai_beta_header
             .split(',')
@@ -1059,7 +1059,7 @@ async fn responses_websocket_v2_wins_when_both_features_enabled() {
     let handshake = server.single_handshake();
     let openai_beta_header = handshake
         .header(OPENAI_BETA_HEADER)
-        .expect("missing MidnightCoder-Beta header");
+        .expect("missing SolaiAgent-Beta header");
     assert!(
         openai_beta_header
             .split(',')
@@ -2067,7 +2067,7 @@ async fn responses_websocket_v2_sets_openai_beta_header() {
     let handshake = server.single_handshake();
     let openai_beta_header = handshake
         .header(OPENAI_BETA_HEADER)
-        .expect("missing MidnightCoder-Beta header");
+        .expect("missing SolaiAgent-Beta header");
     assert!(
         openai_beta_header
             .split(',')
@@ -2184,7 +2184,7 @@ async fn websocket_harness_with_provider_options(
     let thread_id = ThreadId::new();
     let session_id = SessionId::new();
     let auth_manager = codex_core::test_support::auth_manager_from_auth(
-        MidnightCoderAuth::from_api_key("Test API Key"),
+        SolaiAgentAuth::from_api_key("Test API Key"),
     );
     let exporter = InMemoryMetricExporter::default();
     let metrics = MetricsClient::new(
@@ -2304,7 +2304,7 @@ async fn stream_until_complete_with_metadata(
     harness: &WebsocketTestHarness,
     prompt: &Prompt,
     service_tier: Option<ServiceTier>,
-    responses_metadata: &MidnightCoderResponsesMetadata,
+    responses_metadata: &SolaiAgentResponsesMetadata,
 ) {
     let mut stream = client_session
         .stream(

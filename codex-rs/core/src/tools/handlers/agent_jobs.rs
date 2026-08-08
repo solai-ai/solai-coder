@@ -7,7 +7,7 @@ use crate::session::turn_context::TurnContext;
 use crate::tools::handlers::multi_agents::build_agent_spawn_config;
 use crate::tools::handlers::parse_arguments;
 use codex_protocol::ThreadId;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::protocol::AgentStatus;
 use codex_protocol::protocol::MultiAgentVersion;
 use codex_protocol::protocol::SessionSource;
@@ -216,7 +216,7 @@ async fn run_agent_job_loop(
                     .await
                 {
                     Ok(spawned_agent) => spawned_agent.thread_id,
-                    Err(MidnightCoderErr::AgentLimitReached { .. }) => {
+                    Err(SolaiAgentErr::AgentLimitReached { .. }) => {
                         db.mark_agent_job_item_pending(
                             job_id.as_str(),
                             item.item_id.as_str(),

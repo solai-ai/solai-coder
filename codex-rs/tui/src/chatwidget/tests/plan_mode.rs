@@ -1161,7 +1161,7 @@ async fn submit_user_message_queues_while_compaction_turn_is_running() {
     handle_error(
         &mut chat,
         "cannot steer a compact turn",
-        Some(MidnightCoderErrorInfo::ActiveTurnNotSteerable {
+        Some(SolaiAgentErrorInfo::ActiveTurnNotSteerable {
             turn_kind: NonSteerableTurnKind::Compact,
         }),
     );
@@ -1496,7 +1496,7 @@ async fn make_startup_chat_with_cli_overrides(
         has_chatgpt_account: false,
         has_codex_backend_auth: false,
         model_catalog: test_model_catalog(&cfg),
-        feedback: codex_feedback::MidnightCoderFeedback::new(),
+        feedback: codex_feedback::SolaiAgentFeedback::new(),
         is_first_run: true,
         status_account_display: None,
         runtime_model_provider_base_url: None,

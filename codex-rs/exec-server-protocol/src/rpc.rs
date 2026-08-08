@@ -1,6 +1,6 @@
 //! JSON-RPC wire envelopes used by exec-server.
 //!
-//! Exec-server uses the MidnightCoder JSON-RPC dialect, which omits the
+//! Exec-server uses the SolaiAgent JSON-RPC dialect, which omits the
 //! `"jsonrpc": "2.0"` field on the wire.
 
 use std::fmt;

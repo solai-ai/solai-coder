@@ -54,7 +54,7 @@ use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
 use core_test_support::skip_if_no_remote_env;
 use core_test_support::skip_if_target_windows;
-use core_test_support::test_codex::TestMidnightCoder;
+use core_test_support::test_codex::TestSolaiAgent;
 use core_test_support::test_codex::local;
 use core_test_support::test_codex::test_codex;
 use core_test_support::test_codex::test_env;
@@ -81,7 +81,7 @@ use tokio::time::timeout;
 use tokio_tungstenite::WebSocketStream;
 use tokio_tungstenite::accept_async;
 use tokio_tungstenite::tungstenite::Message;
-async fn unified_exec_test(server: &wiremock::MockServer) -> Result<TestMidnightCoder> {
+async fn unified_exec_test(server: &wiremock::MockServer) -> Result<TestSolaiAgent> {
     let mut builder = test_codex().with_config(|config| {
         config.use_experimental_unified_exec_tool = true;
         let result = config.features.enable(Feature::UnifiedExec);
@@ -94,7 +94,7 @@ async fn unified_exec_test(server: &wiremock::MockServer) -> Result<TestMidnight
 }
 
 async fn submit_turn_with_approval_and_environments(
-    test: &TestMidnightCoder,
+    test: &TestSolaiAgent,
     prompt: &str,
     environments: Vec<TurnEnvironmentSelection>,
     approval_policy: AskForApproval,
@@ -134,7 +134,7 @@ async fn submit_turn_with_approval_and_environments(
 }
 
 async fn expect_patch_approval(
-    test: &TestMidnightCoder,
+    test: &TestSolaiAgent,
     expected_call_id: &str,
 ) -> ApplyPatchApprovalRequestEvent {
     let event = wait_for_event(&test.codex, |event| {
@@ -155,7 +155,7 @@ async fn expect_patch_approval(
     }
 }
 
-async fn wait_for_completion_without_patch_approval(test: &TestMidnightCoder) {
+async fn wait_for_completion_without_patch_approval(test: &TestSolaiAgent) {
     let event = wait_for_event(&test.codex, |event| {
         matches!(
             event,
@@ -878,7 +878,7 @@ async fn deferred_executor_compaction_preserves_then_updates_environment_once() 
                     .enable(Feature::DefaultModeRequestUserInput)
                     .is_ok()
             );
-            config.model_provider.name = "MidnightCoder (test)".to_string();
+            config.model_provider.name = "SolaiAgent (test)".to_string();
             config.compact_prompt = Some(SUMMARIZATION_PROMPT.to_string());
             config.model_context_window = Some(100);
             config.model_auto_compact_token_limit = Some(90);
@@ -1066,7 +1066,7 @@ fn remote_exec(script: &str) -> Result<()> {
 }
 
 async fn exec_command_routing_output(
-    test: &TestMidnightCoder,
+    test: &TestSolaiAgent,
     server: &wiremock::MockServer,
     call_id: &str,
     arguments: Value,

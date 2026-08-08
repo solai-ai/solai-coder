@@ -1,7 +1,7 @@
 import path from "node:path";
 
-import { MidnightCoder } from "../src/codex";
-import type { MidnightCoderConfigObject } from "../src/codexOptions";
+import { SolaiAgent } from "../src/codex";
+import type { SolaiAgentConfigObject } from "../src/codexOptions";
 
 export const codexExecPath =
   process.env.CODEX_EXEC_PATH ??
@@ -10,14 +10,14 @@ export const codexExecPath =
 type CreateTestClientOptions = {
   apiKey?: string;
   baseUrl?: string;
-  config?: MidnightCoderConfigObject;
+  config?: SolaiAgentConfigObject;
   env?: Record<string, string>;
   inheritEnv?: boolean;
 };
 
 export type TestClient = {
   cleanup: () => void;
-  client: MidnightCoder;
+  client: SolaiAgent;
 };
 
 export function createMockClient(url: string): TestClient {
@@ -42,7 +42,7 @@ export function createTestClient(options: CreateTestClientOptions = {}): TestCli
 
   return {
     cleanup: () => {},
-    client: new MidnightCoder({
+    client: new SolaiAgent({
       codexPathOverride: codexExecPath,
       baseUrl: options.baseUrl,
       apiKey: options.apiKey,
@@ -54,9 +54,9 @@ export function createTestClient(options: CreateTestClientOptions = {}): TestCli
 
 function mergeTestConfig(
   baseUrl: string | undefined,
-  config: MidnightCoderConfigObject | undefined,
-): MidnightCoderConfigObject | undefined {
-  const mergedConfig: MidnightCoderConfigObject | undefined =
+  config: SolaiAgentConfigObject | undefined,
+): SolaiAgentConfigObject | undefined {
+  const mergedConfig: SolaiAgentConfigObject | undefined =
     !baseUrl || hasExplicitProviderConfig(config)
       ? config
       : {
@@ -86,7 +86,7 @@ function mergeTestConfig(
   };
 }
 
-function hasExplicitProviderConfig(config: MidnightCoderConfigObject | undefined): boolean {
+function hasExplicitProviderConfig(config: SolaiAgentConfigObject | undefined): boolean {
   return config?.model_provider !== undefined || config?.model_providers !== undefined;
 }
 

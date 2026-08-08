@@ -290,7 +290,7 @@ async fn responses_mode_stream_cli_supports_openai_base_url_config_override() {
 
 /// Verify that passing `-c model_instructions_file=...` to the CLI
 /// overrides the built-in base instructions by inspecting the request body
-/// received by a mock MidnightCoder Responses endpoint.
+/// received by a mock SolaiAgent Responses endpoint.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn exec_cli_applies_model_instructions_file() {
     skip_if_no_network!();
@@ -313,7 +313,7 @@ async fn exec_cli_applies_model_instructions_file() {
     let custom_path_str = custom_path.to_string_lossy().replace('\\', "/");
 
     // Build a provider override that points at the mock server and instructs
-    // MidnightCoder to use the Responses API with the dummy env var.
+    // SolaiAgent to use the Responses API with the dummy env var.
     let provider_override = format!(
         "model_providers.mock={{ name = \"mock\", base_url = \"{}/v1\", env_key = \"PATH\", wire_api = \"responses\" }}",
         server.uri()

@@ -32,7 +32,7 @@ use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestMidnightCoder;
+use core_test_support::test_codex::TestSolaiAgent;
 use core_test_support::test_codex::local_selections;
 use core_test_support::test_codex::turn_permission_fields;
 use core_test_support::wait_for_event;
@@ -85,7 +85,7 @@ default_tools_approval_mode = "{approval_mode}"
 }
 
 async fn submit_user_turn(
-    test: &TestMidnightCoder,
+    test: &TestSolaiAgent,
     text: &str,
     approval_policy: AskForApproval,
     collaboration_mode: Option<CollaborationMode>,

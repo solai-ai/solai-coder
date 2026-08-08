@@ -1,6 +1,6 @@
-# Midnight Coder Python SDK (Beta) - API Reference
+# SOLAI Agent Python SDK (Beta) - API Reference
 
-Public surface of `openai_codex` for Midnight Coder workflows.
+Public surface of `openai_codex` for SOLAI Agent workflows.
 
 This SDK is in beta. Public APIs may change before `1.0`. Turn streams are routed by turn ID so one client can consume multiple active turns concurrently.
 Thread starts default to `ApprovalMode.auto_review`; turn starts accept an optional `approval_mode` override.
@@ -9,9 +9,9 @@ Thread starts default to `ApprovalMode.auto_review`; turn starts accept an optio
 
 ```python
 from openai_codex import (
-    Midnight Coder,
-    AsyncMidnightCoder,
-    MidnightCoderConfig,
+    SolaiAgent,
+    AsyncSolaiAgent,
+    SolaiAgentConfig,
     ApprovalMode,
     Sandbox,
     ChatgptLoginHandle,
@@ -48,12 +48,12 @@ from openai_codex.types import (
 
 - Version: `openai_codex.__version__`
 - Requires Python >= 3.10
-- Public Midnight Coder protocol value and event types live in `openai_codex.types`
+- Public SOLAI Agent protocol value and event types live in `openai_codex.types`
 
-## Midnight Coder (sync)
+## SOLAI Agent (sync)
 
 ```python
-Midnight Coder(config: MidnightCoderConfig | None = None)
+SolaiAgent(config: SolaiAgentConfig | None = None)
 ```
 
 Properties/methods:
@@ -76,24 +76,24 @@ Properties/methods:
 Context manager:
 
 ```python
-with Midnight Coder() as codex:
+with SolaiAgent() as codex:
     ...
 ```
 
-## AsyncMidnightCoder (async parity)
+## AsyncSolaiAgent (async parity)
 
 ```python
-AsyncMidnightCoder(config: MidnightCoderConfig | None = None)
+AsyncSolaiAgent(config: SolaiAgentConfig | None = None)
 ```
 
 Preferred usage:
 
 ```python
-async with AsyncMidnightCoder() as codex:
+async with AsyncSolaiAgent() as codex:
     ...
 ```
 
-`AsyncMidnightCoder` initializes lazily. Context entry is the standard path because it
+`AsyncSolaiAgent` initializes lazily. Context entry is the standard path because it
 ensures startup and shutdown are paired explicitly.
 
 Properties/methods:
@@ -116,7 +116,7 @@ Properties/methods:
 Async context manager:
 
 ```python
-async with AsyncMidnightCoder() as codex:
+async with AsyncSolaiAgent() as codex:
     ...
 ```
 
@@ -189,9 +189,9 @@ Use `turn(...)` when you need low-level turn control (`stream()`, `steer()`,
 Use `sandbox=` consistently on thread lifecycle methods and turns:
 
 ```python
-from openai_codex import Midnight Coder, Sandbox
+from openai_codex import SolaiAgent, Sandbox
 
-with Midnight Coder() as codex:
+with SolaiAgent() as codex:
     thread = codex.thread_start(sandbox=Sandbox.workspace_write)
     result = thread.run("Review the diff only.", sandbox=Sandbox.read_only)
 ```
@@ -202,7 +202,7 @@ Presets:
 - `Sandbox.workspace_write`: the normal default for projects with a recorded trust decision; read files and write inside the workspace and configured writable roots.
 - `Sandbox.full_access`: run without filesystem access restrictions.
 
-When `sandbox=` is omitted, Midnight Coder uses its configured default. A sandbox
+When `sandbox=` is omitted, SOLAI Agent uses its configured default. A sandbox
 passed to `run(...)` or `turn(...)` applies to that turn and subsequent turns.
 
 ## TurnHandle / AsyncTurnHandle
@@ -217,7 +217,7 @@ passed to `run(...)` or `turn(...)` applies to that turn and subsequent turns.
 Behavior notes:
 
 - `stream()` and `run()` consume only notifications for their own turn ID
-- one `Midnight Coder` instance can stream multiple active turns concurrently
+- one `SolaiAgent` instance can stream multiple active turns concurrently
 
 ### AsyncTurnHandle
 
@@ -229,7 +229,7 @@ Behavior notes:
 Behavior notes:
 
 - `stream()` and `run()` consume only notifications for their own turn ID
-- one `AsyncMidnightCoder` instance can stream multiple active turns concurrently
+- one `AsyncSolaiAgent` instance can stream multiple active turns concurrently
 
 ## Inputs
 
@@ -253,7 +253,7 @@ Use a plain `str` as shorthand for `TextInput(...)` anywhere a turn input is acc
 
 ## Public Types
 
-The SDK wrappers return and accept public Midnight Coder protocol models wherever possible:
+The SDK wrappers return and accept public SOLAI Agent protocol models wherever possible:
 
 ```python
 from openai_codex.types import (
@@ -287,9 +287,9 @@ from openai_codex import (
 ## Example
 
 ```python
-from openai_codex import Midnight Coder
+from openai_codex import SolaiAgent
 
-with Midnight Coder() as codex:
+with SolaiAgent() as codex:
     thread = codex.thread_start(model="gpt-5.4", config={"model_reasoning_effort": "high"})
     result = thread.run("Say hello in one sentence.")
     print(result.final_response)

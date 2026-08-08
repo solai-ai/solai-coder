@@ -78,7 +78,7 @@ impl SkillsService {
         Self::new_with_restriction_product(
             codex_home,
             bundled_skills_enabled,
-            Some(Product::MidnightCoder),
+            Some(Product::SolaiAgent),
         )
     }
 

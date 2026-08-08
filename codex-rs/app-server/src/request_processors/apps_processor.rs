@@ -68,7 +68,7 @@ impl AppsRequestProcessor {
         let auth = self.auth_manager.auth().await;
         if !config.features.apps_enabled_for_auth(
             auth.as_ref()
-                .is_some_and(MidnightCoderAuth::uses_codex_backend),
+                .is_some_and(SolaiAgentAuth::uses_codex_backend),
         ) {
             return Ok(Some(AppsListResponse {
                 data: Vec::new(),
@@ -316,7 +316,7 @@ impl AppsRequestProcessor {
     async fn load_thread(
         &self,
         thread_id: &str,
-    ) -> Result<(ThreadId, Arc<MidnightCoderThread>), JSONRPCErrorError> {
+    ) -> Result<(ThreadId, Arc<SolaiAgentThread>), JSONRPCErrorError> {
         let thread_id = ThreadId::from_string(thread_id)
             .map_err(|err| invalid_request(format!("invalid thread id: {err}")))?;
 
@@ -342,7 +342,7 @@ impl AppsRequestProcessor {
     async fn workspace_codex_plugins_enabled(
         &self,
         config: &Config,
-        auth: Option<&MidnightCoderAuth>,
+        auth: Option<&SolaiAgentAuth>,
     ) -> bool {
         match workspace_settings::codex_plugins_enabled_for_workspace(
             config,
@@ -354,7 +354,7 @@ impl AppsRequestProcessor {
             Ok(enabled) => enabled,
             Err(err) => {
                 warn!(
-                    "failed to fetch workspace MidnightCoder plugins setting; allowing MidnightCoder plugins: {err:#}"
+                    "failed to fetch workspace SolaiAgent plugins setting; allowing SolaiAgent plugins: {err:#}"
                 );
                 true
             }

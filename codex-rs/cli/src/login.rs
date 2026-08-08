@@ -12,7 +12,7 @@ use codex_core::config::Config;
 use codex_login::AuthKeyringBackendKind;
 use codex_login::AuthRouteConfig;
 use codex_login::CLIENT_ID;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_login::ServerOptions;
 use codex_login::login_with_access_token;
 use codex_login::login_with_api_key;
@@ -425,7 +425,7 @@ pub async fn run_login_status(cli_config_overrides: CliConfigOverrides) -> ! {
     let config = load_config_or_exit(cli_config_overrides).await;
     let auth_route_config = config.auth_route_config();
 
-    match MidnightCoderAuth::from_auth_storage(
+    match SolaiAgentAuth::from_auth_storage(
         &config.codex_home,
         config.cli_auth_credentials_store_mode,
         Some(&config.chatgpt_base_url),
@@ -541,7 +541,7 @@ mod tests {
 
     #[tokio::test]
     async fn clears_existing_auth_before_login() {
-        let codex_home = tempdir().expect("create temporary MidnightCoder home");
+        let codex_home = tempdir().expect("create temporary SolaiAgent home");
         login_with_api_key(
             codex_home.path(),
             "sk-existing",

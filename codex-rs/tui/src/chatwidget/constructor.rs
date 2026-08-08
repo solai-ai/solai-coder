@@ -4,12 +4,12 @@ use super::*;
 
 impl ChatWidget {
     pub(crate) fn new_with_app_event(common: ChatWidgetInit) -> Self {
-        Self::new_with_op_target(common, MidnightCoderOpTarget::AppEvent)
+        Self::new_with_op_target(common, SolaiAgentOpTarget::AppEvent)
     }
 
     pub(super) fn new_with_op_target(
         common: ChatWidgetInit,
-        codex_op_target: MidnightCoderOpTarget,
+        codex_op_target: SolaiAgentOpTarget,
     ) -> Self {
         let ChatWidgetInit {
             config,

@@ -109,9 +109,9 @@ const OTEL_SERVICE_NAME: &str = "codex-app-server-test-client";
 const TRACE_DISABLED_MESSAGE: &str =
     "Not enabled - enable tracing in $CODEX_HOME/config.toml to get a trace URL!";
 
-/// Minimal launcher that initializes the MidnightCoder app-server and logs the handshake.
+/// Minimal launcher that initializes the SolaiAgent app-server and logs the handshake.
 #[derive(Parser)]
-#[command(author = "MidnightCoder", version, about = "Bootstrap MidnightCoder app-server", long_about = None)]
+#[command(author = "SolaiAgent", version, about = "Bootstrap SolaiAgent app-server", long_about = None)]
 struct Cli {
     /// Path to the `codex` CLI binary. When set, requests use stdio by
     /// spawning `codex app-server` as a child process.
@@ -165,9 +165,9 @@ enum CliCommand {
         #[arg(long, default_value_t = false)]
         kill: bool,
     },
-    /// Send a user message through the MidnightCoder app-server.
+    /// Send a user message through the SolaiAgent app-server.
     SendMessage {
-        /// User message to send to MidnightCoder.
+        /// User message to send to SolaiAgent.
         user_message: String,
     },
     /// Send a user message through the app-server V2 thread/turn APIs.
@@ -175,14 +175,14 @@ enum CliCommand {
         /// Opt into experimental app-server methods and fields.
         #[arg(long)]
         experimental_api: bool,
-        /// User message to send to MidnightCoder.
+        /// User message to send to SolaiAgent.
         user_message: String,
     },
     /// Resume a V2 thread by id, then send a user message.
     ResumeMessageV2 {
         /// Existing thread id to resume.
         thread_id: String,
-        /// User message to send to MidnightCoder.
+        /// User message to send to SolaiAgent.
         user_message: String,
     },
     /// Resume a V2 thread and continuously stream notifications/events.
@@ -236,12 +236,12 @@ enum CliCommand {
         #[arg(long, default_value_t = false)]
         device_code: bool,
     },
-    /// Fetch the current account rate limits from the MidnightCoder app-server.
+    /// Fetch the current account rate limits from the SolaiAgent app-server.
     GetAccountRateLimits,
-    /// List the available models from the MidnightCoder app-server.
+    /// List the available models from the SolaiAgent app-server.
     #[command(name = "model-list")]
     ModelList,
-    /// List stored threads from the MidnightCoder app-server.
+    /// List stored threads from the SolaiAgent app-server.
     #[command(name = "thread-list")]
     ThreadList {
         /// Number of threads to return.
@@ -518,7 +518,7 @@ pub async fn run() -> Result<()> {
 }
 
 enum Endpoint {
-    SpawnMidnightCoder(PathBuf),
+    SpawnSolaiAgent(PathBuf),
     ConnectWs(String),
 }
 
@@ -532,7 +532,7 @@ fn resolve_endpoint(codex_bin: Option<PathBuf>, url: Option<String>) -> Result<E
         bail!("--codex-bin and --url are mutually exclusive");
     }
     if let Some(codex_bin) = codex_bin {
-        return Ok(Endpoint::SpawnMidnightCoder(codex_bin));
+        return Ok(Endpoint::SpawnSolaiAgent(codex_bin));
     }
     if let Some(url) = url {
         return Ok(Endpoint::ConnectWs(url));
@@ -747,7 +747,7 @@ pub async fn send_message_v2(
     user_message: String,
     dynamic_tools: &Option<Vec<DynamicToolSpec>>,
 ) -> Result<()> {
-    let endpoint = Endpoint::SpawnMidnightCoder(codex_bin.to_path_buf());
+    let endpoint = Endpoint::SpawnSolaiAgent(codex_bin.to_path_buf());
     send_message_v2_endpoint(
         &endpoint,
         config_overrides,
@@ -1238,7 +1238,7 @@ async fn with_client<T>(
     command_name: &'static str,
     endpoint: &Endpoint,
     config_overrides: &[String],
-    f: impl FnOnce(&mut MidnightCoderClient) -> Result<T>,
+    f: impl FnOnce(&mut SolaiAgentClient) -> Result<T>,
 ) -> Result<T> {
     let tracing = TestClientTracing::initialize(config_overrides).await?;
     let command_span = info_span!(
@@ -1249,7 +1249,7 @@ async fn with_client<T>(
     );
     let trace_summary = command_span.in_scope(|| TraceSummary::capture(tracing.traces_enabled));
     let result = command_span.in_scope(|| {
-        let mut client = MidnightCoderClient::connect(endpoint, config_overrides)?;
+        let mut client = SolaiAgentClient::connect(endpoint, config_overrides)?;
         f(&mut client)
     });
     print_trace_summary(&trace_summary);
@@ -1258,7 +1258,7 @@ async fn with_client<T>(
 
 fn thread_increment_elicitation(url: &str, thread_id: String) -> Result<()> {
     let endpoint = Endpoint::ConnectWs(url.to_string());
-    let mut client = MidnightCoderClient::connect(&endpoint, &[])?;
+    let mut client = SolaiAgentClient::connect(&endpoint, &[])?;
 
     let initialize = client.initialize()?;
     println!("< initialize response: {initialize:?}");
@@ -1272,7 +1272,7 @@ fn thread_increment_elicitation(url: &str, thread_id: String) -> Result<()> {
 
 fn thread_decrement_elicitation(url: &str, thread_id: String) -> Result<()> {
     let endpoint = Endpoint::ConnectWs(url.to_string());
-    let mut client = MidnightCoderClient::connect(&endpoint, &[])?;
+    let mut client = SolaiAgentClient::connect(&endpoint, &[])?;
 
     let initialize = client.initialize()?;
     println!("< initialize response: {initialize:?}");
@@ -1328,7 +1328,7 @@ fn live_elicitation_timeout_pause(
     let app_server_test_client_bin = std::env::current_exe()
         .context("failed to resolve codex-app-server-test-client binary path")?;
     let endpoint = Endpoint::ConnectWs(websocket_url.clone());
-    let mut client = MidnightCoderClient::connect(&endpoint, &[])?;
+    let mut client = SolaiAgentClient::connect(&endpoint, &[])?;
 
     let initialize = client.initialize()?;
     println!("< initialize response: {initialize:?}");
@@ -1488,7 +1488,7 @@ enum ClientTransport {
     },
 }
 
-struct MidnightCoderClient {
+struct SolaiAgentClient {
     transport: ClientTransport,
     pending_notifications: VecDeque<JSONRPCNotification>,
     command_approval_behavior: CommandApprovalBehavior,
@@ -1523,10 +1523,10 @@ fn item_started_before_helper_done_is_unexpected(
     !matches!(item, ThreadItem::UserMessage { .. })
 }
 
-impl MidnightCoderClient {
+impl SolaiAgentClient {
     fn connect(endpoint: &Endpoint, config_overrides: &[String]) -> Result<Self> {
         match endpoint {
-            Endpoint::SpawnMidnightCoder(codex_bin) => {
+            Endpoint::SpawnSolaiAgent(codex_bin) => {
                 Self::spawn_stdio(codex_bin, config_overrides)
             }
             Endpoint::ConnectWs(url) => Self::connect_websocket(url),
@@ -1660,7 +1660,7 @@ impl MidnightCoderClient {
             params: InitializeParams {
                 client_info: ClientInfo {
                     name: "codex-toy-app-server".to_string(),
-                    title: Some("MidnightCoder Toy App Server".to_string()),
+                    title: Some("SolaiAgent Toy App Server".to_string()),
                     version: env!("CARGO_PKG_VERSION").to_string(),
                 },
                 capabilities: Some(InitializeCapabilities {
@@ -2321,7 +2321,7 @@ fn print_trace_summary(trace_summary: &TraceSummary) {
     }
 }
 
-impl Drop for MidnightCoderClient {
+impl Drop for SolaiAgentClient {
     fn drop(&mut self) {
         let ClientTransport::Stdio { child, stdin, .. } = &mut self.transport else {
             return;

@@ -252,7 +252,7 @@
       "type": "object"
     },
     "CollaborationMode": {
-      "description": "Collaboration mode for a Midnight Coder session.",
+      "description": "Collaboration mode for a SOLAI Agent session.",
       "properties": {
         "mode": {
           "$ref": "#/definitions/ModeKind"
@@ -1273,7 +1273,7 @@
           "type": "boolean"
         },
         "mcpServerOpenaiFormElicitation": {
-          "description": "Allow downstream MCP servers to request Midnight Coder extended form elicitations.",
+          "description": "Allow downstream MCP servers to request SOLAI Agent extended form elicitations.",
           "type": "boolean"
         },
         "optOutNotificationMethods": {
@@ -1490,7 +1490,7 @@
           "type": "object"
         },
         {
-          "description": "[UNSTABLE] FOR OPENAI INTERNAL USE ONLY - DO NOT USE. The access token must contain the same scopes that Midnight Coder-managed ChatGPT auth tokens have.",
+          "description": "[UNSTABLE] FOR OPENAI INTERNAL USE ONLY - DO NOT USE. The access token must contain the same scopes that SOLAI Agent-managed ChatGPT auth tokens have.",
           "properties": {
             "accessToken": {
               "description": "Access token (JWT) supplied by the client. This token is used for backend API requests and email extraction.",
@@ -1501,7 +1501,7 @@
               "type": "string"
             },
             "chatgptPlanType": {
-              "description": "Optional plan type supplied by the client.\n\nWhen `null`, Midnight Coder attempts to derive the plan type from access-token claims. If unavailable, the plan defaults to `unknown`.",
+              "description": "Optional plan type supplied by the client.\n\nWhen `null`, SOLAI Agent attempts to derive the plan type from access-token claims. If unavailable, the plan defaults to `unknown`.",
               "type": [
                 "string",
                 "null"

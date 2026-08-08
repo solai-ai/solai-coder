@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import time
 
-from openai_codex.async_client import AsyncMidnightCoderClient
+from openai_codex.async_client import AsyncSolaiAgentClient
 from openai_codex.generated.v2_all import (
     TurnCompletedNotification,
 )
@@ -15,7 +15,7 @@ def test_async_client_allows_concurrent_transport_calls() -> None:
 
     async def scenario() -> int:
         """Run two blocking sync calls and report peak overlap."""
-        client = AsyncMidnightCoderClient()
+        client = AsyncSolaiAgentClient()
         active = 0
         max_active = 0
 
@@ -40,7 +40,7 @@ def test_async_client_turn_notification_methods_delegate_to_sync_client() -> Non
 
     async def scenario() -> tuple[list[tuple[str, str]], Notification, str]:
         """Record the sync-client calls made by async turn notification wrappers."""
-        client = AsyncMidnightCoderClient()
+        client = AsyncSolaiAgentClient()
         event = Notification(
             method="unknown/direct",
             payload=UnknownNotification(params={"turnId": "turn-1"}),

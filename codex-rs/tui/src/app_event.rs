@@ -254,7 +254,7 @@ pub(crate) enum AppEvent {
 
     /// Forward a command to the Agent. Using an `AppEvent` for this avoids
     /// bubbling channels through layers of widgets.
-    MidnightCoderOp(AppCommand),
+    SolaiAgentOp(AppCommand),
 
     /// Restore an output-free interrupted turn into the composer and roll it back.
     RestoreCancelledTurn(UserMessage),
@@ -398,7 +398,7 @@ pub(crate) enum AppEvent {
         url: String,
     },
 
-    /// Open the current thread in MidnightCoder Desktop.
+    /// Open the current thread in SolaiAgent Desktop.
     OpenDesktopThread {
         thread_id: ThreadId,
     },

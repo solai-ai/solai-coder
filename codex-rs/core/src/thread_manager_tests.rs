@@ -150,7 +150,7 @@ fn effective_originator_prefers_thread_scoped_sources_before_env_originator() {
         assert_eq!(
             effective_originator_value(
                 metrics_service_name,
-                Some("MidnightCoder Desktop".to_string()),
+                Some("SolaiAgent Desktop".to_string()),
                 persisted_originator.map(str::to_string),
                 inherited_originator.map(str::to_string),
                 "codex_cli_rs".to_string(),
@@ -367,7 +367,7 @@ async fn shutdown_all_threads_bounded_submits_shutdown_to_every_thread() {
     std::fs::create_dir_all(&config.codex_home).expect("create codex home");
 
     let manager = ThreadManager::with_models_provider_and_home_for_tests(
-        MidnightCoderAuth::from_api_key("dummy"),
+        SolaiAgentAuth::from_api_key("dummy"),
         config.model_provider.clone(),
         config.codex_home.to_path_buf(),
         Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
@@ -404,7 +404,7 @@ async fn code_mode_session_provider_is_shared_across_threads() {
     std::fs::create_dir_all(&config.codex_home).expect("create codex home");
 
     let manager = ThreadManager::with_models_provider_and_home_for_tests(
-        MidnightCoderAuth::from_api_key("dummy"),
+        SolaiAgentAuth::from_api_key("dummy"),
         config.model_provider.clone(),
         config.codex_home.to_path_buf(),
         Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
@@ -462,7 +462,7 @@ async fn start_thread_keeps_internal_threads_hidden_from_normal_lookups() {
     std::fs::create_dir_all(&config.codex_home).expect("create codex home");
 
     let manager = ThreadManager::with_models_provider_and_home_for_tests(
-        MidnightCoderAuth::from_api_key("dummy"),
+        SolaiAgentAuth::from_api_key("dummy"),
         config.model_provider.clone(),
         config.codex_home.to_path_buf(),
         Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
@@ -588,7 +588,7 @@ async fn start_thread_seeds_extension_data_for_mcp_and_lifecycle_contributors() 
     let manager = ThreadManager::new(
         &config,
         AuthManager::from_auth_for_testing(
-            MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing(),
+            SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing(),
         ),
         SessionSource::Exec,
         Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
@@ -719,7 +719,7 @@ async fn selected_capability_roots_round_trip_through_fork() {
     std::fs::create_dir_all(&config.codex_home).expect("create codex home");
 
     let manager = ThreadManager::with_models_provider_and_home_for_tests(
-        MidnightCoderAuth::from_api_key("dummy"),
+        SolaiAgentAuth::from_api_key("dummy"),
         config.model_provider.clone(),
         config.codex_home.to_path_buf(),
         Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
@@ -786,7 +786,7 @@ async fn resume_and_fork_do_not_restore_thread_environments_from_rollout() {
     std::fs::create_dir_all(&config.codex_home).expect("create codex home");
 
     let auth_manager = AuthManager::from_auth_for_testing(
-        MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing(),
+        SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing(),
     );
     let manager = ThreadManager::new(
         &config,
@@ -910,7 +910,7 @@ async fn explicit_installation_id_skips_codex_home_file() {
     std::fs::create_dir_all(&config.codex_home).expect("create codex home");
 
     let auth_manager = AuthManager::from_auth_for_testing(
-        MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing(),
+        SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing(),
     );
     let installation_id = uuid::Uuid::new_v4().to_string();
     let state_db = init_state_db(&config).await;
@@ -955,7 +955,7 @@ async fn resume_active_thread_from_rollout_returns_running_thread() {
     std::fs::create_dir_all(&config.codex_home).expect("create codex home");
 
     let auth_manager = AuthManager::from_auth_for_testing(
-        MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing(),
+        SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing(),
     );
     let manager = ThreadManager::new(
         &config,
@@ -1016,7 +1016,7 @@ async fn resume_stopped_thread_from_rollout_spawns_new_thread() {
     std::fs::create_dir_all(&config.codex_home).expect("create codex home");
 
     let auth_manager = AuthManager::from_auth_for_testing(
-        MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing(),
+        SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing(),
     );
     let manager = ThreadManager::new(
         &config,
@@ -1082,7 +1082,7 @@ async fn resume_stopped_thread_from_rollout_preserves_thread_source() {
     std::fs::create_dir_all(&config.codex_home).expect("create codex home");
 
     let auth_manager = AuthManager::from_auth_for_testing(
-        MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing(),
+        SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing(),
     );
     let state_db = init_state_db(&config).await;
     let thread_store = thread_store_from_config(&config, state_db.clone());
@@ -1177,7 +1177,7 @@ async fn subtree_listing_uses_injected_graph_store_without_state_db() {
         descendant_thread_ids: descendant_thread_ids.clone(),
     });
     let auth_manager = AuthManager::from_auth_for_testing(
-        MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing(),
+        SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing(),
     );
     let manager = ThreadManager::new(
         &config,
@@ -1217,7 +1217,7 @@ async fn rollout_path_resume_and_fork_read_history_through_thread_store() {
     std::fs::create_dir_all(&config.codex_home).expect("create codex home");
 
     let auth_manager = AuthManager::from_auth_for_testing(
-        MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing(),
+        SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing(),
     );
     let state_db = init_state_db(&config).await;
     let thread_store = thread_store_from_config(&config, state_db.clone());
@@ -1329,7 +1329,7 @@ async fn new_uses_active_provider_for_model_refresh() {
     config.model_provider.base_url = Some(server.uri());
 
     let auth_manager = AuthManager::from_auth_for_testing(
-        MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing(),
+        SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing(),
     );
     let manager = ThreadManager::new(
         &config,
@@ -1551,7 +1551,7 @@ async fn interrupted_fork_snapshot_does_not_synthesize_turn_id_for_legacy_histor
     std::fs::create_dir_all(&config.codex_home).expect("create codex home");
 
     let auth_manager = AuthManager::from_auth_for_testing(
-        MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing(),
+        SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing(),
     );
     let state_db = init_state_db(&config).await;
     let manager = ThreadManager::new(
@@ -1661,7 +1661,7 @@ async fn interrupted_fork_snapshot_preserves_explicit_turn_id() {
     std::fs::create_dir_all(&config.codex_home).expect("create codex home");
 
     let auth_manager = AuthManager::from_auth_for_testing(
-        MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing(),
+        SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing(),
     );
     let state_db = init_state_db(&config).await;
     let manager = ThreadManager::new(
@@ -1761,7 +1761,7 @@ async fn interrupted_fork_snapshot_uses_persisted_mid_turn_history_without_live_
     std::fs::create_dir_all(&config.codex_home).expect("create codex home");
 
     let auth_manager = AuthManager::from_auth_for_testing(
-        MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing(),
+        SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing(),
     );
     let state_db = init_state_db(&config).await;
     let manager = ThreadManager::new(

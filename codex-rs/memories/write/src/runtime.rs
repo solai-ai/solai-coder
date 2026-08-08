@@ -1,4 +1,4 @@
-use codex_core::MidnightCoderThread;
+use codex_core::SolaiAgentThread;
 use codex_core::ModelClient;
 use codex_core::NewThread;
 use codex_core::Prompt;
@@ -11,7 +11,7 @@ use codex_core::detached_memory_responses_metadata;
 use codex_core::resolve_installation_id;
 use codex_features::Feature;
 use codex_login::AuthManager;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_login::auth::AgentIdentityAuthPolicy;
 use codex_login::auth_env_telemetry::collect_auth_env_telemetry;
 use codex_login::default_client::originator;
@@ -41,7 +41,7 @@ use std::time::Duration;
 
 pub(crate) struct SpawnedConsolidationAgent {
     pub(crate) thread_id: ThreadId,
-    pub(crate) thread: Arc<MidnightCoderThread>,
+    pub(crate) thread: Arc<SolaiAgentThread>,
 }
 
 #[derive(Clone, Debug)]
@@ -69,7 +69,7 @@ impl StageOneRequestContext {
 
 pub(crate) struct MemoryStartupContext {
     thread_id: ThreadId,
-    thread: Arc<MidnightCoderThread>,
+    thread: Arc<SolaiAgentThread>,
     thread_manager: Arc<ThreadManager>,
     auth_manager: Arc<AuthManager>,
     provider: SharedModelProvider,
@@ -87,10 +87,10 @@ fn build_session_telemetry(
     let auth = auth_manager.auth_cached();
     let auth = auth.as_ref();
     let auth_mode = auth
-        .map(MidnightCoderAuth::auth_mode)
+        .map(SolaiAgentAuth::auth_mode)
         .map(TelemetryAuthMode::from);
-    let account_id = auth.and_then(MidnightCoderAuth::get_account_id);
-    let account_email = auth.and_then(MidnightCoderAuth::get_account_email);
+    let account_id = auth.and_then(SolaiAgentAuth::get_account_id);
+    let account_email = auth.and_then(SolaiAgentAuth::get_account_email);
     let auth_env_telemetry = collect_auth_env_telemetry(
         &config.model_provider,
         auth_manager.codex_api_key_env_enabled(),
@@ -115,7 +115,7 @@ impl MemoryStartupContext {
         thread_manager: Arc<ThreadManager>,
         auth_manager: Arc<AuthManager>,
         thread_id: ThreadId,
-        thread: Arc<MidnightCoderThread>,
+        thread: Arc<SolaiAgentThread>,
         config: &Config,
         source: SessionSource,
     ) -> Self {
@@ -139,7 +139,7 @@ impl MemoryStartupContext {
         thread_manager: Arc<ThreadManager>,
         auth_manager: Arc<AuthManager>,
         thread_id: ThreadId,
-        thread: Arc<MidnightCoderThread>,
+        thread: Arc<SolaiAgentThread>,
         config: &Config,
         source: SessionSource,
         provider: SharedModelProvider,
@@ -159,7 +159,7 @@ impl MemoryStartupContext {
         thread_manager: Arc<ThreadManager>,
         auth_manager: Arc<AuthManager>,
         thread_id: ThreadId,
-        thread: Arc<MidnightCoderThread>,
+        thread: Arc<SolaiAgentThread>,
         config: &Config,
         source: SessionSource,
         provider: SharedModelProvider,

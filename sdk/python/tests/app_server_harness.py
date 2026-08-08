@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
-from openai_codex import MidnightCoderConfig
+from openai_codex import SolaiAgentConfig
 
 Json = dict[str, Any]
 
@@ -225,9 +225,9 @@ class AppServerHarness:
         shutil.rmtree(self.codex_home, ignore_errors=True)
         shutil.rmtree(self.workspace, ignore_errors=True)
 
-    def app_server_config(self) -> MidnightCoderConfig:
+    def app_server_config(self) -> SolaiAgentConfig:
         """Build SDK config for an isolated pinned-runtime app-server process."""
-        return MidnightCoderConfig(
+        return SolaiAgentConfig(
             cwd=str(self.workspace),
             env={
                 "CODEX_HOME": str(self.codex_home),

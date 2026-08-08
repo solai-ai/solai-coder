@@ -1,4 +1,4 @@
-use codex_client::MidnightCoderHttpClient;
+use codex_client::SolaiAgentHttpClient;
 use codex_protocol::account::PlanType as AccountPlanType;
 use codex_protocol::auth::PlanType as InternalPlanType;
 use serde::Deserialize;
@@ -77,7 +77,7 @@ impl PersonalAccessTokenAuth {
 }
 
 async fn hydrate_personal_access_token(
-    client: &MidnightCoderHttpClient,
+    client: &SolaiAgentHttpClient,
     endpoint: &str,
     access_token: &str,
 ) -> std::io::Result<PersonalAccessTokenAuth> {

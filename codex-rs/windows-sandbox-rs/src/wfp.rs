@@ -60,21 +60,21 @@ use filter_specs::ConditionSpec;
 use filter_specs::FILTER_SPECS;
 use filter_specs::FilterSpec;
 
-const SESSION_NAME: &str = "MidnightCoder Windows Sandbox WFP";
-const PROVIDER_NAME: &str = "MidnightCoder Windows Sandbox WFP";
+const SESSION_NAME: &str = "SolaiAgent Windows Sandbox WFP";
+const PROVIDER_NAME: &str = "SolaiAgent Windows Sandbox WFP";
 const PROVIDER_DESCRIPTION: &str =
-    "Persistent WFP provider for MidnightCoder Windows sandbox filters";
-const SUBLAYER_NAME: &str = "MidnightCoder Windows Sandbox WFP";
+    "Persistent WFP provider for SolaiAgent Windows sandbox filters";
+const SUBLAYER_NAME: &str = "SolaiAgent Windows Sandbox WFP";
 const SUBLAYER_DESCRIPTION: &str =
-    "Persistent WFP sublayer for MidnightCoder Windows sandbox filters";
+    "Persistent WFP sublayer for SolaiAgent Windows sandbox filters";
 
 // WFP identifies persistent providers, sublayers, and filters by stable GUIDs.
-// These values are MidnightCoder-owned identities; do not regenerate them unless we
+// These values are SolaiAgent-owned identities; do not regenerate them unless we
 // intentionally want to orphan old objects and create a new WFP namespace.
 const PROVIDER_KEY: GUID = GUID::from_u128(0x2e31d31c_3948_4753_9117_e5d1a6496f41);
 const SUBLAYER_KEY: GUID = GUID::from_u128(0xe65054fd_4d32_4c7c_95ef_621f0cf6431a);
 
-/// Installs the persistent MidnightCoder WFP filters for `account`.
+/// Installs the persistent SolaiAgent WFP filters for `account`.
 ///
 /// This is intended to run from the already-elevated setup helper. Callers
 /// should treat any returned error as non-fatal to the rest of setup.
@@ -225,7 +225,7 @@ impl Drop for UserMatchCondition {
     }
 }
 
-/// Ensures the persistent MidnightCoder WFP provider exists.
+/// Ensures the persistent SolaiAgent WFP provider exists.
 fn ensure_provider(engine: HANDLE) -> Result<()> {
     let provider_name = to_wide(OsStr::new(PROVIDER_NAME));
     let provider_description = to_wide(OsStr::new(PROVIDER_DESCRIPTION));
@@ -244,7 +244,7 @@ fn ensure_provider(engine: HANDLE) -> Result<()> {
     ensure_success_or(result, "FwpmProviderAdd0", &[FWP_E_ALREADY_EXISTS as u32])
 }
 
-/// Ensures the persistent MidnightCoder sublayer exists under the MidnightCoder provider.
+/// Ensures the persistent SolaiAgent sublayer exists under the SolaiAgent provider.
 fn ensure_sublayer(engine: HANDLE) -> Result<()> {
     let sublayer_name = to_wide(OsStr::new(SUBLAYER_NAME));
     let sublayer_description = to_wide(OsStr::new(SUBLAYER_DESCRIPTION));

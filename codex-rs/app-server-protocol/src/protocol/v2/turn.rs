@@ -70,7 +70,7 @@ pub struct TurnStartParams {
     #[ts(optional = nullable)]
     pub client_user_message_id: Option<String>,
     pub input: Vec<UserInput>,
-    /// Optional metadata to enrich MidnightCoder's ResponsesAPI turn metadata.
+    /// Optional metadata to enrich SolaiAgent's ResponsesAPI turn metadata.
     ///
     /// Entries are flattened into the JSON string sent as
     /// `client_metadata["x-codex-turn-metadata"]` on ResponsesAPI HTTP and websocket requests.
@@ -174,7 +174,7 @@ pub struct TurnSteerParams {
     #[ts(optional = nullable)]
     pub client_user_message_id: Option<String>,
     pub input: Vec<UserInput>,
-    /// Optional metadata to enrich MidnightCoder's ResponsesAPI turn metadata.
+    /// Optional metadata to enrich SolaiAgent's ResponsesAPI turn metadata.
     ///
     /// Entries are flattened into the JSON string sent as
     /// `client_metadata["x-codex-turn-metadata"]` on ResponsesAPI HTTP and websocket requests.

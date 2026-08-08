@@ -25,7 +25,7 @@ use tracing::info;
 const MODEL_CACHE_FILE: &str = "models_cache.json";
 const DEFAULT_MODEL_CACHE_TTL: Duration = Duration::from_secs(300);
 
-/// Remote endpoint used by the MidnightCoder-compatible model manager.
+/// Remote endpoint used by the SolaiAgent-compatible model manager.
 ///
 /// Implementations own provider-specific auth and transport details. The model
 /// manager owns refresh policy, cache behavior, and catalog merging; it calls
@@ -44,7 +44,7 @@ pub trait ModelsEndpointClient: fmt::Debug + Send + Sync {
         false
     }
 
-    /// Returns whether the currently resolved auth can use MidnightCoder backend-only models.
+    /// Returns whether the currently resolved auth can use SolaiAgent backend-only models.
     fn uses_codex_backend(&self) -> ModelsEndpointFuture<'_, bool>;
 
     /// Fetches the latest remote model catalog and optional ETag.
@@ -206,7 +206,7 @@ pub type ModelsManagerFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a
 /// Shared model manager handle used across runtime services.
 pub type SharedModelsManager = Arc<dyn ModelsManager>;
 
-/// MidnightCoder-compatible model manager backed by bundled models, cache, and `/models`.
+/// SolaiAgent-compatible model manager backed by bundled models, cache, and `/models`.
 #[derive(Debug)]
 pub struct OpenAiModelsManager {
     remote_models: RwLock<Vec<ModelInfo>>,
@@ -224,7 +224,7 @@ pub struct StaticModelsManager {
 }
 
 impl OpenAiModelsManager {
-    /// Construct an MidnightCoder-compatible remote model manager.
+    /// Construct an SolaiAgent-compatible remote model manager.
     pub fn new(
         codex_home: PathBuf,
         endpoint_client: Arc<dyn ModelsEndpointClient>,

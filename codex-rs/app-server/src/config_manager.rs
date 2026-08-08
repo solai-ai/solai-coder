@@ -24,7 +24,7 @@ use toml::Value as TomlValue;
 use tracing::instrument;
 use tracing::warn;
 
-/// Shared app-server entry point for loading effective MidnightCoder configuration.
+/// Shared app-server entry point for loading effective SolaiAgent configuration.
 #[derive(Clone)]
 pub(crate) struct ConfigManager {
     codex_home: PathBuf,

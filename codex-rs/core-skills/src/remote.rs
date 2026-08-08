@@ -6,7 +6,7 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::time::Duration;
 
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_login::default_client::build_reqwest_client;
 
 const REMOTE_SKILLS_API_TIMEOUT: Duration = Duration::from_secs(30);
@@ -25,7 +25,7 @@ pub enum RemoteSkillScope {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RemoteSkillProductSurface {
     Chatgpt,
-    MidnightCoder,
+    SolaiAgent,
     Api,
     Atlas,
 }
@@ -42,13 +42,13 @@ fn as_query_scope(scope: RemoteSkillScope) -> Option<&'static str> {
 fn as_query_product_surface(product_surface: RemoteSkillProductSurface) -> &'static str {
     match product_surface {
         RemoteSkillProductSurface::Chatgpt => "chatgpt",
-        RemoteSkillProductSurface::MidnightCoder => "codex",
+        RemoteSkillProductSurface::SolaiAgent => "codex",
         RemoteSkillProductSurface::Api => "api",
         RemoteSkillProductSurface::Atlas => "atlas",
     }
 }
 
-fn ensure_codex_backend_auth(auth: Option<&MidnightCoderAuth>) -> Result<&MidnightCoderAuth> {
+fn ensure_codex_backend_auth(auth: Option<&SolaiAgentAuth>) -> Result<&SolaiAgentAuth> {
     let Some(auth) = auth else {
         anyhow::bail!("chatgpt authentication required for remote skill scopes");
     };
@@ -88,7 +88,7 @@ struct RemoteSkill {
 
 pub async fn list_remote_skills(
     chatgpt_base_url: String,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
     scope: RemoteSkillScope,
     product_surface: RemoteSkillProductSurface,
     enabled: Option<bool>,
@@ -141,7 +141,7 @@ pub async fn list_remote_skills(
 pub async fn export_remote_skill(
     chatgpt_base_url: String,
     codex_home: PathBuf,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
     skill_id: &str,
 ) -> Result<RemoteSkillDownloadResult> {
     let auth = ensure_codex_backend_auth(auth)?;

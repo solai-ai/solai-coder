@@ -72,7 +72,7 @@ pub(crate) fn write_openai_api_curated_marketplace(root: &Path, plugin_names: &[
         root,
         "api_marketplace.json",
         OPENAI_API_CURATED_MARKETPLACE_NAME,
-        Some("MidnightCoder Curated"),
+        Some("SolaiAgent Curated"),
         plugin_names,
     );
 }

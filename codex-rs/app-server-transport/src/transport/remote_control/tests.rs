@@ -31,7 +31,7 @@ use codex_core::test_support::auth_manager_from_auth_with_home;
 use codex_login::AuthDotJson;
 use codex_login::AuthKeyringBackendKind;
 use codex_login::AuthManager;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_login::save_auth;
 use codex_login::token_data::TokenData;
 use codex_login::token_data::parse_chatgpt_jwt_claims;
@@ -74,12 +74,12 @@ const TEST_REFRESHED_REMOTE_CONTROL_SERVER_TOKEN: &str = "Refreshed Remote Contr
 const TEST_REMOTE_CONTROL_SERVER_TOKEN_EXPIRES_AT: &str = "2999-01-01T00:00:00Z";
 
 fn remote_control_auth_manager() -> Arc<AuthManager> {
-    auth_manager_from_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+    auth_manager_from_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
 }
 
 fn remote_control_auth_manager_with_home(codex_home: &TempDir) -> Arc<AuthManager> {
     auth_manager_from_auth_with_home(
-        MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing(),
+        SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing(),
         codex_home.path().to_path_buf(),
     )
 }

@@ -3,7 +3,7 @@ source: tui/src/history_cell/tests.rs
 expression: rendered
 ---
 ╭─────────────────────────────────────╮
-│ >_ MidnightCoder (v0.0.0)           │
+│ >_ SolaiAgent (v0.0.0)           │
 │                                     │
 │ model:     gpt-5   /model to change │
 │ directory: /tmp/project             │

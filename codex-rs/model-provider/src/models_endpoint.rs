@@ -12,7 +12,7 @@ use codex_feedback::FeedbackRequestTags;
 use codex_feedback::emit_feedback_request_tags_with_auth_env;
 use codex_login::AuthEnvTelemetry;
 use codex_login::AuthManager;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_login::collect_auth_env_telemetry;
 use codex_login::default_client::build_reqwest_client;
 use codex_model_provider_info::ModelProviderInfo;
@@ -21,7 +21,7 @@ use codex_models_manager::manager::ModelsEndpointFuture;
 use codex_models_manager::model_info::BASE_INSTRUCTIONS;
 use codex_otel::TelemetryAuthMode;
 use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::error::Result as CoreResult;
 use codex_protocol::openai_models::ConfigShellToolType;
 use codex_protocol::openai_models::ModelInfo;
@@ -42,7 +42,7 @@ use crate::auth::resolve_provider_auth;
 const MODELS_REFRESH_TIMEOUT: Duration = Duration::from_secs(5);
 const MODELS_ENDPOINT: &str = "/models";
 
-/// Provider-owned MidnightCoder-compatible `/models` endpoint.
+/// Provider-owned SolaiAgent-compatible `/models` endpoint.
 #[derive(Debug)]
 pub(crate) struct OpenAiModelsEndpoint {
     provider_info: ModelProviderInfo,
@@ -60,7 +60,7 @@ impl OpenAiModelsEndpoint {
         }
     }
 
-    async fn auth(&self) -> Option<MidnightCoderAuth> {
+    async fn auth(&self) -> Option<SolaiAgentAuth> {
         match self.auth_manager.as_ref() {
             Some(auth_manager) => auth_manager.auth().await,
             None => None,
@@ -71,7 +71,7 @@ impl OpenAiModelsEndpoint {
         self.auth()
             .await
             .as_ref()
-            .is_some_and(MidnightCoderAuth::uses_codex_backend)
+            .is_some_and(SolaiAgentAuth::uses_codex_backend)
     }
 
     async fn list_models(
@@ -85,13 +85,13 @@ impl OpenAiModelsEndpoint {
         let _timer =
             codex_otel::start_global_timer("codex.remote_models.fetch_update.duration_ms", &[]);
         let auth = self.auth().await;
-        let auth_mode = auth.as_ref().map(MidnightCoderAuth::auth_mode);
+        let auth_mode = auth.as_ref().map(SolaiAgentAuth::auth_mode);
         let api_provider = self.provider_info.to_api_provider(auth_mode)?;
         let api_auth = resolve_provider_auth(auth.as_ref(), &self.provider_info)?;
         let transport = ReqwestTransport::new(build_reqwest_client());
         let auth_telemetry = auth_header_telemetry(api_auth.as_ref());
         let agent_identity_telemetry =
-            if let Some(MidnightCoderAuth::AgentIdentity(auth)) = auth.as_ref() {
+            if let Some(SolaiAgentAuth::AgentIdentity(auth)) = auth.as_ref() {
                 Some(agent_identity_telemetry(auth))
             } else {
                 None
@@ -111,7 +111,7 @@ impl OpenAiModelsEndpoint {
             client.list_models(client_version, HeaderMap::new()),
         )
         .await
-        .map_err(|_| MidnightCoderErr::Timeout)?
+        .map_err(|_| SolaiAgentErr::Timeout)?
         .map_err(map_api_error)
     }
 
@@ -129,7 +129,7 @@ impl OpenAiModelsEndpoint {
 
     async fn list_ollama_models(&self) -> CoreResult<(Vec<ModelInfo>, Option<String>)> {
         let base_url = self.provider_info.base_url.as_deref().ok_or_else(|| {
-            MidnightCoderErr::InvalidRequest("Ollama base_url is required".into())
+            SolaiAgentErr::InvalidRequest("Ollama base_url is required".into())
         })?;
         let host_root = ollama_host_root(base_url);
         let url = format!("{}/api/tags", host_root.trim_end_matches('/'));
@@ -137,9 +137,9 @@ impl OpenAiModelsEndpoint {
             .get(url)
             .send()
             .await
-            .map_err(|err| MidnightCoderErr::InvalidRequest(err.to_string()))?;
+            .map_err(|err| SolaiAgentErr::InvalidRequest(err.to_string()))?;
         if !response.status().is_success() {
-            return Err(MidnightCoderErr::InvalidRequest(format!(
+            return Err(SolaiAgentErr::InvalidRequest(format!(
                 "failed to list Ollama models: HTTP {}",
                 response.status()
             )));
@@ -147,7 +147,7 @@ impl OpenAiModelsEndpoint {
         let body = response
             .json::<JsonValue>()
             .await
-            .map_err(|err| MidnightCoderErr::InvalidRequest(err.to_string()))?;
+            .map_err(|err| SolaiAgentErr::InvalidRequest(err.to_string()))?;
         let models = body
             .get("models")
             .and_then(JsonValue::as_array)

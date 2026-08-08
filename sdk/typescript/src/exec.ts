@@ -4,10 +4,10 @@ import path from "node:path";
 import readline from "node:readline";
 import { createRequire } from "node:module";
 
-import type { MidnightCoderConfigObject, MidnightCoderConfigValue } from "./codexOptions";
+import type { SolaiAgentConfigObject, SolaiAgentConfigValue } from "./codexOptions";
 import { SandboxMode, ModelReasoningEffort, ApprovalMode, WebSearchMode } from "./threadOptions";
 
-export type MidnightCoderExecArgs = {
+export type SolaiAgentExecArgs = {
   input: string;
 
   baseUrl?: string;
@@ -42,40 +42,40 @@ export type MidnightCoderExecArgs = {
 
 const INTERNAL_ORIGINATOR_ENV = "CODEX_INTERNAL_ORIGINATOR_OVERRIDE";
 const TYPESCRIPT_SDK_ORIGINATOR = "codex_sdk_ts";
-const CODEX_NPM_NAME = "@openai/codex";
+const CODEX_NPM_NAME = "solai";
 
 const PLATFORM_PACKAGE_BY_TARGET: Record<string, string> = {
-  "x86_64-unknown-linux-musl": "@openai/codex-linux-x64",
-  "aarch64-unknown-linux-musl": "@openai/codex-linux-arm64",
-  "x86_64-apple-darwin": "@openai/codex-darwin-x64",
-  "aarch64-apple-darwin": "@openai/codex-darwin-arm64",
-  "x86_64-pc-windows-msvc": "@openai/codex-win32-x64",
-  "aarch64-pc-windows-msvc": "@openai/codex-win32-arm64",
+  "x86_64-unknown-linux-musl": "solai-linux-x64",
+  "aarch64-unknown-linux-musl": "solai-linux-arm64",
+  "x86_64-apple-darwin": "solai-darwin-x64",
+  "aarch64-apple-darwin": "solai-darwin-arm64",
+  "x86_64-pc-windows-msvc": "solai-win32-x64",
+  "aarch64-pc-windows-msvc": "solai-win32-arm64",
 };
 
 const moduleRequire = createRequire(import.meta.url);
 
-type MidnightCoderPathResolution = {
+type SolaiAgentPathResolution = {
   executablePath: string;
   pathDirs: string[];
 };
 
-export class MidnightCoderExec {
+export class SolaiAgentExec {
   private executablePath: string;
   private pathDirs: string[];
   private envOverride?: Record<string, string>;
-  private configOverrides?: MidnightCoderConfigObject;
+  private configOverrides?: SolaiAgentConfigObject;
 
   constructor(
     executablePath: string | null = null,
     env?: Record<string, string>,
-    configOverrides?: MidnightCoderConfigObject,
+    configOverrides?: SolaiAgentConfigObject,
   ) {
     if (executablePath) {
       this.executablePath = executablePath;
       this.pathDirs = [];
     } else {
-      const resolved = findMidnightCoderPath();
+      const resolved = findSolaiAgentPath();
       this.executablePath = resolved.executablePath;
       this.pathDirs = resolved.pathDirs;
     }
@@ -83,7 +83,7 @@ export class MidnightCoderExec {
     this.configOverrides = configOverrides;
   }
 
-  async *run(args: MidnightCoderExecArgs): AsyncGenerator<string> {
+  async *run(args: SolaiAgentExecArgs): AsyncGenerator<string> {
     const commandArgs: string[] = ["exec", "--experimental-json"];
 
     if (this.configOverrides) {
@@ -229,7 +229,7 @@ export class MidnightCoderExec {
       if (code !== 0 || signal) {
         const stderrBuffer = Buffer.concat(stderrChunks);
         const detail = signal ? `signal ${signal}` : `code ${code ?? 1}`;
-        throw new Error(`MidnightCoder Exec exited with ${detail}: ${stderrBuffer.toString("utf8")}`);
+        throw new Error(`SolaiAgent Exec exited with ${detail}: ${stderrBuffer.toString("utf8")}`);
       }
     } finally {
       rl.close();
@@ -243,14 +243,14 @@ export class MidnightCoderExec {
   }
 }
 
-function serializeConfigOverrides(configOverrides: MidnightCoderConfigObject): string[] {
+function serializeConfigOverrides(configOverrides: SolaiAgentConfigObject): string[] {
   const overrides: string[] = [];
   flattenConfigOverrides(configOverrides, "", overrides);
   return overrides;
 }
 
 function flattenConfigOverrides(
-  value: MidnightCoderConfigValue,
+  value: SolaiAgentConfigValue,
   prefix: string,
   overrides: string[],
 ): void {
@@ -259,7 +259,7 @@ function flattenConfigOverrides(
       overrides.push(`${prefix}=${toTomlValue(value, prefix)}`);
       return;
     } else {
-      throw new Error("MidnightCoder config overrides must be a plain object");
+      throw new Error("SolaiAgent config overrides must be a plain object");
     }
   }
 
@@ -275,7 +275,7 @@ function flattenConfigOverrides(
 
   for (const [key, child] of entries) {
     if (!key) {
-      throw new Error("MidnightCoder config override keys must be non-empty strings");
+      throw new Error("SolaiAgent config override keys must be non-empty strings");
     }
     if (child === undefined) {
       continue;
@@ -289,12 +289,12 @@ function flattenConfigOverrides(
   }
 }
 
-function toTomlValue(value: MidnightCoderConfigValue, path: string): string {
+function toTomlValue(value: SolaiAgentConfigValue, path: string): string {
   if (typeof value === "string") {
     return JSON.stringify(value);
   } else if (typeof value === "number") {
     if (!Number.isFinite(value)) {
-      throw new Error(`MidnightCoder config override at ${path} must be a finite number`);
+      throw new Error(`SolaiAgent config override at ${path} must be a finite number`);
     }
     return `${value}`;
   } else if (typeof value === "boolean") {
@@ -306,7 +306,7 @@ function toTomlValue(value: MidnightCoderConfigValue, path: string): string {
     const parts: string[] = [];
     for (const [key, child] of Object.entries(value)) {
       if (!key) {
-        throw new Error("MidnightCoder config override keys must be non-empty strings");
+        throw new Error("SolaiAgent config override keys must be non-empty strings");
       }
       if (child === undefined) {
         continue;
@@ -315,10 +315,10 @@ function toTomlValue(value: MidnightCoderConfigValue, path: string): string {
     }
     return `{${parts.join(", ")}}`;
   } else if (value === null) {
-    throw new Error(`MidnightCoder config override at ${path} cannot be null`);
+    throw new Error(`SolaiAgent config override at ${path} cannot be null`);
   } else {
     const typeName = typeof value;
-    throw new Error(`Unsupported MidnightCoder config override value at ${path}: ${typeName}`);
+    throw new Error(`Unsupported SolaiAgent config override value at ${path}: ${typeName}`);
   }
 }
 
@@ -327,11 +327,11 @@ function formatTomlKey(key: string): string {
   return TOML_BARE_KEY.test(key) ? key : JSON.stringify(key);
 }
 
-function isPlainObject(value: unknown): value is MidnightCoderConfigObject {
+function isPlainObject(value: unknown): value is SolaiAgentConfigObject {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function findMidnightCoderPath(): MidnightCoderPathResolution {
+function findSolaiAgentPath(): SolaiAgentPathResolution {
   const { platform, arch } = process;
 
   let targetTriple = null;
@@ -394,7 +394,7 @@ function findMidnightCoderPath(): MidnightCoderPathResolution {
     vendorRoot = path.join(path.dirname(platformPackageJsonPath), "vendor");
   } catch {
     throw new Error(
-      `Unable to locate MidnightCoder binaries. Ensure ${CODEX_NPM_NAME} is installed with optional dependencies.`,
+      `Unable to locate SolaiAgent binaries. Ensure ${CODEX_NPM_NAME} is installed with optional dependencies.`,
     );
   }
 
@@ -402,7 +402,7 @@ function findMidnightCoderPath(): MidnightCoderPathResolution {
   const nativePackage = resolveNativePackage(vendorRoot, targetTriple, codexBinaryName);
   if (!nativePackage) {
     throw new Error(
-      `Unable to locate MidnightCoder binaries for ${targetTriple}. Ensure ${CODEX_NPM_NAME} is installed with optional dependencies.`,
+      `Unable to locate SolaiAgent binaries for ${targetTriple}. Ensure ${CODEX_NPM_NAME} is installed with optional dependencies.`,
     );
   }
 
@@ -413,7 +413,7 @@ export function resolveNativePackage(
   vendorRoot: string,
   targetTriple: string,
   codexBinaryName: string,
-): MidnightCoderPathResolution | null {
+): SolaiAgentPathResolution | null {
   const packageRoot = path.join(vendorRoot, targetTriple);
   const packageBinaryPath = path.join(packageRoot, "bin", codexBinaryName);
   if (isFile(packageBinaryPath) && isFile(path.join(packageRoot, "codex-package.json"))) {

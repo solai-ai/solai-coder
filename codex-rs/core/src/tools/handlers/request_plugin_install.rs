@@ -351,7 +351,7 @@ async fn verify_request_plugin_install_completed(
     turn: &crate::session::turn_context::TurnContext,
     manager: &codex_mcp::McpConnectionManager,
     tool: &DiscoverableTool,
-    auth: Option<&codex_login::MidnightCoderAuth>,
+    auth: Option<&codex_login::SolaiAgentAuth>,
 ) -> bool {
     match tool {
         DiscoverableTool::Connector(connector) => refresh_missing_requested_connectors(
@@ -413,7 +413,7 @@ async fn verify_request_plugin_install_completed(
 async fn refresh_remote_installed_plugins_cache_after_install(
     session: &crate::session::session::Session,
     turn: &crate::session::turn_context::TurnContext,
-    auth: Option<&codex_login::MidnightCoderAuth>,
+    auth: Option<&codex_login::SolaiAgentAuth>,
     tool_id: &str,
 ) {
     let plugins_manager = &session.services.plugins_manager;
@@ -442,7 +442,7 @@ fn is_remote_plugin_install_suggestion(plugin_id: &str) -> bool {
 async fn refresh_missing_requested_connectors(
     turn: &crate::session::turn_context::TurnContext,
     manager: &codex_mcp::McpConnectionManager,
-    auth: Option<&codex_login::MidnightCoderAuth>,
+    auth: Option<&codex_login::SolaiAgentAuth>,
     expected_connector_ids: &[String],
     tool_id: &str,
 ) -> Option<Vec<AppInfo>> {

@@ -9,7 +9,7 @@ pub fn is_persisted_rollout_item(item: &RolloutItem) -> bool {
         RolloutItem::InterAgentCommunication(_)
         | RolloutItem::InterAgentCommunicationMetadata { .. } => true,
         RolloutItem::EventMsg(ev) => should_persist_event_msg(ev),
-        // Persist MidnightCoder executive markers so we can analyze flows (e.g., compaction, API turns).
+        // Persist SolaiAgent executive markers so we can analyze flows (e.g., compaction, API turns).
         RolloutItem::Compacted(_)
         | RolloutItem::TurnContext(_)
         | RolloutItem::WorldState(_)

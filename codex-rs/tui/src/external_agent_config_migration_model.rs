@@ -56,7 +56,7 @@ pub(crate) fn external_agent_config_migration_groups(
             } else {
                 format!("Projects ({project_count})")
             },
-            description: "Add MidnightCoder files alongside your existing project files",
+            description: "Add SolaiAgent files alongside your existing project files",
             item_indices: projects,
         });
     }

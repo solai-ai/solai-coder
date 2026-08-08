@@ -13,7 +13,7 @@ use codex_protocol::protocol::GuardianAssessmentEvent;
 use codex_protocol::protocol::GuardianAssessmentStatus;
 use codex_protocol::protocol::GuardianRiskLevel;
 use codex_protocol::protocol::GuardianUserAuthorization;
-use codex_protocol::protocol::MidnightCoderErrorInfo;
+use codex_protocol::protocol::SolaiAgentErrorInfo;
 use codex_protocol::protocol::ReviewDecision;
 use codex_protocol::protocol::SubAgentSource;
 use codex_protocol::protocol::TurnAbortReason;
@@ -106,7 +106,7 @@ pub(super) enum GuardianReviewError {
     },
     Session {
         message: String,
-        error_info: Option<MidnightCoderErrorInfo>,
+        error_info: Option<SolaiAgentErrorInfo>,
     },
     Parse {
         message: String,
@@ -129,7 +129,7 @@ impl GuardianReviewError {
         }
     }
 
-    fn session_with_error_info(err: anyhow::Error, error_info: MidnightCoderErrorInfo) -> Self {
+    fn session_with_error_info(err: anyhow::Error, error_info: SolaiAgentErrorInfo) -> Self {
         Self::Session {
             message: err.to_string(),
             error_info: Some(error_info),
@@ -922,11 +922,11 @@ fn should_retry_guardian_review(outcome: &GuardianReviewOutcome) -> bool {
         GuardianReviewOutcome::Error(
             GuardianReviewError::Session {
                 error_info: Some(
-                    MidnightCoderErrorInfo::ServerOverloaded
-                        | MidnightCoderErrorInfo::HttpConnectionFailed { .. }
-                        | MidnightCoderErrorInfo::ResponseStreamConnectionFailed { .. }
-                        | MidnightCoderErrorInfo::InternalServerError
-                        | MidnightCoderErrorInfo::ResponseStreamDisconnected { .. }
+                    SolaiAgentErrorInfo::ServerOverloaded
+                        | SolaiAgentErrorInfo::HttpConnectionFailed { .. }
+                        | SolaiAgentErrorInfo::ResponseStreamConnectionFailed { .. }
+                        | SolaiAgentErrorInfo::InternalServerError
+                        | SolaiAgentErrorInfo::ResponseStreamDisconnected { .. }
                 ),
                 ..
             } | GuardianReviewError::Parse { .. }
@@ -947,7 +947,7 @@ mod review_tests {
             GuardianReviewError::session(anyhow::anyhow!("guardian runtime failed"));
         let structured_session_error = GuardianReviewError::session_with_error_info(
             anyhow::anyhow!("temporary guardian failure"),
-            MidnightCoderErrorInfo::ServerOverloaded,
+            SolaiAgentErrorInfo::ServerOverloaded,
         );
 
         assert!(matches!(
@@ -977,15 +977,15 @@ mod review_tests {
             rationale: "deny".to_string(),
         };
         let transient_error_info = [
-            MidnightCoderErrorInfo::ServerOverloaded,
-            MidnightCoderErrorInfo::HttpConnectionFailed {
+            SolaiAgentErrorInfo::ServerOverloaded,
+            SolaiAgentErrorInfo::HttpConnectionFailed {
                 http_status_code: Some(502),
             },
-            MidnightCoderErrorInfo::ResponseStreamConnectionFailed {
+            SolaiAgentErrorInfo::ResponseStreamConnectionFailed {
                 http_status_code: Some(503),
             },
-            MidnightCoderErrorInfo::InternalServerError,
-            MidnightCoderErrorInfo::ResponseStreamDisconnected {
+            SolaiAgentErrorInfo::InternalServerError,
+            SolaiAgentErrorInfo::ResponseStreamDisconnected {
                 http_status_code: None,
             },
         ];
@@ -1018,7 +1018,7 @@ mod review_tests {
             (
                 GuardianReviewOutcome::Error(GuardianReviewError::session_with_error_info(
                     anyhow::anyhow!("bad request"),
-                    MidnightCoderErrorInfo::BadRequest,
+                    SolaiAgentErrorInfo::BadRequest,
                 )),
                 false,
             ),

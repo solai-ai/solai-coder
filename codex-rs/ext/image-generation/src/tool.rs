@@ -48,7 +48,7 @@ use serde_json::Value;
 
 use crate::IMAGE_GEN_NAMESPACE;
 use crate::IMAGEGEN_TOOL_NAME;
-use crate::backend::MidnightCoderImagesBackend;
+use crate::backend::SolaiAgentImagesBackend;
 
 const IMAGE_MODEL: &str = "gpt-image-2";
 const MAX_EDIT_IMAGES: usize = 5;
@@ -56,7 +56,7 @@ const IMAGEGEN_DESCRIPTION: &str = include_str!("../imagegen_description.md");
 
 #[derive(Clone)]
 pub(crate) struct ImageGenerationTool {
-    backend: MidnightCoderImagesBackend,
+    backend: SolaiAgentImagesBackend,
     save_root: Option<AbsolutePathBuf>,
     thread_id: String,
 }
@@ -64,7 +64,7 @@ pub(crate) struct ImageGenerationTool {
 impl ImageGenerationTool {
     /// Creates an image-generation tool backed by an image API executor.
     pub(crate) fn new(
-        backend: MidnightCoderImagesBackend,
+        backend: SolaiAgentImagesBackend,
         save_root: Option<AbsolutePathBuf>,
         thread_id: String,
     ) -> Self {

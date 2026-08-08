@@ -19,7 +19,7 @@ pub use codex_core::connectors::list_accessible_connectors_from_mcp_tools_with_o
 pub use codex_core::connectors::list_cached_accessible_connectors_from_mcp_tools;
 pub use codex_core::connectors::with_app_enabled_state;
 use codex_login::AuthManager;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_plugin::AppConnectorId;
 
 const DIRECTORY_CONNECTORS_TIMEOUT: Duration = Duration::from_secs(60);
@@ -30,11 +30,11 @@ async fn apps_enabled(config: &Config) -> bool {
     let auth = auth_manager.auth().await;
     config.features.apps_enabled_for_auth(
         auth.as_ref()
-            .is_some_and(MidnightCoderAuth::uses_codex_backend),
+            .is_some_and(SolaiAgentAuth::uses_codex_backend),
     )
 }
 
-async fn connector_auth(config: &Config) -> anyhow::Result<MidnightCoderAuth> {
+async fn connector_auth(config: &Config) -> anyhow::Result<SolaiAgentAuth> {
     let auth_manager =
         AuthManager::shared_from_config(config, /*enable_codex_api_key_env*/ false).await;
     let auth = auth_manager
@@ -43,7 +43,7 @@ async fn connector_auth(config: &Config) -> anyhow::Result<MidnightCoderAuth> {
         .ok_or_else(|| anyhow::anyhow!("ChatGPT auth not available"))?;
     anyhow::ensure!(
         auth.uses_codex_backend(),
-        "ChatGPT connectors require MidnightCoder backend auth"
+        "ChatGPT connectors require SolaiAgent backend auth"
     );
     Ok(auth)
 }
@@ -119,7 +119,7 @@ pub async fn list_all_connectors_with_options(
 
 fn connector_directory_cache_context(
     config: &Config,
-    auth: &MidnightCoderAuth,
+    auth: &SolaiAgentAuth,
 ) -> ConnectorDirectoryCacheContext {
     ConnectorDirectoryCacheContext::new(
         config.codex_home.to_path_buf(),

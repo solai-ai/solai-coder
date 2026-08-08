@@ -9,7 +9,7 @@ use codex_features::Feature;
 use codex_git_utils::diff_since_latest_init;
 use codex_git_utils::reset_git_repository;
 use codex_login::AuthManager;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_model_provider::ModelProvider;
 use codex_model_provider::ModelProviderFuture;
 use codex_model_provider::ProviderAccountResult;
@@ -35,7 +35,7 @@ use core_test_support::responses::ev_response_created;
 use core_test_support::responses::mount_sse_once;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
-use core_test_support::test_codex::TestMidnightCoder;
+use core_test_support::test_codex::TestSolaiAgent;
 use core_test_support::test_codex::test_codex;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
@@ -512,7 +512,7 @@ fn startup_test_memories_config() -> MemoriesConfig {
 async fn build_test_codex(
     server: &wiremock::MockServer,
     home: Arc<TempDir>,
-) -> anyhow::Result<TestMidnightCoder> {
+) -> anyhow::Result<TestSolaiAgent> {
     build_test_codex_with_memories_config(server, home, startup_test_memories_config()).await
 }
 
@@ -520,7 +520,7 @@ async fn build_test_codex_with_memories_config(
     server: &wiremock::MockServer,
     home: Arc<TempDir>,
     memories: MemoriesConfig,
-) -> anyhow::Result<TestMidnightCoder> {
+) -> anyhow::Result<TestSolaiAgent> {
     test_codex()
         .with_home(home)
         .with_config(move |config| {
@@ -541,7 +541,7 @@ async fn init_state_db(home: &Arc<TempDir>) -> anyhow::Result<Arc<codex_state::S
     Ok(db)
 }
 
-async fn trigger_memories_startup(test: &TestMidnightCoder) {
+async fn trigger_memories_startup(test: &TestSolaiAgent) {
     let config_snapshot = test.codex.config_snapshot().await;
     let mut config = test.config.clone();
     config
@@ -559,7 +559,7 @@ async fn trigger_memories_startup(test: &TestMidnightCoder) {
 }
 
 async fn memory_startup_context_with_provider(
-    test: &TestMidnightCoder,
+    test: &TestSolaiAgent,
     provider: SharedModelProvider,
 ) -> (Arc<MemoryStartupContext>, Arc<codex_core::config::Config>) {
     let config_snapshot = test.codex.config_snapshot().await;
@@ -615,7 +615,7 @@ impl ModelProvider for MockMemoryModelProvider {
         self.delegate.auth_manager()
     }
 
-    fn auth(&self) -> ModelProviderFuture<'_, Option<MidnightCoderAuth>> {
+    fn auth(&self) -> ModelProviderFuture<'_, Option<SolaiAgentAuth>> {
         let delegate = Arc::clone(&self.delegate);
         Box::pin(async move { delegate.auth().await })
     }
@@ -760,7 +760,7 @@ async fn wait_for_request(mock: &ResponseMock, expected_count: usize) -> Vec<Res
 }
 
 async fn wait_for_service_tier(
-    test: &TestMidnightCoder,
+    test: &TestSolaiAgent,
     expected_service_tier: Option<String>,
 ) -> anyhow::Result<codex_core::ThreadConfigSnapshot> {
     let deadline = Instant::now() + Duration::from_secs(10);
@@ -851,7 +851,7 @@ async fn read_rollout_summary_bodies(memory_root: &Path) -> anyhow::Result<Vec<S
     Ok(summaries)
 }
 
-async fn shutdown_test_codex(test: &TestMidnightCoder) -> anyhow::Result<()> {
+async fn shutdown_test_codex(test: &TestSolaiAgent) -> anyhow::Result<()> {
     test.codex.submit(Op::Shutdown {}).await?;
     wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
     Ok(())

@@ -19,8 +19,8 @@ use crate::hook_runtime::PreCompactHookOutcome;
 use crate::hook_runtime::run_post_compact_hooks;
 use crate::hook_runtime::run_pre_compact_hooks;
 use crate::responses_metadata::CompactionTurnMetadata;
-use crate::responses_metadata::MidnightCoderResponsesMetadata;
-use crate::responses_metadata::MidnightCoderResponsesRequestKind;
+use crate::responses_metadata::SolaiAgentResponsesMetadata;
+use crate::responses_metadata::SolaiAgentResponsesRequestKind;
 use crate::responses_retry::ResponsesStreamRequest;
 use crate::responses_retry::handle_retryable_response_stream_error;
 use crate::session::session::Session;
@@ -31,8 +31,8 @@ use codex_analytics::CompactionImplementation;
 use codex_analytics::CompactionPhase;
 use codex_analytics::CompactionReason;
 use codex_analytics::CompactionTrigger;
-use codex_protocol::error::MidnightCoderErr;
-use codex_protocol::error::Result as MidnightCoderResult;
+use codex_protocol::error::SolaiAgentErr;
+use codex_protocol::error::Result as SolaiAgentResult;
 use codex_protocol::items::ContextCompactionItem;
 use codex_protocol::items::TurnItem;
 use codex_protocol::models::ContentItem;
@@ -64,7 +64,7 @@ pub(crate) async fn run_inline_remote_auto_compact_task(
     initial_context_injection: InitialContextInjection,
     reason: CompactionReason,
     phase: CompactionPhase,
-) -> MidnightCoderResult<()> {
+) -> SolaiAgentResult<()> {
     run_remote_compact_task_inner(
         &sess,
         &step_context,
@@ -80,7 +80,7 @@ pub(crate) async fn run_inline_remote_auto_compact_task(
 pub(crate) async fn run_remote_compact_task(
     sess: Arc<Session>,
     turn_context: Arc<TurnContext>,
-) -> MidnightCoderResult<()> {
+) -> SolaiAgentResult<()> {
     // Standalone compaction is its own request boundary, so it captures a fresh step.
     let step_context = sess.capture_step_context(Arc::clone(&turn_context)).await;
     let start_event = EventMsg::TurnStarted(TurnStartedEvent {
@@ -112,7 +112,7 @@ async fn run_remote_compact_task_inner(
     trigger: CompactionTrigger,
     reason: CompactionReason,
     phase: CompactionPhase,
-) -> MidnightCoderResult<()> {
+) -> SolaiAgentResult<()> {
     let turn_context = &step_context.turn;
     let compaction_metadata = CompactionTurnMetadata::new(
         trigger,
@@ -137,7 +137,7 @@ async fn run_remote_compact_task_inner(
     match pre_compact_outcome {
         PreCompactHookOutcome::Continue => {}
         PreCompactHookOutcome::Stopped => {
-            let error = MidnightCoderErr::TurnAborted;
+            let error = SolaiAgentErr::TurnAborted;
             attempt
                 .track(
                     sess.as_ref(),
@@ -166,7 +166,7 @@ async fn run_remote_compact_task_inner(
             attempt
                 .track(sess.as_ref(), status, codex_error, analytics_details)
                 .await;
-            return Err(MidnightCoderErr::TurnAborted);
+            return Err(SolaiAgentErr::TurnAborted);
         }
     }
     attempt
@@ -174,7 +174,7 @@ async fn run_remote_compact_task_inner(
         .await;
     match result {
         Ok(()) => Ok(()),
-        Err(err @ MidnightCoderErr::TurnAborted) => Err(err),
+        Err(err @ SolaiAgentErr::TurnAborted) => Err(err),
         Err(err) => {
             sess.track_turn_codex_error(turn_context, &err);
             let event = EventMsg::Error(
@@ -193,7 +193,7 @@ async fn run_remote_compact_task_inner_impl(
     initial_context_injection: InitialContextInjection,
     compaction_metadata: CompactionTurnMetadata,
     analytics_details: &mut CompactionAnalyticsDetails,
-) -> MidnightCoderResult<()> {
+) -> SolaiAgentResult<()> {
     let turn_context = &step_context.turn;
     let context_compaction_item = ContextCompactionItem::new();
     let compact_model_info = compact_model_info(sess.as_ref(), turn_context.as_ref()).await;
@@ -268,7 +268,7 @@ async fn run_remote_compact_task_inner_impl(
     let responses_metadata = turn_context.turn_metadata_state.to_responses_metadata(
         sess.installation_id.clone(),
         window_id,
-        MidnightCoderResponsesRequestKind::Compaction(compaction_metadata),
+        SolaiAgentResponsesRequestKind::Compaction(compaction_metadata),
     );
     let trace_attempt = compaction_trace.start_attempt(&serde_json::json!({
         "model": compact_model_info.slug.as_str(),
@@ -366,8 +366,8 @@ async fn run_remote_compaction_request_v2(
     client_session: &mut ModelClientSession,
     compact_model_info: &codex_protocol::openai_models::ModelInfo,
     prompt: &Prompt,
-    responses_metadata: &MidnightCoderResponsesMetadata,
-) -> MidnightCoderResult<RemoteCompactionV2Output> {
+    responses_metadata: &SolaiAgentResponsesMetadata,
+) -> SolaiAgentResult<RemoteCompactionV2Output> {
     let max_retries = turn_context
         .provider
         .info()
@@ -414,7 +414,7 @@ async fn run_remote_compaction_request_v2(
 
 async fn collect_compaction_output(
     mut stream: ResponseStream,
-) -> MidnightCoderResult<RemoteCompactionV2Output> {
+) -> SolaiAgentResult<RemoteCompactionV2Output> {
     let mut output_item_count = 0usize;
     let mut compaction_count = 0usize;
     let mut compaction_output = None;
@@ -441,14 +441,14 @@ async fn collect_compaction_output(
     }
 
     if !saw_completed {
-        return Err(MidnightCoderErr::Stream(
+        return Err(SolaiAgentErr::Stream(
             "remote compaction v2 stream closed before response.completed".to_string(),
             None,
         ));
     }
 
     if compaction_count != 1 {
-        return Err(MidnightCoderErr::Fatal(format!(
+        return Err(SolaiAgentErr::Fatal(format!(
             "remote compaction v2 expected exactly one compaction output item, got {compaction_count} from {output_item_count} output items"
         )));
     }
@@ -616,7 +616,7 @@ mod tests {
         }
     }
 
-    fn response_stream(events: Vec<MidnightCoderResult<ResponseEvent>>) -> ResponseStream {
+    fn response_stream(events: Vec<SolaiAgentResult<ResponseEvent>>) -> ResponseStream {
         let (tx_event, rx_event) = mpsc::channel(events.len().max(1));
         for event in events {
             tx_event

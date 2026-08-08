@@ -3,7 +3,7 @@ source: tui/src/model_migration.rs
 expression: terminal.backend()
 ---
 
-> MidnightCoder just got an upgrade. Introducing gpt-5.1-cod
+> SolaiAgent just got an upgrade. Introducing gpt-5.1-cod
 
   We recommend switching from gpt-5-codex-mini to
   gpt-5.1-codex-mini.

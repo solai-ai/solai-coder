@@ -14,21 +14,21 @@ pub struct Cli {
 
 #[derive(Debug, clap::Subcommand)]
 pub enum Command {
-    /// Submit a new MidnightCoder Cloud task without launching the TUI.
+    /// Submit a new SolaiAgent Cloud task without launching the TUI.
     Exec(ExecCommand),
-    /// Show the status of a MidnightCoder Cloud task.
+    /// Show the status of a SolaiAgent Cloud task.
     Status(StatusCommand),
-    /// List MidnightCoder Cloud tasks.
+    /// List SolaiAgent Cloud tasks.
     List(ListCommand),
-    /// Apply the diff for a MidnightCoder Cloud task locally.
+    /// Apply the diff for a SolaiAgent Cloud task locally.
     Apply(ApplyCommand),
-    /// Show the unified diff for a MidnightCoder Cloud task.
+    /// Show the unified diff for a SolaiAgent Cloud task.
     Diff(DiffCommand),
 }
 
 #[derive(Debug, Args)]
 pub struct ExecCommand {
-    /// Task prompt to run in MidnightCoder Cloud.
+    /// Task prompt to run in SolaiAgent Cloud.
     #[arg(value_name = "QUERY")]
     pub query: Option<String>,
 
@@ -44,7 +44,7 @@ pub struct ExecCommand {
     )]
     pub attempts: usize,
 
-    /// Git branch to run in MidnightCoder Cloud (defaults to current branch).
+    /// Git branch to run in SolaiAgent Cloud (defaults to current branch).
     #[arg(long = "branch", value_name = "BRANCH")]
     pub branch: Option<String>,
 }
@@ -73,7 +73,7 @@ fn parse_limit(input: &str) -> Result<i64, String> {
 
 #[derive(Debug, Args)]
 pub struct StatusCommand {
-    /// MidnightCoder Cloud task identifier to inspect.
+    /// SolaiAgent Cloud task identifier to inspect.
     #[arg(value_name = "TASK_ID")]
     pub task_id: String,
 }
@@ -99,7 +99,7 @@ pub struct ListCommand {
 
 #[derive(Debug, Args)]
 pub struct ApplyCommand {
-    /// MidnightCoder Cloud task identifier to apply.
+    /// SolaiAgent Cloud task identifier to apply.
     #[arg(value_name = "TASK_ID")]
     pub task_id: String,
 
@@ -110,7 +110,7 @@ pub struct ApplyCommand {
 
 #[derive(Debug, Args)]
 pub struct DiffCommand {
-    /// MidnightCoder Cloud task identifier to display.
+    /// SolaiAgent Cloud task identifier to display.
     #[arg(value_name = "TASK_ID")]
     pub task_id: String,
 

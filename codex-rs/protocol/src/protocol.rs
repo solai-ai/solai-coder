@@ -1,4 +1,4 @@
-//! Defines the protocol for a MidnightCoder session between a client and an agent.
+//! Defines the protocol for a SolaiAgent session between a client and an agent.
 //!
 //! Uses a SQ (Submission Queue) / EQ (Event Queue) pattern to asynchronously communicate
 //! between user and agent.
@@ -117,7 +117,7 @@ pub const CONTEXT_WINDOW_OPEN_TAG: &str = "<context_window>";
 pub const CONTEXT_WINDOW_CLOSE_TAG: &str = "</context_window>";
 pub const CONTEXT_WINDOW_GUIDANCE_OPEN_TAG: &str = "<context_window_guidance>";
 pub const CONTEXT_WINDOW_GUIDANCE_CLOSE_TAG: &str = "</context_window_guidance>";
-pub const USER_MESSAGE_BEGIN: &str = "## My request for MidnightCoder:";
+pub const USER_MESSAGE_BEGIN: &str = "## My request for SolaiAgent:";
 
 // TODO(anp): Replace `TurnEnvironmentSelection` with `PathUri` once path URIs carry environment
 // identifiers.
@@ -191,13 +191,13 @@ pub struct McpServerRefreshConfig {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ConversationStartParams {
-    /// Whether MidnightCoder response handoffs are managed through explicit client append calls.
+    /// Whether SolaiAgent response handoffs are managed through explicit client append calls.
     pub client_managed_handoffs: bool,
-    /// Sends automatic MidnightCoder responses as realtime conversation items instead of handoff appends.
+    /// Sends automatic SolaiAgent responses as realtime conversation items instead of handoff appends.
     pub codex_responses_as_items: bool,
-    /// Optional prefix added to automatic MidnightCoder response items when `codex_responses_as_items` is set.
+    /// Optional prefix added to automatic SolaiAgent response items when `codex_responses_as_items` is set.
     pub codex_response_item_prefix: Option<String>,
-    /// Optional prefix added to automatic V1 MidnightCoder commentary sent with
+    /// Optional prefix added to automatic V1 SolaiAgent commentary sent with
     /// `conversation.handoff.append` when `codex_responses_as_items` is not set. Final answers are
     /// sent without the prefix.
     pub codex_response_handoff_prefix: Option<String>,
@@ -205,7 +205,7 @@ pub struct ConversationStartParams {
     pub model: Option<String>,
     /// Selects whether the realtime session should produce text or audio output.
     pub output_modality: RealtimeOutputModality,
-    /// Whether to append MidnightCoder's startup context to the realtime backend prompt.
+    /// Whether to append SolaiAgent's startup context to the realtime backend prompt.
     pub include_startup_context: bool,
     pub prompt: Option<Option<String>>,
     pub realtime_session_id: Option<String>,
@@ -645,7 +645,7 @@ pub enum Op {
     /// model.
     SetThreadMemoryMode { mode: ThreadMemoryMode },
 
-    /// Request MidnightCoder to drop the last N user turns from in-memory context.
+    /// Request SolaiAgent to drop the last N user turns from in-memory context.
     ///
     /// This does not attempt to revert local filesystem changes. Clients are
     /// responsible for undoing any edits on disk.
@@ -881,7 +881,7 @@ impl Op {
 }
 
 /// Determines the conditions under which the user is consulted to approve
-/// running the command proposed by MidnightCoder.
+/// running the command proposed by SolaiAgent.
 #[derive(
     Debug,
     Clone,
@@ -1720,11 +1720,11 @@ pub enum NonSteerableTurnKind {
     Compact,
 }
 
-/// MidnightCoder errors that we expose to clients.
+/// SolaiAgent errors that we expose to clients.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema, TS)]
 #[serde(rename_all = "snake_case")]
 #[ts(rename_all = "snake_case")]
-pub enum MidnightCoderErrorInfo {
+pub enum SolaiAgentErrorInfo {
     ContextWindowExceeded,
     SessionBudgetExceeded,
     UsageLimitExceeded,
@@ -1758,7 +1758,7 @@ pub enum MidnightCoderErrorInfo {
     Other,
 }
 
-impl MidnightCoderErrorInfo {
+impl SolaiAgentErrorInfo {
     /// Whether this error should mark the current turn as failed when replaying history.
     pub fn affects_turn_status(&self) -> bool {
         match self {
@@ -1931,7 +1931,7 @@ pub struct ExitedReviewModeEvent {
 pub struct ErrorEvent {
     pub message: String,
     #[serde(default)]
-    pub codex_error_info: Option<MidnightCoderErrorInfo>,
+    pub codex_error_info: Option<SolaiAgentErrorInfo>,
 }
 
 impl ErrorEvent {
@@ -1939,7 +1939,7 @@ impl ErrorEvent {
     pub fn affects_turn_status(&self) -> bool {
         self.codex_error_info
             .as_ref()
-            .is_none_or(MidnightCoderErrorInfo::affects_turn_status)
+            .is_none_or(SolaiAgentErrorInfo::affects_turn_status)
     }
 }
 
@@ -2904,7 +2904,7 @@ impl SessionSource {
             | SessionSource::VSCode
             | SessionSource::Exec
             | SessionSource::Mcp
-            | SessionSource::Unknown => Some(Product::MidnightCoder),
+            | SessionSource::Unknown => Some(Product::SolaiAgent),
             SessionSource::Internal(_) | SessionSource::SubAgent(_) => None,
         }
     }
@@ -3265,7 +3265,7 @@ pub struct TurnContextItem {
     pub realtime_active: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub effort: Option<ReasoningEffortConfig>,
-    // Compatibility-only field written with a default value so older MidnightCoder
+    // Compatibility-only field written with a default value so older SolaiAgent
     // versions can deserialize turn-context rollout items. It is no longer
     // read by context reconstruction and should be removed in a future schema
     // cleanup.
@@ -3601,7 +3601,7 @@ pub struct ThreadRolledBackEvent {
 pub struct StreamErrorEvent {
     pub message: String,
     #[serde(default)]
-    pub codex_error_info: Option<MidnightCoderErrorInfo>,
+    pub codex_error_info: Option<SolaiAgentErrorInfo>,
     /// Optional details about the underlying stream failure (often the same
     /// human-readable message that is surfaced as the terminal error if retries
     /// are exhausted).
@@ -3747,7 +3747,7 @@ pub enum Product {
     #[serde(alias = "CHATGPT")]
     Chatgpt,
     #[serde(alias = "CODEX")]
-    MidnightCoder,
+    SolaiAgent,
     #[serde(alias = "ATLAS")]
     Atlas,
 }
@@ -3755,7 +3755,7 @@ impl Product {
     pub fn to_app_platform(self) -> &'static str {
         match self {
             Self::Chatgpt => "chat",
-            Self::MidnightCoder => "codex",
+            Self::SolaiAgent => "codex",
             Self::Atlas => "atlas",
         }
     }
@@ -3764,7 +3764,7 @@ impl Product {
         let normalized = value.trim().to_ascii_lowercase();
         match normalized.as_str() {
             "chatgpt" => Some(Self::Chatgpt),
-            "codex" => Some(Self::MidnightCoder),
+            "codex" => Some(Self::SolaiAgent),
             "atlas" => Some(Self::Atlas),
             _ => None,
         }
@@ -4585,23 +4585,23 @@ mod tests {
     fn session_source_restriction_product_defaults_non_subagent_sources_to_codex() {
         assert_eq!(
             SessionSource::Cli.restriction_product(),
-            Some(Product::MidnightCoder)
+            Some(Product::SolaiAgent)
         );
         assert_eq!(
             SessionSource::VSCode.restriction_product(),
-            Some(Product::MidnightCoder)
+            Some(Product::SolaiAgent)
         );
         assert_eq!(
             SessionSource::Exec.restriction_product(),
-            Some(Product::MidnightCoder)
+            Some(Product::SolaiAgent)
         );
         assert_eq!(
             SessionSource::Mcp.restriction_product(),
-            Some(Product::MidnightCoder)
+            Some(Product::SolaiAgent)
         );
         assert_eq!(
             SessionSource::Unknown.restriction_product(),
-            Some(Product::MidnightCoder)
+            Some(Product::SolaiAgent)
         );
     }
 
@@ -4630,7 +4630,7 @@ mod tests {
         );
         assert_eq!(
             SessionSource::Custom("codex".to_string()).restriction_product(),
-            Some(Product::MidnightCoder)
+            Some(Product::SolaiAgent)
         );
         assert_eq!(
             SessionSource::Custom("atlas-dev".to_string()).restriction_product(),
@@ -4646,9 +4646,9 @@ mod tests {
         );
         assert!(
             !SessionSource::Custom("chatgpt".to_string())
-                .matches_product_restriction(&[Product::MidnightCoder])
+                .matches_product_restriction(&[Product::SolaiAgent])
         );
-        assert!(SessionSource::VSCode.matches_product_restriction(&[Product::MidnightCoder]));
+        assert!(SessionSource::VSCode.matches_product_restriction(&[Product::SolaiAgent]));
         assert!(
             !SessionSource::Custom("atlas-dev".to_string())
                 .matches_product_restriction(&[Product::Atlas])
@@ -5390,7 +5390,7 @@ mod tests {
     fn rollback_failed_error_does_not_affect_turn_status() {
         let event = ErrorEvent {
             message: "rollback failed".into(),
-            codex_error_info: Some(MidnightCoderErrorInfo::ThreadRollbackFailed),
+            codex_error_info: Some(SolaiAgentErrorInfo::ThreadRollbackFailed),
         };
         assert!(!event.affects_turn_status());
     }
@@ -5399,7 +5399,7 @@ mod tests {
     fn active_turn_not_steerable_error_does_not_affect_turn_status() {
         let event = ErrorEvent {
             message: "cannot steer a review turn".into(),
-            codex_error_info: Some(MidnightCoderErrorInfo::ActiveTurnNotSteerable {
+            codex_error_info: Some(SolaiAgentErrorInfo::ActiveTurnNotSteerable {
                 turn_kind: NonSteerableTurnKind::Review,
             }),
         };
@@ -5410,7 +5410,7 @@ mod tests {
     fn generic_error_affects_turn_status() {
         let event = ErrorEvent {
             message: "generic".into(),
-            codex_error_info: Some(MidnightCoderErrorInfo::Other),
+            codex_error_info: Some(SolaiAgentErrorInfo::Other),
         };
         assert!(event.affects_turn_status());
     }

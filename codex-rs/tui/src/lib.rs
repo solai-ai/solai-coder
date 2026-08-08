@@ -84,7 +84,7 @@ use uuid::Uuid;
 
 pub(crate) use codex_app_server_client::legacy_core;
 
-const DEFAULT_MODEL: &str = "MidnightCoder-30B";
+const DEFAULT_MODEL: &str = "SolaiAgent-30B";
 
 mod additional_dirs;
 mod app;
@@ -241,7 +241,7 @@ async fn start_embedded_app_server(
     loader_overrides: LoaderOverrides,
     strict_config: bool,
     cloud_config_bundle: CloudConfigBundleLoader,
-    feedback: codex_feedback::MidnightCoderFeedback,
+    feedback: codex_feedback::SolaiAgentFeedback,
     log_db: Option<log_db::LogDbLayer>,
     state_db: Option<StateDbHandle>,
     environment_manager: Arc<EnvironmentManager>,
@@ -456,7 +456,7 @@ async fn start_app_server(
     loader_overrides: LoaderOverrides,
     strict_config: bool,
     cloud_config_bundle: CloudConfigBundleLoader,
-    feedback: codex_feedback::MidnightCoderFeedback,
+    feedback: codex_feedback::SolaiAgentFeedback,
     log_db: Option<log_db::LogDbLayer>,
     state_db: Option<StateDbHandle>,
     environment_manager: Arc<EnvironmentManager>,
@@ -496,7 +496,7 @@ pub(crate) async fn start_app_server_for_picker(
         LoaderOverrides::default(),
         /*strict_config*/ false,
         CloudConfigBundleLoader::default(),
-        codex_feedback::MidnightCoderFeedback::new(),
+        codex_feedback::SolaiAgentFeedback::new(),
         /*log_db*/ None,
         state_db,
         environment_manager,
@@ -530,7 +530,7 @@ async fn start_embedded_app_server_with<F, Fut>(
     loader_overrides: LoaderOverrides,
     strict_config: bool,
     cloud_config_bundle: CloudConfigBundleLoader,
-    feedback: codex_feedback::MidnightCoderFeedback,
+    feedback: codex_feedback::SolaiAgentFeedback,
     log_db: Option<log_db::LogDbLayer>,
     state_db: Option<StateDbHandle>,
     environment_manager: Arc<EnvironmentManager>,
@@ -1216,7 +1216,7 @@ pub async fn run_main(
         (None, None)
     };
 
-    let feedback = codex_feedback::MidnightCoderFeedback::new();
+    let feedback = codex_feedback::SolaiAgentFeedback::new();
     let feedback_layer = feedback.logger_layer();
     let feedback_metadata_layer = feedback.metadata_layer();
 
@@ -1296,7 +1296,7 @@ async fn run_ratatui_app(
     overrides: ConfigOverrides,
     cli_kv_overrides: Vec<(String, toml::Value)>,
     mut cloud_config_bundle: CloudConfigBundleLoader,
-    feedback: codex_feedback::MidnightCoderFeedback,
+    feedback: codex_feedback::SolaiAgentFeedback,
     log_db: Option<log_db::LogDbLayer>,
     state_db: Option<StateDbHandle>,
     environment_manager: Arc<EnvironmentManager>,
@@ -2005,8 +2005,8 @@ fn should_show_onboarding(
 }
 
 fn should_show_login_screen(login_status: LoginStatus, config: &Config) -> bool {
-    // Only show the login screen for providers that actually require MidnightCoder auth
-    // (MidnightCoder or equivalents). For OSS/other providers, skip login entirely.
+    // Only show the login screen for providers that actually require SolaiAgent auth
+    // (SolaiAgent or equivalents). For OSS/other providers, skip login entirely.
     if !config.model_provider.requires_openai_auth {
         return false;
     }
@@ -2142,7 +2142,7 @@ mod tests {
             LoaderOverrides::default(),
             /*strict_config*/ false,
             CloudConfigBundleLoader::default(),
-            codex_feedback::MidnightCoderFeedback::new(),
+            codex_feedback::SolaiAgentFeedback::new(),
             /*log_db*/ None,
             state_db,
             Arc::new(EnvironmentManager::default_for_tests()),
@@ -2914,7 +2914,7 @@ mod tests {
             LoaderOverrides::default(),
             /*strict_config*/ false,
             CloudConfigBundleLoader::default(),
-            codex_feedback::MidnightCoderFeedback::new(),
+            codex_feedback::SolaiAgentFeedback::new(),
             /*log_db*/ None,
             /*state_db*/ None,
             Arc::new(EnvironmentManager::default_for_tests()),

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rewrite a local plugin version to a single MidnightCoder cachebuster suffix."""
+"""Rewrite a local plugin version to a single SolaiAgent cachebuster suffix."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-//! Built-in pet catalog ported from the MidnightCoder App avatar catalog.
+//! Built-in pet catalog ported from the SolaiAgent App avatar catalog.
 
 pub(super) const DEFAULT_FRAME_WIDTH: u32 = 192;
 pub(super) const DEFAULT_FRAME_HEIGHT: u32 = 208;
@@ -18,8 +18,8 @@ pub(super) struct BuiltinPet {
 pub(super) const BUILTIN_PETS: &[BuiltinPet] = &[
     BuiltinPet {
         id: "codex",
-        display_name: "MidnightCoder",
-        description: "The original MidnightCoder companion",
+        display_name: "SolaiAgent",
+        description: "The original SolaiAgent companion",
         spritesheet_file: "codex-spritesheet-v4.webp",
     },
     BuiltinPet {

@@ -3053,7 +3053,7 @@ async fn approve_mode_skips_guardian_in_every_permission_mode() {
     ] {
         let (mut session, mut turn_context) = make_session_and_context().await;
         turn_context.auth_manager = Some(crate::test_support::auth_manager_from_auth(
-            codex_login::MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing(),
+            codex_login::SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing(),
         ));
         turn_context
             .approval_policy

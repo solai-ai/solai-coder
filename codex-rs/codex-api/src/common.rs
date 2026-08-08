@@ -76,7 +76,7 @@ pub enum ResponseEvent {
     SafetyBuffering(SafetyBuffering),
     OutputItemDone(ResponseItem),
     OutputItemAdded(ResponseItem),
-    /// Emitted when the server includes `MidnightCoder-Model` on the stream response.
+    /// Emitted when the server includes `SolaiAgent-Model` on the stream response.
     /// This can differ from the requested model when backend safety routing applies.
     ServerModel(String),
     /// Emitted when the server recommends additional account verification.
@@ -166,7 +166,7 @@ pub enum TextFormatType {
 
 #[derive(Debug, Serialize, Default, Clone, PartialEq)]
 pub struct TextFormat {
-    /// Format type used by the MidnightCoder text controls.
+    /// Format type used by the SolaiAgent text controls.
     pub r#type: TextFormatType,
     /// When true, the server is expected to strictly validate responses.
     pub strict: bool,
@@ -186,10 +186,10 @@ pub struct TextControls {
     pub format: Option<TextFormat>,
 }
 
-/// Provider-native request options for MidnightCoder-compatible APIs.
+/// Provider-native request options for SolaiAgent-compatible APIs.
 ///
 /// These are omitted for providers that do not support them. Ollama accepts
-/// `options.num_ctx` on both its native API and MidnightCoder-compatible `/v1/responses`.
+/// `options.num_ctx` on both its native API and SolaiAgent-compatible `/v1/responses`.
 #[derive(Debug, Serialize, Default, Clone, PartialEq, Eq)]
 pub struct ProviderRequestOptions {
     #[serde(skip_serializing_if = "Option::is_none")]

@@ -18,7 +18,7 @@ use codex_extension_api::ExtensionRegistryBuilder;
 use codex_goal_extension::GoalService;
 use codex_login::AuthManager;
 use codex_protocol::ThreadId;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::protocol::Event;
 use codex_protocol::protocol::EventMsg;
 use codex_rollout::state_db::StateDbHandle;
@@ -46,7 +46,7 @@ pub(crate) fn thread_extensions<S>(
     dependencies: ThreadExtensionDependencies,
 ) -> Arc<ExtensionRegistry<Config>>
 where
-    S: AgentSpawner<StartThreadOptions, Spawned = NewThread, Error = MidnightCoderErr> + 'static,
+    S: AgentSpawner<StartThreadOptions, Spawned = NewThread, Error = SolaiAgentErr> + 'static,
 {
     let ThreadExtensionDependencies {
         event_sink,
@@ -155,14 +155,14 @@ impl ExtensionEventSink for AppServerExtensionEventSink {
 
 pub(crate) fn guardian_agent_spawner(
     thread_manager: Weak<ThreadManager>,
-) -> impl AgentSpawner<StartThreadOptions, Spawned = NewThread, Error = MidnightCoderErr> {
+) -> impl AgentSpawner<StartThreadOptions, Spawned = NewThread, Error = SolaiAgentErr> {
     move |forked_from_thread_id: ThreadId,
           options: StartThreadOptions|
-          -> AgentSpawnFuture<'static, NewThread, MidnightCoderErr> {
+          -> AgentSpawnFuture<'static, NewThread, SolaiAgentErr> {
         let thread_manager = thread_manager.clone();
         Box::pin(async move {
             let thread_manager = thread_manager.upgrade().ok_or_else(|| {
-                MidnightCoderErr::UnsupportedOperation("thread manager dropped".to_string())
+                SolaiAgentErr::UnsupportedOperation("thread manager dropped".to_string())
             })?;
             thread_manager
                 .spawn_subagent(forked_from_thread_id, options)

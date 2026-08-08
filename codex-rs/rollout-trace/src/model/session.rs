@@ -7,7 +7,7 @@ use super::AgentPath;
 use super::AgentThreadId;
 use super::ConversationItemId;
 use super::EdgeId;
-use super::MidnightCoderTurnId;
+use super::SolaiAgentTurnId;
 
 /// Coarse terminal status for the rollout.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -23,7 +23,7 @@ pub enum RolloutStatus {
     Aborted,
 }
 
-/// One MidnightCoder thread/session participating in the rollout.
+/// One SolaiAgent thread/session participating in the rollout.
 ///
 /// Threads are agents in the multi-agent sense, but the root interactive
 /// session is represented by the same object. Runtime objects live in top-level
@@ -49,7 +49,7 @@ pub struct AgentThread {
     pub conversation_item_ids: Vec<ConversationItemId>,
 }
 
-/// Provenance for a traced MidnightCoder thread.
+/// Provenance for a traced SolaiAgent thread.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case", tag = "type")]
 pub enum AgentOrigin {
@@ -95,14 +95,14 @@ pub enum ExecutionStatus {
     Aborted,
 }
 
-/// One activation of the MidnightCoder runtime for one thread.
+/// One activation of the SolaiAgent runtime for one thread.
 ///
-/// A MidnightCoder turn groups protocol/runtime work for one thread activation.
+/// A SolaiAgent turn groups protocol/runtime work for one thread activation.
 /// It is not a user/assistant message pair; conversation belongs in
 /// `ConversationItem`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct MidnightCoderTurn {
-    pub codex_turn_id: MidnightCoderTurnId,
+pub struct SolaiAgentTurn {
+    pub codex_turn_id: SolaiAgentTurnId,
     pub thread_id: AgentThreadId,
     pub execution: ExecutionWindow,
     /// Conversation items that directly triggered this activation, when known.

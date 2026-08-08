@@ -3,12 +3,12 @@ source: tui/src/model_migration.rs
 expression: terminal.backend()
 ---
 
-> MidnightCoder just got an upgrade. Introducing gpt-5.1-cod
+> SolaiAgent just got an upgrade. Introducing gpt-5.1-cod
 
   We recommend switching from gpt-5-codex to
   gpt-5.1-codex-max.
 
-  MidnightCoder-optimized flagship for deep and fast
+  SolaiAgent-optimized flagship for deep and fast
   reasoning. Learn more about gpt-5.1-codex-max at
   https://www.codex.com/models/gpt-5.1-codex-max
 

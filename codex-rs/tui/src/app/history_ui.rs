@@ -5,7 +5,7 @@
 
 use super::*;
 
-const DESKTOP_THREAD_OPENED_MESSAGE: &str = "Opened this session in MidnightCoder Desktop.";
+const DESKTOP_THREAD_OPENED_MESSAGE: &str = "Opened this session in SolaiAgent Desktop.";
 
 impl App {
     pub(super) fn insert_history_cell(&mut self, tui: &mut tui::Tui, cell: Box<dyn HistoryCell>) {
@@ -179,7 +179,7 @@ impl App {
 
 fn desktop_thread_open_error_message(err: &str) -> String {
     format!(
-        "Failed to open this session in MidnightCoder Desktop: {err}. Install or launch MidnightCoder Desktop and try again."
+        "Failed to open this session in SolaiAgent Desktop: {err}. Install or launch SolaiAgent Desktop and try again."
     )
 }
 
@@ -206,7 +206,7 @@ fn open_desktop_thread_url(url: &str) -> Result<(), String> {
         .arg(&script)
         .output()
         .map_err(|err| {
-            format!("failed to launch MidnightCoder Desktop through PowerShell: {err}")
+            format!("failed to launch SolaiAgent Desktop through PowerShell: {err}")
         })?;
 
     if output.status.success() {
@@ -216,7 +216,7 @@ fn open_desktop_thread_url(url: &str) -> Result<(), String> {
     let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
     if stderr.is_empty() {
         Err(format!(
-            "failed to launch MidnightCoder Desktop through PowerShell with {}",
+            "failed to launch SolaiAgent Desktop through PowerShell with {}",
             output.status
         ))
     } else {
@@ -232,21 +232,21 @@ fn windows_desktop_app_launch_script(url: &str) -> String {
 $ErrorActionPreference = 'Stop'
 $url = {url}
 
-$installLocation = (Get-AppxPackage -Name MidnightCoder.MidnightCoder -ErrorAction SilentlyContinue).InstallLocation
+$installLocation = (Get-AppxPackage -Name SolaiAgent.SolaiAgent -ErrorAction SilentlyContinue).InstallLocation
 if ([string]::IsNullOrWhiteSpace($installLocation)) {{
-    Write-Error 'MidnightCoder Desktop package is not installed'
+    Write-Error 'SolaiAgent Desktop package is not installed'
     exit 1
 }}
 
 $appDir = Join-Path $installLocation 'app'
-$exe = Join-Path $appDir 'MidnightCoder.exe'
+$exe = Join-Path $appDir 'SolaiAgent.exe'
 $app = Join-Path $appDir 'resources\app.asar'
 if (-not (Test-Path $exe)) {{
-    Write-Error "MidnightCoder Desktop executable not found at $exe"
+    Write-Error "SolaiAgent Desktop executable not found at $exe"
     exit 1
 }}
 if (-not (Test-Path $app)) {{
-    Write-Error "MidnightCoder Desktop app bundle not found at $app"
+    Write-Error "SolaiAgent Desktop app bundle not found at $app"
     exit 1
 }}
 
@@ -262,7 +262,7 @@ fn powershell_single_quoted_string(value: &str) -> String {
 
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
 fn open_desktop_thread_url(_url: &str) -> Result<(), String> {
-    Err("MidnightCoder Desktop is only available on macOS and Windows".to_string())
+    Err("SolaiAgent Desktop is only available on macOS and Windows".to_string())
 }
 
 #[cfg(test)]

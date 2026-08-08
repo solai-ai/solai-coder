@@ -1,1 +1,1 @@
-#define PACKAGE_STRING "bubblewrap built for Midnight Coder"
+#define PACKAGE_STRING "bubblewrap built for SOLAI Agent"

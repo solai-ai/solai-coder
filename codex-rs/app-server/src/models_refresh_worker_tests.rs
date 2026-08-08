@@ -7,7 +7,7 @@ use codex_models_manager::manager::ModelsEndpointClient;
 use codex_models_manager::manager::ModelsEndpointFuture;
 use codex_models_manager::manager::OpenAiModelsManager;
 use codex_models_manager::manager::SharedModelsManager;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::error::Result as CoreResult;
 use codex_protocol::openai_models::ModelInfo;
 use pretty_assertions::assert_eq;
@@ -60,7 +60,7 @@ impl ModelsEndpointClient for TestModelsEndpoint {
             let fetch_index = self.fetch_count.fetch_add(1, Ordering::SeqCst);
             self.fetched.notify_one();
             if fetch_index == 0 {
-                return Err(MidnightCoderErr::Io(std::io::Error::other("test failure")));
+                return Err(SolaiAgentErr::Io(std::io::Error::other("test failure")));
             }
             if fetch_index == 1 {
                 self.release_second_fetch.notified().await;

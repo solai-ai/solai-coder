@@ -3,7 +3,7 @@ source: tui/src/bottom_pane/chat_composer.rs
 expression: terminal.backend()
 ---
 "                                            "
-"› Ask MidnightCoder to do anything          "
+"› Ask SolaiAgent to do anything          "
 "                                            "
 "                                            "
 "                                            "

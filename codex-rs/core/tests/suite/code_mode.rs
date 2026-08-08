@@ -10,7 +10,7 @@ use codex_core::config::CurrentTimeReminderConfig;
 use codex_extension_api::ExtensionRegistryBuilder;
 use codex_features::CurrentTimeSource;
 use codex_features::Feature;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_models_manager::bundled_models_response;
 use codex_protocol::config_types::WebSearchMode;
 use codex_protocol::dynamic_tools::DynamicToolCallOutputContentItem;
@@ -42,7 +42,7 @@ use core_test_support::responses::sse;
 use core_test_support::skip_if_no_network;
 use core_test_support::skip_if_wine_exec;
 use core_test_support::stdio_server_bin;
-use core_test_support::test_codex::TestMidnightCoder;
+use core_test_support::test_codex::TestSolaiAgent;
 use core_test_support::test_codex::test_codex;
 use core_test_support::test_codex::turn_permission_fields;
 use core_test_support::wait_for_event;
@@ -169,7 +169,7 @@ async fn run_code_mode_turn(
     server: &MockServer,
     prompt: &str,
     code: &str,
-) -> Result<(TestMidnightCoder, ResponseMock)> {
+) -> Result<(TestSolaiAgent, ResponseMock)> {
     run_code_mode_turn_with_config(server, prompt, code, |_| {}).await
 }
 
@@ -178,7 +178,7 @@ async fn run_code_mode_turn_with_config(
     prompt: &str,
     code: &str,
     configure: impl FnOnce(&mut Config) + Send + 'static,
-) -> Result<(TestMidnightCoder, ResponseMock)> {
+) -> Result<(TestSolaiAgent, ResponseMock)> {
     run_code_mode_turn_with_model_and_config(server, prompt, code, "test-gpt-5.1-codex", configure)
         .await
 }
@@ -189,7 +189,7 @@ async fn run_code_mode_turn_with_model_and_config(
     code: &str,
     model: &'static str,
     configure: impl FnOnce(&mut Config) + Send + 'static,
-) -> Result<(TestMidnightCoder, ResponseMock)> {
+) -> Result<(TestSolaiAgent, ResponseMock)> {
     let mut builder = test_codex().with_model(model).with_config(move |config| {
         let _ = config.features.enable(Feature::CodeMode);
         configure(config);
@@ -299,7 +299,7 @@ text(result);
     )
     .await;
 
-    let auth = MidnightCoderAuth::from_api_key("dummy");
+    let auth = SolaiAgentAuth::from_api_key("dummy");
     let auth_manager = codex_core::test_support::auth_manager_from_auth(auth.clone());
     let mut extension_builder = ExtensionRegistryBuilder::<Config>::new();
     install_web_search_extension(&mut extension_builder, auth_manager);
@@ -364,7 +364,7 @@ async fn run_code_mode_turn_with_rmcp(
     server: &MockServer,
     prompt: &str,
     code: &str,
-) -> Result<(TestMidnightCoder, ResponseMock)> {
+) -> Result<(TestSolaiAgent, ResponseMock)> {
     run_code_mode_turn_with_rmcp_model(server, prompt, code, "test-gpt-5.1-codex").await
 }
 
@@ -373,7 +373,7 @@ async fn run_code_mode_turn_with_rmcp_model(
     prompt: &str,
     code: &str,
     model: &'static str,
-) -> Result<(TestMidnightCoder, ResponseMock)> {
+) -> Result<(TestSolaiAgent, ResponseMock)> {
     run_code_mode_turn_with_rmcp_config(
         server, prompt, code, model, /*code_mode_only*/ false,
         /*non_prefixed_mcp_tool_names*/ false,
@@ -386,7 +386,7 @@ async fn run_code_mode_turn_with_rmcp_mode(
     prompt: &str,
     code: &str,
     code_mode_only: bool,
-) -> Result<(TestMidnightCoder, ResponseMock)> {
+) -> Result<(TestSolaiAgent, ResponseMock)> {
     run_code_mode_turn_with_rmcp_config(
         server,
         prompt,
@@ -405,7 +405,7 @@ async fn run_code_mode_turn_with_rmcp_config(
     model: &'static str,
     code_mode_only: bool,
     non_prefixed_mcp_tool_names: bool,
-) -> Result<(TestMidnightCoder, ResponseMock)> {
+) -> Result<(TestSolaiAgent, ResponseMock)> {
     let rmcp_test_server_bin = stdio_server_bin()?;
     let mut builder = test_codex().with_model(model).with_config(move |config| {
         let _ = if code_mode_only {
@@ -600,7 +600,7 @@ if (!tool) {
 
     let apps_base_url = apps_server.chatgpt_base_url.clone();
     let mut builder = test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(move |config| {
             config
                 .features
@@ -3465,7 +3465,7 @@ async fn code_mode_can_call_hidden_dynamic_tools() -> Result<()> {
             base_test.config.clone(),
             vec![DynamicToolSpec::Namespace(DynamicToolNamespaceSpec {
                 name: "codex_app".to_string(),
-                description: "MidnightCoder app tools.".to_string(),
+                description: "SolaiAgent app tools.".to_string(),
                 tools: vec![DynamicToolNamespaceTool::Function(
                     DynamicToolFunctionSpec {
                         name: "hidden_dynamic_tool".to_string(),
@@ -3608,7 +3608,7 @@ text(
             .get("description")
             .and_then(Value::as_str)
             .is_some_and(|description| {
-                description.contains("MidnightCoder app tools.")
+                description.contains("SolaiAgent app tools.")
                     && description.contains("A hidden dynamic tool.")
                     && description.contains("declare const tools:")
                     && description.contains("codex_app__hidden_dynamic_tool(args:")

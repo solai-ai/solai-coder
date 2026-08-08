@@ -91,7 +91,7 @@ impl AgentControl {
         config: Config,
         initial_operation: Op,
         session_source: Option<SessionSource>,
-    ) -> MidnightCoderResult<ThreadId> {
+    ) -> SolaiAgentResult<ThreadId> {
         let spawned_agent = Box::pin(self.spawn_agent_internal(
             config,
             initial_operation,
@@ -109,7 +109,7 @@ impl AgentControl {
         initial_operation: Op,
         session_source: Option<SessionSource>,
         options: SpawnAgentOptions, // TODO(jif) drop with new fork.
-    ) -> MidnightCoderResult<LiveAgent> {
+    ) -> SolaiAgentResult<LiveAgent> {
         Box::pin(self.spawn_agent_internal(config, initial_operation, session_source, options))
             .await
     }
@@ -118,14 +118,14 @@ impl AgentControl {
         &self,
         config: Config,
         thread_id: ThreadId,
-    ) -> MidnightCoderResult<()> {
+    ) -> SolaiAgentResult<()> {
         let state = self.upgrade()?;
         if state.get_thread(thread_id).await.is_ok() {
             self.touch_loaded_v2_residency(&state, thread_id).await;
             return Ok(());
         }
         if self.state.agent_metadata_for_thread(thread_id).is_none() {
-            return Err(MidnightCoderErr::ThreadNotFound(thread_id));
+            return Err(SolaiAgentErr::ThreadNotFound(thread_id));
         }
 
         let stored_thread = state
@@ -139,7 +139,7 @@ impl AgentControl {
         let stored_parent_thread_id = stored_thread.parent_thread_id;
         let history = stored_thread
             .history
-            .ok_or(MidnightCoderErr::ThreadNotFound(thread_id))?
+            .ok_or(SolaiAgentErr::ThreadNotFound(thread_id))?
             .items;
         let initial_history = InitialHistory::Resumed(ResumedHistory {
             conversation_id: thread_id,
@@ -147,7 +147,7 @@ impl AgentControl {
             rollout_path: stored_thread.rollout_path,
         });
         if initial_history.get_multi_agent_version() != Some(MultiAgentVersion::V2) {
-            return Err(MidnightCoderErr::ThreadNotFound(thread_id));
+            return Err(SolaiAgentErr::ThreadNotFound(thread_id));
         }
         let residency_slot = self
             .reserve_v2_residency_slot(&state, &config, Some(thread_id))
@@ -200,7 +200,7 @@ impl AgentControl {
         initial_operation: Op,
         session_source: Option<SessionSource>,
         options: SpawnAgentOptions,
-    ) -> MidnightCoderResult<LiveAgent> {
+    ) -> SolaiAgentResult<LiveAgent> {
         let state = self.upgrade()?;
         let multi_agent_version = state
             .effective_multi_agent_version_for_spawn(
@@ -387,18 +387,18 @@ impl AgentControl {
         options: &SpawnAgentOptions,
         inheritance: SpawnAgentThreadInheritance,
         multi_agent_version: MultiAgentVersion,
-    ) -> MidnightCoderResult<crate::thread_manager::NewThread> {
+    ) -> SolaiAgentResult<crate::thread_manager::NewThread> {
         let SpawnAgentThreadInheritance {
             environments: inherited_environments,
             exec_policy: inherited_exec_policy,
         } = inheritance;
         if options.fork_parent_spawn_call_id.is_none() {
-            return Err(MidnightCoderErr::Fatal(
+            return Err(SolaiAgentErr::Fatal(
                 "spawn_agent fork requires a parent spawn call id".to_string(),
             ));
         }
         let Some(fork_mode) = options.fork_mode.as_ref() else {
-            return Err(MidnightCoderErr::Fatal(
+            return Err(SolaiAgentErr::Fatal(
                 "spawn_agent fork requires a fork mode".to_string(),
             ));
         };
@@ -406,7 +406,7 @@ impl AgentControl {
             parent_thread_id, ..
         }) = &session_source
         else {
-            return Err(MidnightCoderErr::Fatal(
+            return Err(SolaiAgentErr::Fatal(
                 "spawn_agent fork requires a thread-spawn session source".to_string(),
             ));
         };
@@ -429,7 +429,7 @@ impl AgentControl {
             .await?
             .history
             .ok_or_else(|| {
-                MidnightCoderErr::Fatal(format!(
+                SolaiAgentErr::Fatal(format!(
                     "parent thread history unavailable for fork: {parent_thread_id}"
                 ))
             })?;
@@ -541,7 +541,7 @@ impl AgentControl {
         config: Config,
         thread_id: ThreadId,
         session_source: SessionSource,
-    ) -> MidnightCoderResult<ThreadId> {
+    ) -> SolaiAgentResult<ThreadId> {
         let root_depth = thread_spawn_depth(&session_source).unwrap_or(0);
         let (resumed_thread_id, resumed_multi_agent_version) = Box::pin(
             self.resume_single_agent_from_rollout(config.clone(), thread_id, session_source),
@@ -616,7 +616,7 @@ impl AgentControl {
         config: Config,
         thread_id: ThreadId,
         session_source: SessionSource,
-    ) -> MidnightCoderResult<(ThreadId, MultiAgentVersion)> {
+    ) -> SolaiAgentResult<(ThreadId, MultiAgentVersion)> {
         let state = self.upgrade()?;
         let stored_thread = state
             .read_stored_thread(ReadThreadParams {
@@ -631,13 +631,13 @@ impl AgentControl {
             .map(AgentPath::try_from)
             .transpose()
             .map_err(|err| {
-                MidnightCoderErr::InvalidRequest(format!("invalid stored agent path: {err}"))
+                SolaiAgentErr::InvalidRequest(format!("invalid stored agent path: {err}"))
             })?;
         let resumed_agent_nickname = stored_thread.agent_nickname.clone();
         let resumed_agent_role = stored_thread.agent_role.clone();
         let history = stored_thread
             .history
-            .ok_or_else(|| MidnightCoderErr::ThreadNotFound(thread_id))?
+            .ok_or_else(|| SolaiAgentErr::ThreadNotFound(thread_id))?
             .items;
         let initial_history = InitialHistory::Resumed(ResumedHistory {
             conversation_id: thread_id,

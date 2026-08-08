@@ -14,7 +14,7 @@ use anyhow::Context;
 use anyhow::Result;
 use anyhow::anyhow;
 use codex_config::CloudConfigBundleLoader;
-use codex_core::MidnightCoderThread;
+use codex_core::SolaiAgentThread;
 use codex_core::StartThreadOptions;
 use codex_core::ThreadManager;
 use codex_core::TimeProvider;
@@ -31,8 +31,8 @@ use codex_extension_api::LoadUserInstructionsFuture;
 use codex_extension_api::UserInstructionsProvider;
 use codex_extension_api::empty_extension_registry;
 use codex_features::Feature;
-use codex_home::MidnightCoderHomeUserInstructionsProvider;
-use codex_login::MidnightCoderAuth;
+use codex_home::SolaiAgentHomeUserInstructionsProvider;
+use codex_login::SolaiAgentAuth;
 use codex_model_provider_info::ModelProviderInfo;
 use codex_model_provider_info::built_in_model_providers;
 use codex_models_manager::bundled_models_response;
@@ -277,9 +277,9 @@ pub fn turn_permission_fields(
     (sandbox_policy, Some(permission_profile))
 }
 
-pub struct TestMidnightCoderBuilder {
+pub struct TestSolaiAgentBuilder {
     config_mutators: Vec<Box<ConfigMutator>>,
-    auth: MidnightCoderAuth,
+    auth: SolaiAgentAuth,
     pre_build_hooks: Vec<Box<PreBuildHook>>,
     workspace_setups: Vec<Box<WorkspaceSetup>>,
     home: Option<Arc<TempDir>>,
@@ -292,7 +292,7 @@ pub struct TestMidnightCoderBuilder {
     external_time_provider: Option<Arc<dyn TimeProvider>>,
 }
 
-impl TestMidnightCoderBuilder {
+impl TestSolaiAgentBuilder {
     pub fn with_config<T>(mut self, mutator: T) -> Self
     where
         T: FnOnce(&mut Config) + Send + 'static,
@@ -301,7 +301,7 @@ impl TestMidnightCoderBuilder {
         self
     }
 
-    pub fn with_auth(mut self, auth: MidnightCoderAuth) -> Self {
+    pub fn with_auth(mut self, auth: SolaiAgentAuth) -> Self {
         self.auth = auth;
         self
     }
@@ -407,7 +407,7 @@ impl TestMidnightCoderBuilder {
     pub async fn build(
         &mut self,
         server: &wiremock::MockServer,
-    ) -> anyhow::Result<TestMidnightCoder> {
+    ) -> anyhow::Result<TestSolaiAgent> {
         let home = match self.home.clone() {
             Some(home) => home,
             None => Arc::new(TempDir::new()?),
@@ -433,7 +433,7 @@ impl TestMidnightCoderBuilder {
     pub async fn build_with_auto_env(
         &mut self,
         server: &wiremock::MockServer,
-    ) -> anyhow::Result<TestMidnightCoder> {
+    ) -> anyhow::Result<TestSolaiAgent> {
         let home = match self.home.clone() {
             Some(home) => home,
             None => Arc::new(TempDir::new()?),
@@ -450,7 +450,7 @@ impl TestMidnightCoderBuilder {
     pub async fn build_with_remote_and_local_env(
         &mut self,
         server: &wiremock::MockServer,
-    ) -> anyhow::Result<TestMidnightCoder> {
+    ) -> anyhow::Result<TestSolaiAgent> {
         let home = match self.home.clone() {
             Some(home) => home,
             None => Arc::new(TempDir::new()?),
@@ -467,7 +467,7 @@ impl TestMidnightCoderBuilder {
     pub async fn build_with_streaming_server(
         &mut self,
         server: &StreamingSseServer,
-    ) -> anyhow::Result<TestMidnightCoder> {
+    ) -> anyhow::Result<TestSolaiAgent> {
         let base_url = server.uri();
         let home = match self.home.clone() {
             Some(home) => home,
@@ -487,7 +487,7 @@ impl TestMidnightCoderBuilder {
     pub async fn build_with_websocket_server(
         &mut self,
         server: &WebSocketTestServer,
-    ) -> anyhow::Result<TestMidnightCoder> {
+    ) -> anyhow::Result<TestSolaiAgent> {
         let base_url = format!("{}/v1", server.uri());
         let home = match self.home.clone() {
             Some(home) => home,
@@ -513,7 +513,7 @@ impl TestMidnightCoderBuilder {
         server: &wiremock::MockServer,
         home: Arc<TempDir>,
         rollout_path: PathBuf,
-    ) -> anyhow::Result<TestMidnightCoder> {
+    ) -> anyhow::Result<TestSolaiAgent> {
         let base_url = format!("{}/v1", server.uri());
         let test_env = TestEnv::local().await?;
         Box::pin(self.build_with_home_and_base_url(
@@ -533,7 +533,7 @@ impl TestMidnightCoderBuilder {
         resume_from: Option<PathBuf>,
         test_env: TestEnv,
         include_local_environment: bool,
-    ) -> anyhow::Result<TestMidnightCoder> {
+    ) -> anyhow::Result<TestSolaiAgent> {
         let (config, fallback_cwd) = self
             .prepare_config(base_url, &home, test_env.cwd().clone())
             .await?;
@@ -591,14 +591,14 @@ impl TestMidnightCoderBuilder {
         resume_from: Option<PathBuf>,
         test_env: TestEnv,
         environment_manager: Arc<codex_exec_server::EnvironmentManager>,
-    ) -> anyhow::Result<TestMidnightCoder> {
+    ) -> anyhow::Result<TestSolaiAgent> {
         let auth = self.auth.clone();
         let state_db = codex_core::init_state_db(&config).await;
         let thread_store = thread_store_from_config(&config, state_db.clone());
         let installation_id = resolve_installation_id(&config.codex_home).await?;
         let user_instructions_provider =
             self.user_instructions_provider.clone().unwrap_or_else(|| {
-                Arc::new(MidnightCoderHomeUserInstructionsProvider::new(
+                Arc::new(SolaiAgentHomeUserInstructionsProvider::new(
                     config.codex_home.clone(),
                 ))
             });
@@ -678,7 +678,7 @@ impl TestMidnightCoderBuilder {
             }
         };
 
-        Ok(TestMidnightCoder {
+        Ok(TestSolaiAgent {
             home,
             cwd,
             config,
@@ -765,17 +765,17 @@ fn ensure_test_model_catalog(config: &mut Config) -> Result<()> {
     Ok(())
 }
 
-pub struct TestMidnightCoder {
+pub struct TestSolaiAgent {
     pub home: Arc<TempDir>,
     pub cwd: Arc<TempDir>,
-    pub codex: Arc<MidnightCoderThread>,
+    pub codex: Arc<SolaiAgentThread>,
     pub session_configured: SessionConfiguredEvent,
     pub config: Config,
     pub thread_manager: Arc<ThreadManager>,
     _test_env: TestEnv,
 }
 
-impl TestMidnightCoder {
+impl TestSolaiAgent {
     pub fn cwd_path(&self) -> &Path {
         self.cwd.path()
     }
@@ -967,12 +967,12 @@ impl TestMidnightCoder {
     }
 }
 
-pub struct TestMidnightCoderHarness {
+pub struct TestSolaiAgentHarness {
     server: MockServer,
-    test: TestMidnightCoder,
+    test: TestSolaiAgent,
 }
 
-impl TestMidnightCoderHarness {
+impl TestSolaiAgentHarness {
     pub async fn new() -> Result<Self> {
         Self::with_builder(test_codex()).await
     }
@@ -981,13 +981,13 @@ impl TestMidnightCoderHarness {
         Self::with_builder(test_codex().with_config(mutator)).await
     }
 
-    pub async fn with_builder(mut builder: TestMidnightCoderBuilder) -> Result<Self> {
+    pub async fn with_builder(mut builder: TestSolaiAgentBuilder) -> Result<Self> {
         let server = start_mock_server().await;
         let test = builder.build(&server).await?;
         Ok(Self { server, test })
     }
 
-    pub async fn with_auto_env_builder(mut builder: TestMidnightCoderBuilder) -> Result<Self> {
+    pub async fn with_auto_env_builder(mut builder: TestSolaiAgentBuilder) -> Result<Self> {
         let server = start_mock_server().await;
         let test = builder.build_with_auto_env(&server).await?;
         Ok(Self { server, test })
@@ -997,7 +997,7 @@ impl TestMidnightCoderHarness {
         &self.server
     }
 
-    pub fn test(&self) -> &TestMidnightCoder {
+    pub fn test(&self) -> &TestSolaiAgent {
         &self.test
     }
 
@@ -1203,15 +1203,15 @@ fn function_call_output<'a>(bodies: &'a [Value], call_id: &str) -> &'a Value {
         .expect(&missing_output)
 }
 
-pub fn test_codex() -> TestMidnightCoderBuilder {
-    TestMidnightCoderBuilder {
+pub fn test_codex() -> TestSolaiAgentBuilder {
+    TestSolaiAgentBuilder {
         config_mutators: vec![Box::new(|config| {
             config
                 .features
                 .disable(Feature::Apps)
                 .expect("test config should allow Apps override");
         })],
-        auth: MidnightCoderAuth::from_api_key("dummy"),
+        auth: SolaiAgentAuth::from_api_key("dummy"),
         pre_build_hooks: vec![],
         workspace_setups: vec![],
         home: None,

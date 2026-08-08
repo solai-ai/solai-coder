@@ -3,7 +3,7 @@ source: tui/src/chatwidget/tests/popups_and_settings.rs
 expression: popup
 ---
   Select Model and Effort
-  Access other models by running midnight-coder -m <model_name> or in your con
+  Access other models by running solai -m <model_name> or in your con
 
   1. gpt-5.5 (default)  Frontier model for complex coding, research, and real-
                         world work.

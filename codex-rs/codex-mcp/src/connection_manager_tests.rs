@@ -1,6 +1,6 @@
 use super::*;
-use crate::codex_apps_cache::MidnightCoderAppsToolsCache;
-use crate::codex_apps_cache::MidnightCoderAppsToolsCacheContext;
+use crate::codex_apps_cache::SolaiAgentAppsToolsCache;
+use crate::codex_apps_cache::SolaiAgentAppsToolsCacheContext;
 use crate::declared_openai_file_input_param_names;
 use crate::elicitation::ElicitationRequestManager;
 use crate::elicitation::ElicitationRequestRouter;
@@ -9,7 +9,7 @@ use crate::rmcp_client::AsyncManagedClient;
 use crate::rmcp_client::CODEX_APPS_RECONNECT_INITIAL_BACKOFF;
 use crate::rmcp_client::ManagedClient;
 use crate::rmcp_client::ManagedClientFuture;
-use crate::rmcp_client::MidnightCoderAppsStartupReconnect;
+use crate::rmcp_client::SolaiAgentAppsStartupReconnect;
 use crate::rmcp_client::StartupOutcomeError;
 use crate::server::EffectiveMcpServer;
 use crate::server::McpServerMetadata;
@@ -72,10 +72,10 @@ fn create_codex_apps_tools_cache_context(
     codex_home: PathBuf,
     account_id: Option<&str>,
     chatgpt_user_id: Option<&str>,
-) -> MidnightCoderAppsToolsCacheContext {
-    MidnightCoderAppsToolsCache::default().context(
+) -> SolaiAgentAppsToolsCacheContext {
+    SolaiAgentAppsToolsCache::default().context(
         codex_home,
-        MidnightCoderAppsToolsCacheKey {
+        SolaiAgentAppsToolsCacheKey {
             account_id: account_id.map(ToOwned::to_owned),
             chatgpt_user_id: chatgpt_user_id.map(ToOwned::to_owned),
             is_workspace_account: false,
@@ -174,7 +174,7 @@ fn create_test_manager_with_failed_apps_startup(
             codex_apps_tools_cache_context: Some(cache_context),
             tool_filter: ToolFilter::default(),
             startup_complete: Arc::new(std::sync::atomic::AtomicBool::new(true)),
-            startup_reconnect: Some(Arc::new(MidnightCoderAppsStartupReconnect::new(
+            startup_reconnect: Some(Arc::new(SolaiAgentAppsStartupReconnect::new(
                 reconnect_factory,
             ))),
             tool_plugin_provenance: Arc::new(ToolPluginProvenance::default()),
@@ -442,7 +442,7 @@ async fn shared_elicitation_router_targets_the_exact_pending_request() {
         codex_protocol::mcp::RequestId::String(request_b_id),
     ) = (request_a.id, request_b.id)
     else {
-        panic!("expected MidnightCoder-owned string request IDs");
+        panic!("expected SolaiAgent-owned string request IDs");
     };
     assert_ne!(request_a_id, request_b_id);
 
@@ -801,7 +801,7 @@ async fn list_available_server_infos_uses_cache_while_client_is_pending() {
         &permission_profile,
         /*prefix_mcp_tool_names*/ true,
     );
-    let server_info = create_test_server_info("MidnightCoder Apps");
+    let server_info = create_test_server_info("SolaiAgent Apps");
     manager.clients.insert(
         CODEX_APPS_MCP_SERVER_NAME.to_string(),
         AsyncManagedClient {
@@ -1075,7 +1075,7 @@ async fn list_all_tools_uses_shared_codex_apps_cache_when_client_startup_fails()
         CODEX_APPS_MCP_SERVER_NAME,
         "calendar_create_event",
     )]);
-    let server_info = create_test_server_info("MidnightCoder Apps");
+    let server_info = create_test_server_info("SolaiAgent Apps");
     let failed_client = futures::future::ready::<Result<ManagedClient, StartupOutcomeError>>(Err(
         StartupOutcomeError::Failed {
             error: "startup failed".to_string(),
@@ -1529,8 +1529,8 @@ async fn no_local_runtime_fails_local_stdio_but_keeps_local_http_server() {
             PathBuf::from("/tmp"),
         ),
         codex_home.path().to_path_buf(),
-        MidnightCoderAppsToolsCache::default(),
-        MidnightCoderAppsToolsCacheKey {
+        SolaiAgentAppsToolsCache::default(),
+        SolaiAgentAppsToolsCacheKey {
             account_id: None,
             chatgpt_user_id: None,
             is_workspace_account: false,

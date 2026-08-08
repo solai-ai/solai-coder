@@ -66,7 +66,7 @@ impl ThreadGoalRequestProcessor {
     pub(crate) async fn emit_resume_goal_snapshot_and_continue(
         &self,
         thread_id: ThreadId,
-        thread: &MidnightCoderThread,
+        thread: &SolaiAgentThread,
     ) {
         if !self.config.features.enabled(Feature::Goals) {
             return;
@@ -79,7 +79,7 @@ impl ThreadGoalRequestProcessor {
 
     pub(crate) async fn pending_resume_goal_state(
         &self,
-        thread: &MidnightCoderThread,
+        thread: &SolaiAgentThread,
     ) -> (bool, Option<StateDbHandle>) {
         let emit_thread_goal_update = self.config.features.enabled(Feature::Goals);
         let thread_goal_state_db = if emit_thread_goal_update {

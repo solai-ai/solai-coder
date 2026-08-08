@@ -60,7 +60,7 @@ use codex_core::check_execpolicy_for_warnings;
 use codex_core::config::find_codex_home;
 use codex_exec_server::EnvironmentManager;
 use codex_exec_server::ExecServerRuntimePaths;
-use codex_feedback::MidnightCoderFeedback;
+use codex_feedback::SolaiAgentFeedback;
 use codex_protocol::protocol::SessionSource;
 use codex_rollout::state_db as rollout_state_db;
 use codex_state::log_db;
@@ -77,7 +77,7 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::registry::Registry;
 use tracing_subscriber::util::SubscriberInitExt;
 
-const SQLITE_RECOVERY_CONFIG_WARNING_SUMMARY: &str = "MidnightCoder rebuilt its local database.";
+const SQLITE_RECOVERY_CONFIG_WARNING_SUMMARY: &str = "SolaiAgent rebuilt its local database.";
 
 mod analytics_utils;
 mod app_info;
@@ -644,7 +644,7 @@ pub async fn run_main_with_transport_options(
         });
     }
 
-    let feedback = MidnightCoderFeedback::new();
+    let feedback = SolaiAgentFeedback::new();
 
     // Install a simple subscriber so `tracing` output is visible. Users can
     // control the log level with `RUST_LOG` and switch to JSON logs with
@@ -1247,7 +1247,7 @@ async fn init_sqlite_state_db_with_fresh_start_on_corruption(
 
         let original_error = err.to_string();
         emit_state_db_backup_warning(&format!(
-            "MidnightCoder local database at {} appears damaged. Moving it into a backup folder so the app server can rebuild it from saved data.",
+            "SolaiAgent local database at {} appears damaged. Moving it into a backup folder so the app server can rebuild it from saved data.",
             database_path.display()
         ));
         let backups = codex_state::backup_runtime_db_for_fresh_start(database_path.as_path())
@@ -1259,7 +1259,7 @@ async fn init_sqlite_state_db_with_fresh_start_on_corruption(
             })?;
         for backup in &backups {
             emit_state_db_backup_warning(&format!(
-                "Moved damaged MidnightCoder local database file {} to {}",
+                "Moved damaged SolaiAgent local database file {} to {}",
                 backup.original_path.display(),
                 backup.backup_path.display()
             ));

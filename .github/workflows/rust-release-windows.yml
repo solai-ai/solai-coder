@@ -7,7 +7,7 @@ on:
 # nested submodules. Prefer the system git CLI across every Cargo invocation.
 env:
   CARGO_NET_GIT_FETCH_WITH_CLI: "true"
-  WINDOWS_BINARIES: "midnight-coder codex-responses-api-proxy codex-windows-sandbox-setup codex-command-runner codex-app-server"
+  WINDOWS_BINARIES: "solai codex-responses-api-proxy codex-windows-sandbox-setup codex-command-runner codex-app-server"
 
 jobs:
   build-windows-binaries:
@@ -28,12 +28,12 @@ jobs:
           - runner: windows-x64
             target: x86_64-pc-windows-msvc
             bundle: primary
-            binaries: "midnight-coder codex-responses-api-proxy"
+            binaries: "solai codex-responses-api-proxy"
             runs_on: windows-2022
           - runner: windows-arm64
             target: aarch64-pc-windows-msvc
             bundle: primary
-            binaries: "midnight-coder codex-responses-api-proxy"
+            binaries: "solai codex-responses-api-proxy"
             runs_on: windows-2022
           - runner: windows-x64
             target: x86_64-pc-windows-msvc
@@ -393,7 +393,7 @@ jobs:
             # Create zip archive for Windows binaries.
             # Must run from inside the dest dir so 7z does not embed the
             # directory path inside the zip.
-            if [[ "$base" == "midnight-coder-${target}.exe" ]]; then
+            if [[ "$base" == "solai-${target}.exe" ]]; then
               # Bundle the sandbox helper binaries into the main codex zip so
               # WinGet installs include the required helpers next to codex.exe.
               # Fall back to the single-binary zip if the helpers are missing

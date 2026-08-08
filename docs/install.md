@@ -10,13 +10,13 @@
 
 ### DotSlash
 
-The GitHub Release also contains a [DotSlash](https://dotslash-cli.com/) file for the Midnight Coder named `codex`. Using a DotSlash file makes it possible to make a lightweight commit to source control to ensure all contributors use the same version of an executable, regardless of what platform they use for development.
+The GitHub Release also contains a [DotSlash](https://dotslash-cli.com/) file for the SOLAI Agent named `codex`. Using a DotSlash file makes it possible to make a lightweight commit to source control to ensure all contributors use the same version of an executable, regardless of what platform they use for development.
 
 ### Build from source
 
 ```bash
 # Clone the repository and navigate to the root of the Cargo workspace.
-git clone https://github.com/modnight/coder.git
+git clone https://github.com/solai-ai/solai-agent.git
 cd codex/codex-rs
 
 # Install the Rust toolchain, if necessary.
@@ -31,7 +31,7 @@ cargo install --locked dotslash
 # Install nextest for the `just test` helper.
 cargo install --locked cargo-nextest
 
-# Build Midnight Coder.
+# Build SOLAI Agent.
 cargo build
 
 # Launch the TUI with a sample prompt.
@@ -51,7 +51,7 @@ just test
 
 ## Tracing / verbose logging
 
-Midnight Coder is written in Rust, so it honors the `RUST_LOG` environment variable to configure its logging behavior.
+SOLAI Agent is written in Rust, so it honors the `RUST_LOG` environment variable to configure its logging behavior.
 
 The TUI records diagnostics in bounded local stores by default. Set `log_dir` explicitly to enable a plaintext TUI log for a run:
 

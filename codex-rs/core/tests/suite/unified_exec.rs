@@ -36,8 +36,8 @@ use core_test_support::skip_if_no_network;
 use core_test_support::skip_if_sandbox;
 use core_test_support::skip_if_target_windows;
 use core_test_support::skip_if_wine_exec;
-use core_test_support::test_codex::TestMidnightCoder;
-use core_test_support::test_codex::TestMidnightCoderHarness;
+use core_test_support::test_codex::TestSolaiAgent;
+use core_test_support::test_codex::TestSolaiAgentHarness;
 use core_test_support::test_codex::test_codex;
 use core_test_support::test_codex::turn_permission_fields;
 use core_test_support::wait_for_event;
@@ -167,7 +167,7 @@ fn collect_tool_outputs(bodies: &[Value]) -> Result<HashMap<String, ParsedUnifie
 }
 
 async fn wait_for_raw_unified_exec_output(
-    test: &TestMidnightCoder,
+    test: &TestSolaiAgent,
     call_id: &str,
 ) -> Result<ParsedUnifiedExecOutput> {
     let content = wait_for_event_match(&test.codex, |event| match event {
@@ -188,7 +188,7 @@ async fn wait_for_raw_unified_exec_output(
 }
 
 async fn submit_unified_exec_turn(
-    test: &TestMidnightCoder,
+    test: &TestSolaiAgent,
     prompt: &str,
     permission_profile: PermissionProfile,
 ) -> Result<()> {
@@ -226,7 +226,7 @@ async fn submit_unified_exec_turn(
 }
 
 async fn create_workspace_directory(
-    test: &TestMidnightCoder,
+    test: &TestSolaiAgent,
     rel_path: impl AsRef<std::path::Path>,
 ) -> Result<std::path::PathBuf> {
     let abs_path = test.config.cwd.join(rel_path.as_ref());
@@ -254,7 +254,7 @@ async fn unified_exec_intercepts_apply_patch_exec_command() -> Result<()> {
             .enable(Feature::UnifiedExec)
             .expect("test config should allow feature update");
     });
-    let harness = TestMidnightCoderHarness::with_builder(builder).await?;
+    let harness = TestSolaiAgentHarness::with_builder(builder).await?;
 
     let patch =
         "*** Begin Patch\n*** Add File: uexec_apply.txt\n+hello from unified exec\n*** End Patch";
@@ -905,7 +905,7 @@ async fn unified_exec_short_lived_network_denial_emits_failed_end_event() -> Res
 
 async fn unified_exec_network_denial_test(
     server: &wiremock::MockServer,
-) -> Result<(TestMidnightCoder, PermissionProfile)> {
+) -> Result<(TestSolaiAgent, PermissionProfile)> {
     use codex_config::Constrained;
     use std::sync::Arc;
     use tempfile::TempDir;
@@ -976,7 +976,7 @@ async fn mount_unified_exec_network_denial_responses(
 }
 
 async fn wait_for_unified_exec_end(
-    test: &TestMidnightCoder,
+    test: &TestSolaiAgent,
     call_id: &str,
     response_mock: &core_test_support::responses::ResponseMock,
 ) -> (codex_protocol::protocol::ExecCommandEndEvent, bool) {
@@ -2379,7 +2379,7 @@ async fn unified_exec_keeps_long_running_session_after_turn_end() -> Result<()> 
             .enable(Feature::UnifiedExec)
             .expect("test config should allow feature update");
     });
-    let TestMidnightCoder {
+    let TestSolaiAgent {
         codex,
         cwd,
         session_configured,
@@ -2489,7 +2489,7 @@ async fn unified_exec_interrupt_preserves_long_running_session() -> Result<()> {
             .enable(Feature::UnifiedExec)
             .expect("test config should allow feature update");
     });
-    let TestMidnightCoder {
+    let TestSolaiAgent {
         codex,
         cwd,
         session_configured,
@@ -2967,7 +2967,7 @@ async fn unified_exec_runs_under_sandbox() -> Result<()> {
             .enable(Feature::UnifiedExec)
             .expect("test config should allow feature update");
     });
-    let TestMidnightCoder {
+    let TestSolaiAgent {
         codex,
         cwd,
         session_configured,
@@ -3078,7 +3078,7 @@ async fn unified_exec_enforces_glob_deny_read_policy() -> Result<()> {
             ))
             .expect("set permission profile");
     });
-    let TestMidnightCoder {
+    let TestSolaiAgent {
         codex,
         cwd,
         session_configured,
@@ -3205,7 +3205,7 @@ async fn unified_exec_python_prompt_under_seatbelt() -> Result<()> {
             .enable(Feature::UnifiedExec)
             .expect("test config should allow feature update");
     });
-    let TestMidnightCoder {
+    let TestSolaiAgent {
         codex,
         cwd,
         session_configured,

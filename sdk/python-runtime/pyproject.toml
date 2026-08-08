@@ -5,11 +5,11 @@ build-backend = "hatchling.build"
 [project]
 name = "openai-codex-cli-bin"
 version = "0.0.0-dev"
-description = "Pinned Midnight Coder runtime for the Python SDK"
+description = "Pinned SOLAI Agent runtime for the Python SDK"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
-authors = [{ name = "Midnight Coder" }]
+authors = [{ name = "SOLAI Agent" }]
 classifiers = [
   "Intended Audience :: Developers",
   "License :: OSI Approved :: Apache Software License",
@@ -21,9 +21,9 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/modnight/coder"
-Repository = "https://github.com/modnight/coder"
-Issues = "https://github.com/modnight/coder/issues"
+Homepage = "https://github.com/solai-ai/solai-agent"
+Repository = "https://github.com/solai-ai/solai-agent"
+Issues = "https://github.com/solai-ai/solai-agent/issues"
 
 [tool.hatch.build]
 exclude = [

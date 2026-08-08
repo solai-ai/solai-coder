@@ -2,7 +2,7 @@ use super::*;
 use codex_app_server_protocol::PluginAuthPolicy;
 use codex_app_server_protocol::PluginInstallPolicy;
 use codex_app_server_protocol::PluginInterface;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_utils_absolute_path::AbsolutePathBuf;
 use pretty_assertions::assert_eq;
 use serde_json::json;
@@ -28,8 +28,8 @@ fn test_config(server: &MockServer) -> RemotePluginServiceConfig {
     }
 }
 
-fn test_auth() -> MidnightCoderAuth {
-    MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing()
+fn test_auth() -> SolaiAgentAuth {
+    SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing()
 }
 
 fn write_file(path: &Path, contents: &str) {

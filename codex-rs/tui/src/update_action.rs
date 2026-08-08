@@ -8,9 +8,9 @@ use codex_install_context::StandalonePlatform;
 /// Update action the CLI should perform after the TUI exits.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UpdateAction {
-    /// Update via `npm install -g midnight-coder@latest`.
+    /// Update via `npm install -g solai@latest`.
     NpmGlobalLatest,
-    /// Update via `bun install -g midnight-coder@latest`.
+    /// Update via `bun install -g solai@latest`.
     BunGlobalLatest,
     /// Update via `brew upgrade codex`.
     BrewUpgrade,
@@ -38,8 +38,8 @@ impl UpdateAction {
     /// Returns the list of command-line arguments for invoking the update.
     pub fn command_args(self) -> (&'static str, &'static [&'static str]) {
         match self {
-            UpdateAction::NpmGlobalLatest => ("npm", &["install", "-g", "midnight-coder"]),
-            UpdateAction::BunGlobalLatest => ("bun", &["install", "-g", "midnight-coder"]),
+            UpdateAction::NpmGlobalLatest => ("npm", &["install", "-g", "solai"]),
+            UpdateAction::BunGlobalLatest => ("bun", &["install", "-g", "solai"]),
             UpdateAction::BrewUpgrade => ("brew", &["upgrade", "--cask", "codex"]),
             UpdateAction::StandaloneUnix => (
                 "sh",

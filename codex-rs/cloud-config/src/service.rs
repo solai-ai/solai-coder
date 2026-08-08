@@ -19,7 +19,7 @@ use codex_config::CloudConfigBundleLoadError;
 use codex_config::CloudConfigBundleLoadErrorCode;
 use codex_core::util::backoff;
 use codex_login::AuthManager;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_login::RefreshTokenError;
 use codex_login::UnauthorizedRecovery;
 use codex_protocol::account::PlanType;
@@ -40,11 +40,11 @@ const CLOUD_CONFIG_BUNDLE_AUTH_RECOVERY_FAILED_MESSAGE: &str = concat!(
     "Please log out and sign in again."
 );
 
-fn auth_identity(auth: &MidnightCoderAuth) -> (Option<String>, Option<String>) {
+fn auth_identity(auth: &SolaiAgentAuth) -> (Option<String>, Option<String>) {
     (auth.get_chatgpt_user_id(), auth.get_account_id())
 }
 
-fn cloud_config_eligible_auth(auth: &MidnightCoderAuth) -> bool {
+fn cloud_config_eligible_auth(auth: &SolaiAgentAuth) -> bool {
     let Some(plan_type) = auth.account_plan_type() else {
         return false;
     };
@@ -226,7 +226,7 @@ where
 
     async fn fetch_remote_bundle_and_update_cache_with_retries(
         &self,
-        mut auth: MidnightCoderAuth,
+        mut auth: SolaiAgentAuth,
         trigger: &'static str,
     ) -> Result<Option<CloudConfigBundle>, CloudConfigBundleLoadError> {
         let mut attempt = 1;
@@ -299,7 +299,7 @@ where
 
     async fn validate_and_cache_remote_bundle(
         &self,
-        auth: &MidnightCoderAuth,
+        auth: &SolaiAgentAuth,
         trigger: &'static str,
         attempt: usize,
         bundle: CloudConfigBundle,
@@ -364,7 +364,7 @@ where
 
     async fn handle_unauthorized(
         &self,
-        auth: &mut MidnightCoderAuth,
+        auth: &mut SolaiAgentAuth,
         auth_recovery: &mut UnauthorizedRecovery,
         trigger: &'static str,
         attempt: usize,

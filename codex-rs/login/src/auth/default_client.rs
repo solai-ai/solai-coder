@@ -1,5 +1,5 @@
-//! Default MidnightCoder HTTP client: shared `User-Agent`, `originator`, optional residency header, and
-//! reqwest/`MidnightCoderHttpClient` construction.
+//! Default SolaiAgent HTTP client: shared `User-Agent`, `originator`, optional residency header, and
+//! reqwest/`SolaiAgentHttpClient` construction.
 //!
 //! Use [`crate::default_client`] or [`codex_login::default_client`] from other crates in this
 //! workspace.
@@ -7,8 +7,8 @@
 use codex_client::BuildCustomCaTransportError;
 use codex_client::BuildRouteAwareHttpClientError;
 use codex_client::ClientRouteClass;
-use codex_client::MidnightCoderHttpClient;
-pub use codex_client::MidnightCoderRequestBuilder;
+use codex_client::SolaiAgentHttpClient;
+pub use codex_client::SolaiAgentRequestBuilder;
 use codex_client::build_reqwest_client_for_route;
 use codex_client::build_reqwest_client_with_custom_ca;
 use codex_client::with_chatgpt_cloudflare_cookie_store;
@@ -36,7 +36,7 @@ use crate::outbound_proxy::AuthRouteConfig;
 ///
 /// A space is automatically added between the suffix and the rest of the User-Agent string.
 /// The full user agent string is returned from the mcp initialize response.
-/// Parenthesis will be added by MidnightCoder. This should only specify what goes inside of the parenthesis.
+/// Parenthesis will be added by SolaiAgent. This should only specify what goes inside of the parenthesis.
 pub static USER_AGENT_SUFFIX: LazyLock<Mutex<Option<String>>> = LazyLock::new(|| Mutex::new(None));
 pub const DEFAULT_ORIGINATOR: &str = "codex_cli_rs";
 pub const CODEX_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR: &str = "CODEX_INTERNAL_ORIGINATOR_OVERRIDE";
@@ -128,7 +128,7 @@ pub fn is_first_party_originator(originator_value: &str) -> bool {
     originator_value == DEFAULT_ORIGINATOR
         || originator_value == "codex-tui"
         || originator_value == "codex_vscode"
-        || originator_value.starts_with("MidnightCoder ")
+        || originator_value.starts_with("SolaiAgent ")
 }
 
 pub fn is_first_party_chat_originator(originator_value: &str) -> bool {
@@ -177,17 +177,17 @@ fn sanitize_user_agent(candidate: String, fallback: &str) -> String {
         .collect();
     if !sanitized.is_empty() && HeaderValue::from_str(sanitized.as_str()).is_ok() {
         tracing::warn!(
-            "Sanitized MidnightCoder user agent because provided suffix contained invalid header characters"
+            "Sanitized SolaiAgent user agent because provided suffix contained invalid header characters"
         );
         sanitized
     } else if HeaderValue::from_str(fallback).is_ok() {
         tracing::warn!(
-            "Falling back to base MidnightCoder user agent because provided suffix could not be sanitized"
+            "Falling back to base SolaiAgent user agent because provided suffix could not be sanitized"
         );
         fallback.to_string()
     } else {
         tracing::warn!(
-            "Falling back to default MidnightCoder originator because base user agent string is invalid"
+            "Falling back to default SolaiAgent originator because base user agent string is invalid"
         );
         originator().value
     }
@@ -196,21 +196,21 @@ fn sanitize_user_agent(candidate: String, fallback: &str) -> String {
 /// Create an HTTP client with default `originator` and `User-Agent` headers set.
 ///
 /// This supported default path preserves reqwest's existing proxy behavior and does not opt into
-/// MidnightCoder's route-aware system/PAC resolution.
-pub fn create_client() -> MidnightCoderHttpClient {
+/// SolaiAgent's route-aware system/PAC resolution.
+pub fn create_client() -> SolaiAgentHttpClient {
     let inner = build_reqwest_client();
-    MidnightCoderHttpClient::new(inner)
+    SolaiAgentHttpClient::new(inner)
 }
 
-/// Builds the default reqwest client used for ordinary MidnightCoder HTTP traffic.
+/// Builds the default reqwest client used for ordinary SolaiAgent HTTP traffic.
 ///
-/// This starts from the standard MidnightCoder user agent, default headers, and sandbox-specific proxy
+/// This starts from the standard SolaiAgent user agent, default headers, and sandbox-specific proxy
 /// policy, then layers in shared custom CA handling from `CODEX_CA_CERTIFICATE` /
 /// `SSL_CERT_FILE`. The function remains infallible for compatibility with existing call sites, so
 /// a custom-CA or builder failure is logged and falls back to `reqwest::Client::new()`.
 ///
 /// This supported default path preserves reqwest's existing proxy behavior and does not opt into
-/// MidnightCoder's route-aware system/PAC resolution. Auth callers with route settings must use
+/// SolaiAgent's route-aware system/PAC resolution. Auth callers with route settings must use
 /// `build_default_auth_reqwest_client` or `create_default_auth_client`.
 pub fn build_reqwest_client() -> reqwest::Client {
     try_build_reqwest_client().unwrap_or_else(|error| {
@@ -227,7 +227,7 @@ pub fn build_reqwest_client() -> reqwest::Client {
     })
 }
 
-/// Tries to build the default reqwest client used for ordinary MidnightCoder HTTP traffic.
+/// Tries to build the default reqwest client used for ordinary SolaiAgent HTTP traffic.
 ///
 /// Callers that need a structured CA-loading failure instead of the legacy logged fallback can use
 /// this method directly.
@@ -243,7 +243,7 @@ fn default_reqwest_client_builder() -> reqwest::ClientBuilder {
     with_chatgpt_cloudflare_cookie_store(builder)
 }
 
-/// Builds a raw reqwest client for an auth endpoint without MidnightCoder default headers.
+/// Builds a raw reqwest client for an auth endpoint without SolaiAgent default headers.
 pub(crate) fn build_raw_auth_reqwest_client(
     endpoint: &str,
     auth_route_config: Option<&AuthRouteConfig>,
@@ -256,7 +256,7 @@ pub(crate) fn build_raw_auth_reqwest_client(
     )
 }
 
-/// Builds the default MidnightCoder reqwest client for an auth endpoint.
+/// Builds the default SolaiAgent reqwest client for an auth endpoint.
 pub(crate) fn build_default_auth_reqwest_client(
     endpoint: &str,
     auth_route_config: Option<&AuthRouteConfig>,
@@ -278,12 +278,12 @@ pub(crate) fn build_default_auth_reqwest_client(
     )
 }
 
-/// Builds the default MidnightCoder HTTP client wrapper for an auth endpoint.
+/// Builds the default SolaiAgent HTTP client wrapper for an auth endpoint.
 pub(crate) fn create_default_auth_client(
     endpoint: &str,
     auth_route_config: Option<&AuthRouteConfig>,
-) -> Result<MidnightCoderHttpClient, BuildRouteAwareHttpClientError> {
-    build_default_auth_reqwest_client(endpoint, auth_route_config).map(MidnightCoderHttpClient::new)
+) -> Result<SolaiAgentHttpClient, BuildRouteAwareHttpClientError> {
+    build_default_auth_reqwest_client(endpoint, auth_route_config).map(SolaiAgentHttpClient::new)
 }
 
 pub fn default_headers() -> HeaderMap {

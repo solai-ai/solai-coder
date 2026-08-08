@@ -1,14 +1,14 @@
 interface:
-  display_name: "Midnight Coder Docs"
-  short_description: "Reference Midnight Coder docs, Midnight Coder self-knowledge, and model migration guidance"
+  display_name: "SOLAI Agent Docs"
+  short_description: "Reference SOLAI Agent docs, SOLAI Agent self-knowledge, and model migration guidance"
   icon_small: "./assets/openai-small.svg"
   icon_large: "./assets/openai.png"
-  default_prompt: "Use Midnight Coder Docs for official docs lookup, questions about Midnight Coder itself or Midnight Coder surfaces, model selection, model migration, and prompt-upgrade work."
+  default_prompt: "Use SOLAI Agent Docs for official docs lookup, questions about SOLAI Agent itself or SOLAI Agent surfaces, model selection, model migration, and prompt-upgrade work."
 
 dependencies:
   tools:
     - type: "mcp"
       value: "openaiDeveloperDocs"
-      description: "Midnight Coder Developer Docs MCP server"
+      description: "SOLAI Agent Developer Docs MCP server"
       transport: "streamable_http"
       url: "https://developers.openai.com/mcp"

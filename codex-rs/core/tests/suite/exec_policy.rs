@@ -37,7 +37,7 @@ fn collaboration_mode_for_model(model: String) -> CollaborationMode {
 }
 
 async fn submit_user_turn(
-    test: &core_test_support::test_codex::TestMidnightCoder,
+    test: &core_test_support::test_codex::TestSolaiAgent,
     prompt: &str,
     approval_policy: AskForApproval,
     permission_profile: PermissionProfile,

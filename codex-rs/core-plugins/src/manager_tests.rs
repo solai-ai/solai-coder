@@ -43,7 +43,7 @@ use codex_core_skills::PluginSkillSnapshots;
 use codex_core_skills::SkillsLoadInput;
 use codex_core_skills::SkillsService;
 use codex_core_skills::config_rules::SkillConfigRules;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_plugin::AppDeclaration;
 use codex_plugin::PluginId;
 use codex_protocol::auth::AuthMode;
@@ -116,7 +116,7 @@ fn plugins_manager_tracks_auth_mode() {
 
     let manager_with_auth = PluginsManager::new_with_options(
         tmp.path().join("auth"),
-        Some(Product::MidnightCoder),
+        Some(Product::SolaiAgent),
         Some(AuthMode::Chatgpt),
     );
     assert_eq!(manager_with_auth.auth_mode(), Some(AuthMode::Chatgpt));
@@ -203,7 +203,7 @@ async fn plugin_auth_projection_hides_apps_without_chatgpt_auth() {
     let config = auth_projection_config(codex_home.path()).await;
     let manager = PluginsManager::new_with_options(
         codex_home.path().to_path_buf(),
-        Some(Product::MidnightCoder),
+        Some(Product::SolaiAgent),
         Some(AuthMode::ApiKey),
     );
 
@@ -231,7 +231,7 @@ async fn plugin_auth_projection_hides_matching_mcp_with_chatgpt_apps_route() {
     let config = auth_projection_config(codex_home.path()).await;
     let manager = PluginsManager::new_with_options(
         codex_home.path().to_path_buf(),
-        Some(Product::MidnightCoder),
+        Some(Product::SolaiAgent),
         Some(AuthMode::Chatgpt),
     );
 
@@ -272,7 +272,7 @@ async fn plugin_auth_projection_hides_dual_surface_mcp_with_agent_identity_apps_
     let config = auth_projection_config(codex_home.path()).await;
     let manager = PluginsManager::new_with_options(
         codex_home.path().to_path_buf(),
-        Some(Product::MidnightCoder),
+        Some(Product::SolaiAgent),
         Some(AuthMode::AgentIdentity),
     );
 
@@ -297,7 +297,7 @@ async fn plugin_auth_projection_keeps_non_conflicting_mcp_with_chatgpt_apps_rout
     let config = auth_projection_config(codex_home.path()).await;
     let manager = PluginsManager::new_with_options(
         codex_home.path().to_path_buf(),
-        Some(Product::MidnightCoder),
+        Some(Product::SolaiAgent),
         Some(AuthMode::Chatgpt),
     );
 
@@ -380,7 +380,7 @@ enabled = true
     let config = load_config(codex_home.path(), codex_home.path()).await;
     let manager = PluginsManager::new_with_options(
         codex_home.path().to_path_buf(),
-        Some(Product::MidnightCoder),
+        Some(Product::SolaiAgent),
         Some(AuthMode::Chatgpt),
     );
 
@@ -414,7 +414,7 @@ async fn plugin_auth_projection_reprojects_cached_plugins_when_auth_changes() {
     let config = auth_projection_config(codex_home.path()).await;
     let manager = PluginsManager::new_with_options(
         codex_home.path().to_path_buf(),
-        Some(Product::MidnightCoder),
+        Some(Product::SolaiAgent),
         Some(AuthMode::Chatgpt),
     );
 
@@ -513,7 +513,7 @@ fn write_plugin(root: &Path, dir_name: &str, manifest_name: &str) {
 fn init_git_repo(repo: &Path) {
     run_git(repo, &["init"]);
     run_git(repo, &["config", "user.email", "codex-test@example.com"]);
-    run_git(repo, &["config", "user.name", "MidnightCoder Test"]);
+    run_git(repo, &["config", "user.name", "SolaiAgent Test"]);
     run_git(repo, &["add", "."]);
     run_git(repo, &["commit", "-m", "initial"]);
 }
@@ -564,7 +564,7 @@ async fn load_plugins_from_config(
     let config = load_config(codex_home, codex_home).await;
     PluginsManager::new_with_options(
         codex_home.to_path_buf(),
-        Some(Product::MidnightCoder),
+        Some(Product::SolaiAgent),
         auth_mode,
     )
     .plugins_for_config(&config)
@@ -1130,7 +1130,7 @@ enabled = true
     let config = load_config(codex_home.path(), codex_home.path()).await;
     let manager = PluginsManager::new_with_options(
         codex_home.path().to_path_buf(),
-        Some(Product::MidnightCoder),
+        Some(Product::SolaiAgent),
         Some(AuthMode::Chatgpt),
     );
     manager.write_remote_installed_plugins_cache(vec![
@@ -1175,7 +1175,7 @@ enabled = true
     let config = load_config(codex_home.path(), codex_home.path()).await;
     let manager = PluginsManager::new_with_options(
         codex_home.path().to_path_buf(),
-        Some(Product::MidnightCoder),
+        Some(Product::SolaiAgent),
         Some(AuthMode::ApiKey),
     );
 
@@ -1230,7 +1230,7 @@ async fn build_remote_installed_plugin_marketplaces_from_cache_uses_remote_metad
         .expect("remote installed cache should be present");
     assert_eq!(marketplaces.len(), 1);
     assert_eq!(marketplaces[0].name, "openai-curated-remote");
-    assert_eq!(marketplaces[0].display_name, "MidnightCoder Curated Remote");
+    assert_eq!(marketplaces[0].display_name, "SolaiAgent Curated Remote");
     assert_eq!(marketplaces[0].plugins.len(), 1);
     let plugin = &marketplaces[0].plugins[0];
     assert_eq!(plugin.id, "linear@openai-curated-remote");
@@ -2478,7 +2478,7 @@ async fn install_plugin_updates_config_with_relative_path_and_plugin_key() {
 
 #[tokio::test]
 async fn strict_install_requires_allowed_local_marketplace_to_be_added_first() {
-    let codex_home = TempDir::new().expect("create MidnightCoder home");
+    let codex_home = TempDir::new().expect("create SolaiAgent home");
     let marketplace_root = codex_home.path().join("company-marketplace");
     write_plugin(&marketplace_root, "sample", "sample");
     write_file(
@@ -3252,7 +3252,7 @@ plugins = true
 
     let chatgpt_outcome = PluginsManager::new_with_options(
         tmp.path().to_path_buf(),
-        Some(Product::MidnightCoder),
+        Some(Product::SolaiAgent),
         Some(AuthMode::Chatgpt),
     )
     .read_plugin_for_config(&config, &request)
@@ -3269,7 +3269,7 @@ plugins = true
 
     let api_key_outcome = PluginsManager::new_with_options(
         tmp.path().to_path_buf(),
-        Some(Product::MidnightCoder),
+        Some(Product::SolaiAgent),
         Some(AuthMode::ApiKey),
     )
     .read_plugin_for_config(&config, &request)
@@ -3990,7 +3990,7 @@ plugins = true
         r#"{
   "name": "openai-api-curated",
   "interface": {
-    "displayName": "MidnightCoder Curated"
+    "displayName": "SolaiAgent Curated"
   },
   "plugins": [
     {
@@ -4025,7 +4025,7 @@ plugins = true
             )
             .unwrap(),
             interface: Some(MarketplaceInterface {
-                display_name: Some("MidnightCoder Curated".to_string()),
+                display_name: Some("SolaiAgent Curated".to_string()),
             }),
             plugins: vec![ConfiguredMarketplacePlugin {
                 id: "api-plugin@openai-api-curated".to_string(),
@@ -4634,7 +4634,7 @@ plugins = true
     let featured_plugin_ids = manager
         .featured_plugin_ids_for_config(
             &config,
-            Some(&MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing()),
+            Some(&SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing()),
         )
         .await
         .unwrap();
@@ -4702,7 +4702,7 @@ remote_plugin = true
     let mut config = load_config(tmp.path(), tmp.path()).await;
     config.chatgpt_base_url = server.uri();
     let manager = std::sync::Arc::new(PluginsManager::new(tmp.path().to_path_buf()));
-    let auth = MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing();
     let cache_key = recommended_plugins_cache_key(&config);
 
     manager.maybe_start_remote_plugin_caches_refresh(
@@ -4784,7 +4784,7 @@ remote_plugin = true
     let mut config = load_config(tmp.path(), tmp.path()).await;
     config.chatgpt_base_url = server.uri();
     let manager = PluginsManager::new(tmp.path().to_path_buf());
-    let auth = MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing();
     let expected = RecommendedPluginsMode::Endpoint {
         plugins: vec![
             RecommendedPlugin {
@@ -4858,7 +4858,7 @@ remote_plugin = true
     let mut installed_linear = remote_installed_plugin("linear");
     installed_linear.id = "plugin_linear".to_string();
     manager.write_remote_installed_plugins_cache(vec![installed_linear]);
-    let auth = MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing();
     let disabled_tools = [ToolSuggestDisabledTool::plugin(
         "github@openai-curated-remote",
     )];
@@ -4913,7 +4913,7 @@ remote_plugin = true
     let mut config = load_config(tmp.path(), tmp.path()).await;
     config.chatgpt_base_url = server.uri();
     let manager = PluginsManager::new(tmp.path().to_path_buf());
-    let auth = MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing();
     assert_eq!(
         manager
             .recommended_plugins_mode_for_config(&config, Some(&auth))
@@ -4950,7 +4950,7 @@ remote_plugin = true
     let mut config = load_config(tmp.path(), tmp.path()).await;
     config.chatgpt_base_url = server.uri();
     let manager = PluginsManager::new(tmp.path().to_path_buf());
-    let auth = MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing();
     assert_eq!(
         manager
             .recommended_plugins_mode_for_config(&config, Some(&auth))
@@ -5584,7 +5584,7 @@ async fn load_plugins_ignores_project_config_files() {
         std::collections::HashMap::new(),
         &PluginStore::new(codex_home.path().to_path_buf()),
         /*plugin_skill_snapshots*/ None,
-        Some(Product::MidnightCoder),
+        Some(Product::SolaiAgent),
         /*remote_global_catalog_active*/ false,
     )
     .await;

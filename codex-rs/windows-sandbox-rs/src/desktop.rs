@@ -89,7 +89,7 @@ struct PrivateDesktop {
 impl PrivateDesktop {
     fn create(logs_base_dir: Option<&Path>) -> Result<Self> {
         let mut rng = SmallRng::from_entropy();
-        let name = format!("MidnightCoderSandboxDesktop-{:x}", rng.r#gen::<u128>());
+        let name = format!("SolaiAgentSandboxDesktop-{:x}", rng.r#gen::<u128>());
         let name_wide = to_wide(&name);
         let handle = unsafe {
             CreateDesktopW(

@@ -9,7 +9,7 @@ pub(crate) struct FeedbackRequestProcessor {
     auth_manager: Arc<AuthManager>,
     thread_manager: Arc<ThreadManager>,
     config: Arc<Config>,
-    feedback: MidnightCoderFeedback,
+    feedback: SolaiAgentFeedback,
     log_db: Option<LogDbLayer>,
     state_db: Option<StateDbHandle>,
 }
@@ -19,7 +19,7 @@ impl FeedbackRequestProcessor {
         auth_manager: Arc<AuthManager>,
         thread_manager: Arc<ThreadManager>,
         config: Arc<Config>,
-        feedback: MidnightCoderFeedback,
+        feedback: SolaiAgentFeedback,
         log_db: Option<LogDbLayer>,
         state_db: Option<StateDbHandle>,
     ) -> Self {

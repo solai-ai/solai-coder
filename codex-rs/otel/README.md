@@ -1,6 +1,6 @@
 # codex-otel
 
-`codex-otel` is the OpenTelemetry integration crate for Midnight Coder. It provides:
+`codex-otel` is the OpenTelemetry integration crate for SOLAI Agent. It provides:
 
 - Provider wiring for log/trace/metric exporters (`codex_otel::OtelProvider`
   and `codex_otel::provider`).
@@ -65,7 +65,7 @@ beta = "two"
 
 Configured tracestate members and encoded values must be valid W3C tracestate.
 Each nested table is encoded as semicolon-separated `key:value` fields inside
-that member. If propagated trace context already has the named member, Midnight Coder
+that member. If propagated trace context already has the named member, SOLAI Agent
 upserts configured fields and preserves other fields in that member. This
 config shape does not support setting opaque tracestate member values. Invalid
 trace metadata entries are ignored during config load and reported as startup
@@ -74,7 +74,7 @@ warnings.
 ## SessionTelemetry (events)
 
 `SessionTelemetry` adds consistent metadata to tracing events and helps record
-Midnight Coder-specific session events. Rich session/business events should go through
+SOLAI Agent-specific session events. Rich session/business events should go through
 `SessionTelemetry`; subsystem-owned audit events can stay with the owning subsystem.
 
 ```rust
@@ -104,7 +104,7 @@ Modes:
 - In-memory: records via `opentelemetry_sdk::metrics::InMemoryMetricExporter` for tests/assertions; call `shutdown()` to flush.
 
 `codex-otel` also provides `OtelExporter::Statsig`, a shorthand for exporting OTLP/HTTP JSON metrics
-to Statsig using Midnight Coder-internal defaults.
+to Statsig using SOLAI Agent-internal defaults.
 
 Statsig ingestion (OTLP/HTTP JSON) example:
 

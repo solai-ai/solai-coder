@@ -11,7 +11,7 @@ const COMPOSITION_SCHEMA_KEYS: [&str; 3] = ["anyOf", "oneOf", "allOf"];
 
 /// Primitive JSON Schema type names we support in tool definitions.
 ///
-/// This mirrors the MidnightCoder Structured Outputs subset for JSON Schema `type`:
+/// This mirrors the SolaiAgent Structured Outputs subset for JSON Schema `type`:
 /// string, number, boolean, integer, object, array, and null.
 /// Keywords such as `enum`, `const`, `anyOf`, `oneOf`, and `allOf` are modeled
 /// separately.
@@ -545,7 +545,7 @@ fn sanitize_json_schema(value: &mut JsonValue) {
 
 /// Sanitize a schema definition table before deserializing into `JsonSchema`.
 ///
-/// Definition tables must be objects. MidnightCoder keeps valid definition tables and
+/// Definition tables must be objects. SolaiAgent keeps valid definition tables and
 /// recursively applies the same compatibility lowering used for inline schemas,
 /// but drops malformed tables so `strict: false` tool registration degrades
 /// gracefully instead of failing on an unreachable or invalid definition table.

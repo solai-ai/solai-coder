@@ -7,7 +7,7 @@ use codex_exec_server::CreateDirectoryOptions;
 use codex_exec_server::LOCAL_ENVIRONMENT_ID;
 use codex_exec_server::REMOTE_ENVIRONMENT_ID;
 use codex_exec_server::RemoveOptions;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_protocol::config_types::ReasoningSummary;
 use codex_protocol::models::PermissionProfile;
 use codex_protocol::openai_models::ConfigShellToolType;
@@ -42,7 +42,7 @@ use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
 use core_test_support::skip_if_no_remote_env;
-use core_test_support::test_codex::TestMidnightCoder;
+use core_test_support::test_codex::TestSolaiAgent;
 use core_test_support::test_codex::local;
 use core_test_support::test_codex::test_codex;
 use core_test_support::test_codex::turn_permission_fields;
@@ -70,7 +70,7 @@ use wiremock::matchers::body_string_contains;
 
 const VIEW_IMAGE_TURN_COMPLETE_TIMEOUT: Duration = Duration::from_secs(30);
 
-fn disabled_user_turn(test: &TestMidnightCoder, items: Vec<UserInput>, model: String) -> Op {
+fn disabled_user_turn(test: &TestSolaiAgent, items: Vec<UserInput>, model: String) -> Op {
     let (sandbox_policy, permission_profile) =
         turn_permission_fields(PermissionProfile::Disabled, test.config.cwd.as_path());
     Op::UserInput {
@@ -130,7 +130,7 @@ fn png_bytes(width: u32, height: u32, rgba: [u8; 4]) -> anyhow::Result<Vec<u8>> 
 }
 
 async fn create_workspace_directory(
-    test: &TestMidnightCoder,
+    test: &TestSolaiAgent,
     rel_path: &str,
 ) -> anyhow::Result<PathBuf> {
     let abs_path = test.config.cwd.join(rel_path);
@@ -146,7 +146,7 @@ async fn create_workspace_directory(
 }
 
 async fn write_workspace_file(
-    test: &TestMidnightCoder,
+    test: &TestSolaiAgent,
     rel_path: &str,
     contents: Vec<u8>,
 ) -> anyhow::Result<PathBuf> {
@@ -169,7 +169,7 @@ async fn write_workspace_file(
 }
 
 async fn write_workspace_png(
-    test: &TestMidnightCoder,
+    test: &TestSolaiAgent,
     rel_path: &str,
     width: u32,
     height: u32,
@@ -186,7 +186,7 @@ async fn assert_user_turn_local_image_resizes_to(
 
     let mut builder = test_codex();
     let test = builder.build_with_auto_env(&server).await?;
-    let TestMidnightCoder {
+    let TestSolaiAgent {
         codex,
         session_configured,
         ..
@@ -286,7 +286,7 @@ async fn view_image_tool_attaches_local_image() -> anyhow::Result<()> {
     let server = start_mock_server().await;
     let mut builder = test_codex();
     let test = builder.build_with_auto_env(&server).await?;
-    let TestMidnightCoder {
+    let TestSolaiAgent {
         codex,
         session_configured,
         config,
@@ -683,7 +683,7 @@ async fn view_image_tool_can_preserve_original_resolution_when_requested_on_gpt5
     let server = start_mock_server().await;
     let mut builder = test_codex().with_model("gpt-5.3-codex");
     let test = builder.build_with_auto_env(&server).await?;
-    let TestMidnightCoder {
+    let TestSolaiAgent {
         codex,
         session_configured,
         ..
@@ -774,7 +774,7 @@ async fn view_image_tool_errors_clearly_for_unsupported_detail_values() -> anyho
     let server = start_mock_server().await;
     let mut builder = test_codex().with_model("gpt-5.3-codex");
     let test = builder.build_with_auto_env(&server).await?;
-    let TestMidnightCoder {
+    let TestSolaiAgent {
         codex,
         session_configured,
         ..
@@ -852,7 +852,7 @@ async fn view_image_tool_treats_null_detail_as_omitted() -> anyhow::Result<()> {
     let server = start_mock_server().await;
     let mut builder = test_codex().with_model("gpt-5.3-codex");
     let test = builder.build_with_auto_env(&server).await?;
-    let TestMidnightCoder {
+    let TestSolaiAgent {
         codex,
         session_configured,
         ..
@@ -942,7 +942,7 @@ async fn view_image_tool_resizes_when_model_lacks_original_detail_support() -> a
     let server = start_mock_server().await;
     let mut builder = test_codex().with_model("gpt-5.2");
     let test = builder.build_with_auto_env(&server).await?;
-    let TestMidnightCoder {
+    let TestSolaiAgent {
         codex,
         session_configured,
         ..
@@ -1036,7 +1036,7 @@ async fn view_image_tool_does_not_force_original_resolution_with_capability_only
     let server = start_mock_server().await;
     let mut builder = test_codex().with_model("gpt-5.3-codex");
     let test = builder.build_with_auto_env(&server).await?;
-    let TestMidnightCoder {
+    let TestSolaiAgent {
         codex,
         session_configured,
         ..
@@ -1127,7 +1127,7 @@ async fn view_image_tool_errors_when_path_is_directory() -> anyhow::Result<()> {
 
     let mut builder = test_codex();
     let test = builder.build_with_auto_env(&server).await?;
-    let TestMidnightCoder {
+    let TestSolaiAgent {
         codex,
         session_configured,
         ..
@@ -1197,7 +1197,7 @@ async fn view_image_tool_turns_invalid_image_into_placeholder() -> anyhow::Resul
     let server = start_mock_server().await;
     let mut builder = test_codex();
     let test = builder.build_with_auto_env(&server).await?;
-    let TestMidnightCoder {
+    let TestSolaiAgent {
         codex,
         session_configured,
         ..
@@ -1268,7 +1268,7 @@ async fn view_image_tool_errors_when_file_missing() -> anyhow::Result<()> {
 
     let mut builder = test_codex();
     let test = builder.build_with_auto_env(&server).await?;
-    let TestMidnightCoder {
+    let TestSolaiAgent {
         codex,
         session_configured,
         ..
@@ -1403,12 +1403,12 @@ async fn view_image_tool_returns_unsupported_message_for_text_only_model() -> an
     .await;
 
     let mut builder = test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             config.model = Some(model_slug.to_string());
         });
     let test = builder.build_with_auto_env(&server).await?;
-    let TestMidnightCoder { codex, .. } = &test;
+    let TestSolaiAgent { codex, .. } = &test;
 
     let rel_path = "assets/example.png";
     write_workspace_png(
@@ -1495,7 +1495,7 @@ async fn replaces_invalid_local_image_after_bad_request() -> anyhow::Result<()> 
 
     let mut builder = test_codex();
     let test = builder.build_with_auto_env(&server).await?;
-    let TestMidnightCoder {
+    let TestSolaiAgent {
         codex,
         session_configured,
         ..

@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use codex_core::MidnightCoderThread;
+use codex_core::SolaiAgentThread;
 use codex_protocol::ThreadId;
 use codex_protocol::parse_command::ParsedCommand;
 use codex_protocol::protocol::Op;
@@ -52,7 +52,7 @@ pub(crate) async fn handle_exec_approval_request(
     command: Vec<String>,
     cwd: PathBuf,
     outgoing: Arc<crate::outgoing_message::OutgoingMessageSender>,
-    codex: Arc<MidnightCoderThread>,
+    codex: Arc<SolaiAgentThread>,
     request_id: RequestId,
     tool_call_id: String,
     event_id: String,
@@ -64,7 +64,7 @@ pub(crate) async fn handle_exec_approval_request(
     let escaped_command =
         shlex::try_join(command.iter().map(String::as_str)).unwrap_or_else(|_| command.join(" "));
     let message = format!(
-        "Allow MidnightCoder to run `{escaped_command}` in `{cwd}`?",
+        "Allow SolaiAgent to run `{escaped_command}` in `{cwd}`?",
         cwd = cwd.to_string_lossy()
     );
 
@@ -113,7 +113,7 @@ async fn on_exec_approval_response(
     approval_id: String,
     event_id: String,
     receiver: tokio::sync::oneshot::Receiver<serde_json::Value>,
-    codex: Arc<MidnightCoderThread>,
+    codex: Arc<SolaiAgentThread>,
 ) {
     let response = receiver.await;
     let value = match response {

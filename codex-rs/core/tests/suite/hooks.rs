@@ -97,7 +97,7 @@ fn code_mode_custom_tool_output_text(output_item: &Value) -> String {
 fn non_openai_model_provider(server: &wiremock::MockServer) -> ModelProviderInfo {
     let mut provider =
         built_in_model_providers(/* openai_base_url */ /*openai_base_url*/ None)["openai"].clone();
-    provider.name = "MidnightCoder (test)".into();
+    provider.name = "SolaiAgent (test)".into();
     provider.base_url = Some(format!("{}/v1", server.uri()));
     provider.supports_websockets = false;
     provider
@@ -106,7 +106,7 @@ fn non_openai_model_provider(server: &wiremock::MockServer) -> ModelProviderInfo
 fn trust_plugin_hooks(config: &mut Config, plugin_hook_sources: Vec<PluginHookSource>) {
     config
         .features
-        .enable(Feature::MidnightCoderHooks)
+        .enable(Feature::SolaiAgentHooks)
         .expect("test config should allow feature update");
     let listed = codex_hooks::list_hooks(codex_hooks::HooksConfig {
         feature_enabled: true,

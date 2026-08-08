@@ -4,7 +4,7 @@ use std::time::Duration;
 use std::time::Instant;
 
 use codex_core::config::Config;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use serde::Deserialize;
 
 use crate::chatgpt_client::chatgpt_get_request_with_timeout;
@@ -82,7 +82,7 @@ impl WorkspaceSettingsCache {
 
 pub async fn codex_plugins_enabled_for_workspace(
     config: &Config,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
     cache: Option<&WorkspaceSettingsCache>,
 ) -> anyhow::Result<bool> {
     let Some(auth) = auth else {

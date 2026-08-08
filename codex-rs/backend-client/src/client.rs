@@ -1,7 +1,7 @@
 use crate::types::AccountsCheckResponse;
 use crate::types::CodeTaskDetailsResponse;
 use crate::types::ConfigBundleResponse;
-use crate::types::MidnightCoderWorkspaceMessagesResponse;
+use crate::types::SolaiAgentWorkspaceMessagesResponse;
 use crate::types::PaginatedListTaskListItem;
 use crate::types::RateLimitReachedKind as BackendRateLimitReachedKind;
 use crate::types::RateLimitStatusPayload;
@@ -11,7 +11,7 @@ use anyhow::Result;
 use codex_api::SharedAuthProvider;
 use codex_client::build_reqwest_client_with_custom_ca;
 use codex_client::with_chatgpt_cloudflare_cookie_store;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_login::default_client::get_codex_user_agent;
 use codex_protocol::account::PlanType as AccountPlanType;
 use codex_protocol::protocol::CreditsSnapshot;
@@ -105,7 +105,7 @@ struct SendAddCreditsNudgeEmailRequest {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PathStyle {
     /// /api/codex/…
-    MidnightCoderApi,
+    SolaiAgentApi,
     /// /wham/…
     ChatGptApi,
 }
@@ -115,7 +115,7 @@ impl PathStyle {
         if base_url.contains("/backend-api") {
             PathStyle::ChatGptApi
         } else {
-            PathStyle::MidnightCoderApi
+            PathStyle::SolaiAgentApi
         }
     }
 }
@@ -176,7 +176,7 @@ impl Client {
         })
     }
 
-    pub fn from_auth(base_url: impl Into<String>, auth: &MidnightCoderAuth) -> Result<Self> {
+    pub fn from_auth(base_url: impl Into<String>, auth: &SolaiAgentAuth) -> Result<Self> {
         Ok(Self::new(base_url)?
             .with_user_agent(get_codex_user_agent())
             .with_auth_provider(codex_model_provider::auth_provider_from_auth(auth)))
@@ -303,7 +303,7 @@ impl Client {
 
     pub async fn get_accounts_check(&self) -> Result<AccountsCheckResponse> {
         let url = match self.path_style {
-            PathStyle::MidnightCoderApi => format!("{}/api/codex/accounts/check", self.base_url),
+            PathStyle::SolaiAgentApi => format!("{}/api/codex/accounts/check", self.base_url),
             PathStyle::ChatGptApi => format!("{}/wham/accounts/check", self.base_url),
         };
         let req = self.http.get(&url).headers(self.headers());
@@ -320,7 +320,7 @@ impl Client {
 
     fn token_usage_profile_url(&self) -> String {
         match self.path_style {
-            PathStyle::MidnightCoderApi => format!("{}/api/codex/profiles/me", self.base_url),
+            PathStyle::SolaiAgentApi => format!("{}/api/codex/profiles/me", self.base_url),
             PathStyle::ChatGptApi => format!("{}/wham/profiles/me", self.base_url),
         }
     }
@@ -348,7 +348,7 @@ impl Client {
         cursor: Option<&str>,
     ) -> Result<PaginatedListTaskListItem> {
         let url = match self.path_style {
-            PathStyle::MidnightCoderApi => format!("{}/api/codex/tasks/list", self.base_url),
+            PathStyle::SolaiAgentApi => format!("{}/api/codex/tasks/list", self.base_url),
             PathStyle::ChatGptApi => format!("{}/wham/tasks/list", self.base_url),
         };
         let req = self.http.get(&url).headers(self.headers());
@@ -386,7 +386,7 @@ impl Client {
         task_id: &str,
     ) -> Result<(CodeTaskDetailsResponse, String, String)> {
         let url = match self.path_style {
-            PathStyle::MidnightCoderApi => format!("{}/api/codex/tasks/{}", self.base_url, task_id),
+            PathStyle::SolaiAgentApi => format!("{}/api/codex/tasks/{}", self.base_url, task_id),
             PathStyle::ChatGptApi => format!("{}/wham/tasks/{}", self.base_url, task_id),
         };
         let req = self.http.get(&url).headers(self.headers());
@@ -401,7 +401,7 @@ impl Client {
         turn_id: &str,
     ) -> Result<TurnAttemptsSiblingTurnsResponse> {
         let url = match self.path_style {
-            PathStyle::MidnightCoderApi => format!(
+            PathStyle::SolaiAgentApi => format!(
                 "{}/api/codex/tasks/{}/turns/{}/sibling_turns",
                 self.base_url, task_id, turn_id
             ),
@@ -417,13 +417,13 @@ impl Client {
 
     /// Fetch the selected cloud-managed config bundle from codex-backend.
     ///
-    /// `GET /api/codex/config/bundle` (MidnightCoder API style) or
+    /// `GET /api/codex/config/bundle` (SolaiAgent API style) or
     /// `GET /wham/config/bundle` (ChatGPT backend-api style).
     pub async fn get_config_bundle(
         &self,
     ) -> std::result::Result<ConfigBundleResponse, RequestError> {
         let url = match self.path_style {
-            PathStyle::MidnightCoderApi => format!("{}/api/codex/config/bundle", self.base_url),
+            PathStyle::SolaiAgentApi => format!("{}/api/codex/config/bundle", self.base_url),
             PathStyle::ChatGptApi => format!("{}/wham/config/bundle", self.base_url),
         };
         let req = self.http.get(&url).headers(self.headers());
@@ -434,7 +434,7 @@ impl Client {
 
     pub async fn list_workspace_messages(
         &self,
-    ) -> std::result::Result<MidnightCoderWorkspaceMessagesResponse, RequestError> {
+    ) -> std::result::Result<SolaiAgentWorkspaceMessagesResponse, RequestError> {
         let url = self.workspace_messages_url();
         let req = self
             .http
@@ -442,7 +442,7 @@ impl Client {
             .headers(self.headers())
             .header(CACHE_CONTROL, HeaderValue::from_static("no-store"));
         let (body, ct) = self.exec_request_detailed(req, "GET", &url).await?;
-        self.decode_json::<MidnightCoderWorkspaceMessagesResponse>(&url, &ct, &body)
+        self.decode_json::<SolaiAgentWorkspaceMessagesResponse>(&url, &ct, &body)
             .map_err(RequestError::from)
     }
 
@@ -450,7 +450,7 @@ impl Client {
     /// based on `path_style`. Returns the created task id.
     pub async fn create_task(&self, request_body: serde_json::Value) -> Result<String> {
         let url = match self.path_style {
-            PathStyle::MidnightCoderApi => format!("{}/api/codex/tasks", self.base_url),
+            PathStyle::SolaiAgentApi => format!("{}/api/codex/tasks", self.base_url),
             PathStyle::ChatGptApi => format!("{}/wham/tasks", self.base_url),
         };
         let req = self
@@ -573,7 +573,7 @@ impl Client {
 
     fn send_add_credits_nudge_email_url(&self) -> String {
         match self.path_style {
-            PathStyle::MidnightCoderApi => format!(
+            PathStyle::SolaiAgentApi => format!(
                 "{}/api/codex/accounts/send_add_credits_nudge_email",
                 self.base_url
             ),
@@ -588,7 +588,7 @@ impl Client {
 
     fn workspace_messages_url(&self) -> String {
         match self.path_style {
-            PathStyle::MidnightCoderApi => {
+            PathStyle::SolaiAgentApi => {
                 format!("{}/api/codex/workspace-messages", self.base_url)
             }
             PathStyle::ChatGptApi => format!("{}/wham/workspace-messages", self.base_url),
@@ -918,7 +918,7 @@ mod tests {
 
     #[test]
     fn add_credits_nudge_email_uses_expected_paths_and_bodies() {
-        let codex_client = test_client("https://example.test", PathStyle::MidnightCoderApi);
+        let codex_client = test_client("https://example.test", PathStyle::SolaiAgentApi);
         assert_eq!(
             codex_client.send_add_credits_nudge_email_url(),
             "https://example.test/api/codex/accounts/send_add_credits_nudge_email"
@@ -948,7 +948,7 @@ mod tests {
 
     #[test]
     fn token_usage_profile_uses_expected_paths() {
-        let codex_client = test_client("https://example.test", PathStyle::MidnightCoderApi);
+        let codex_client = test_client("https://example.test", PathStyle::SolaiAgentApi);
         assert_eq!(
             codex_client.token_usage_profile_url(),
             "https://example.test/api/codex/profiles/me"
@@ -963,7 +963,7 @@ mod tests {
 
     #[test]
     fn workspace_messages_uses_expected_paths() {
-        let codex_client = test_client("https://example.test", PathStyle::MidnightCoderApi);
+        let codex_client = test_client("https://example.test", PathStyle::SolaiAgentApi);
         assert_eq!(
             codex_client.workspace_messages_url(),
             "https://example.test/api/codex/workspace-messages"

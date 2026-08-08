@@ -11,11 +11,11 @@ import openai_codex
 import openai_codex.types as public_types
 from openai_codex import (
     ApprovalMode,
-    AsyncMidnightCoder,
+    AsyncSolaiAgent,
     AsyncThread,
     AsyncTurnHandle,
-    MidnightCoder,
-    MidnightCoderConfig,
+    SolaiAgent,
+    SolaiAgentConfig,
     Sandbox,
     Thread,
     TurnHandle,
@@ -26,9 +26,9 @@ from openai_codex.types import InitializeResponse
 
 EXPECTED_ROOT_EXPORTS = [
     "__version__",
-    "MidnightCoderConfig",
-    "MidnightCoder",
-    "AsyncMidnightCoder",
+    "SolaiAgentConfig",
+    "SolaiAgent",
+    "AsyncSolaiAgent",
     "ApprovalMode",
     "Sandbox",
     "ChatgptLoginHandle",
@@ -49,10 +49,10 @@ EXPECTED_ROOT_EXPORTS = [
     "SkillInput",
     "MentionInput",
     "retry_on_overload",
-    "MidnightCoderError",
+    "SolaiAgentError",
     "TransportClosedError",
     "JsonRpcError",
-    "MidnightCoderRpcError",
+    "SolaiAgentRpcError",
     "ParseError",
     "InvalidRequestError",
     "MethodNotFoundError",
@@ -131,7 +131,7 @@ def _assert_no_any_annotations(fn: object) -> None:
 
 def test_root_exports_codex_config() -> None:
     """The root package should expose the process configuration object."""
-    assert MidnightCoderConfig.__name__ == "MidnightCoderConfig"
+    assert SolaiAgentConfig.__name__ == "SolaiAgentConfig"
 
 
 def test_root_exports_turn_result() -> None:
@@ -208,24 +208,24 @@ def test_package_and_default_client_versions_follow_project_version() -> None:
     pyproject = tomllib.loads(pyproject_path.read_text())
 
     assert openai_codex.__version__ == pyproject["project"]["version"]
-    assert MidnightCoderConfig().client_version == openai_codex.__version__
+    assert SolaiAgentConfig().client_version == openai_codex.__version__
 
 
 def test_curated_public_api_has_builtin_help_documentation() -> None:
     """The package's normal ``help()`` surface should explain common first-use APIs."""
     documented = {
         "module": openai_codex,
-        "MidnightCoder": MidnightCoder,
-        "AsyncMidnightCoder": AsyncMidnightCoder,
-        "MidnightCoderConfig": MidnightCoderConfig,
+        "SolaiAgent": SolaiAgent,
+        "AsyncSolaiAgent": AsyncSolaiAgent,
+        "SolaiAgentConfig": SolaiAgentConfig,
         "Thread": Thread,
         "AsyncThread": AsyncThread,
         "TurnHandle": TurnHandle,
         "AsyncTurnHandle": AsyncTurnHandle,
         "TurnResult": TurnResult,
         "Sandbox": Sandbox,
-        "thread_start": MidnightCoder.thread_start,
-        "thread_resume": MidnightCoder.thread_resume,
+        "thread_start": SolaiAgent.thread_start,
+        "thread_resume": SolaiAgent.thread_resume,
         "thread_run": Thread.run,
         "thread_turn": Thread.turn,
     }
@@ -248,16 +248,16 @@ def test_package_root_exports_only_public_api() -> None:
         EXPECTED_ROOT_EXPORTS, True
     )
     assert {
-        "MidnightCoderClient": hasattr(openai_codex, "MidnightCoderClient"),
-        "AsyncMidnightCoderClient": hasattr(openai_codex, "AsyncMidnightCoderClient"),
+        "SolaiAgentClient": hasattr(openai_codex, "SolaiAgentClient"),
+        "AsyncSolaiAgentClient": hasattr(openai_codex, "AsyncSolaiAgentClient"),
         "InitializeResponse": hasattr(openai_codex, "InitializeResponse"),
         "ThreadStartParams": hasattr(openai_codex, "ThreadStartParams"),
         "TurnStartParams": hasattr(openai_codex, "TurnStartParams"),
         "TurnCompletedNotification": hasattr(openai_codex, "TurnCompletedNotification"),
         "TurnStatus": hasattr(openai_codex, "TurnStatus"),
     } == {
-        "MidnightCoderClient": False,
-        "AsyncMidnightCoderClient": False,
+        "SolaiAgentClient": False,
+        "AsyncSolaiAgentClient": False,
         "InitializeResponse": False,
         "ThreadStartParams": False,
         "TurnStartParams": False,
@@ -276,7 +276,7 @@ def test_package_star_import_matches_public_api() -> None:
 
 
 def test_types_module_exports_curated_public_types() -> None:
-    """The public type module should expose MidnightCoder protocol models."""
+    """The public type module should expose SolaiAgent protocol models."""
     assert public_types.__all__ == EXPECTED_TYPES_EXPORTS
     assert {name: hasattr(public_types, name) for name in EXPECTED_TYPES_EXPORTS} == dict.fromkeys(
         EXPECTED_TYPES_EXPORTS, True
@@ -316,7 +316,7 @@ def test_examples_use_public_import_surfaces() -> None:
 def test_generated_public_signatures_are_snake_case_and_typed() -> None:
     """Generated convenience methods should expose typed Pythonic keyword names."""
     expected = {
-        MidnightCoder.thread_start: [
+        SolaiAgent.thread_start: [
             "approval_mode",
             "base_instructions",
             "config",
@@ -332,7 +332,7 @@ def test_generated_public_signatures_are_snake_case_and_typed() -> None:
             "session_start_source",
             "thread_source",
         ],
-        MidnightCoder.thread_list: [
+        SolaiAgent.thread_list: [
             "archived",
             "cursor",
             "cwd",
@@ -344,7 +344,7 @@ def test_generated_public_signatures_are_snake_case_and_typed() -> None:
             "source_kinds",
             "use_state_db_only",
         ],
-        MidnightCoder.thread_resume: [
+        SolaiAgent.thread_resume: [
             "approval_mode",
             "base_instructions",
             "config",
@@ -356,7 +356,7 @@ def test_generated_public_signatures_are_snake_case_and_typed() -> None:
             "sandbox",
             "service_tier",
         ],
-        MidnightCoder.thread_fork: [
+        SolaiAgent.thread_fork: [
             "approval_mode",
             "base_instructions",
             "config",
@@ -391,7 +391,7 @@ def test_generated_public_signatures_are_snake_case_and_typed() -> None:
             "service_tier",
             "summary",
         ],
-        AsyncMidnightCoder.thread_start: [
+        AsyncSolaiAgent.thread_start: [
             "approval_mode",
             "base_instructions",
             "config",
@@ -407,7 +407,7 @@ def test_generated_public_signatures_are_snake_case_and_typed() -> None:
             "session_start_source",
             "thread_source",
         ],
-        AsyncMidnightCoder.thread_list: [
+        AsyncSolaiAgent.thread_list: [
             "archived",
             "cursor",
             "cwd",
@@ -419,7 +419,7 @@ def test_generated_public_signatures_are_snake_case_and_typed() -> None:
             "source_kinds",
             "use_state_db_only",
         ],
-        AsyncMidnightCoder.thread_resume: [
+        AsyncSolaiAgent.thread_resume: [
             "approval_mode",
             "base_instructions",
             "config",
@@ -431,7 +431,7 @@ def test_generated_public_signatures_are_snake_case_and_typed() -> None:
             "sandbox",
             "service_tier",
         ],
-        AsyncMidnightCoder.thread_fork: [
+        AsyncSolaiAgent.thread_fork: [
             "approval_mode",
             "base_instructions",
             "config",
@@ -480,8 +480,8 @@ def test_generated_public_signatures_are_snake_case_and_typed() -> None:
 def test_new_thread_methods_default_to_auto_review() -> None:
     """New threads should start with auto-review unless callers opt out."""
     funcs = [
-        MidnightCoder.thread_start,
-        AsyncMidnightCoder.thread_start,
+        SolaiAgent.thread_start,
+        AsyncSolaiAgent.thread_start,
     ]
 
     assert {fn: _keyword_default(fn, "approval_mode") for fn in funcs} == dict.fromkeys(
@@ -492,12 +492,12 @@ def test_new_thread_methods_default_to_auto_review() -> None:
 def test_existing_thread_methods_default_to_preserving_approval_settings() -> None:
     """Existing thread operations should not serialize approval overrides by default."""
     funcs = [
-        MidnightCoder.thread_resume,
-        MidnightCoder.thread_fork,
+        SolaiAgent.thread_resume,
+        SolaiAgent.thread_fork,
         Thread.turn,
         Thread.run,
-        AsyncMidnightCoder.thread_resume,
-        AsyncMidnightCoder.thread_fork,
+        AsyncSolaiAgent.thread_resume,
+        AsyncSolaiAgent.thread_fork,
         AsyncThread.turn,
         AsyncThread.run,
     ]
@@ -507,16 +507,16 @@ def test_existing_thread_methods_default_to_preserving_approval_settings() -> No
 
 def test_lifecycle_methods_are_codex_scoped() -> None:
     """Lifecycle operations should hang off the client rather than thread objects."""
-    assert hasattr(MidnightCoder, "thread_resume")
-    assert hasattr(MidnightCoder, "thread_fork")
-    assert hasattr(MidnightCoder, "thread_archive")
-    assert hasattr(MidnightCoder, "thread_unarchive")
-    assert hasattr(AsyncMidnightCoder, "thread_resume")
-    assert hasattr(AsyncMidnightCoder, "thread_fork")
-    assert hasattr(AsyncMidnightCoder, "thread_archive")
-    assert hasattr(AsyncMidnightCoder, "thread_unarchive")
-    assert not hasattr(MidnightCoder, "thread")
-    assert not hasattr(AsyncMidnightCoder, "thread")
+    assert hasattr(SolaiAgent, "thread_resume")
+    assert hasattr(SolaiAgent, "thread_fork")
+    assert hasattr(SolaiAgent, "thread_archive")
+    assert hasattr(SolaiAgent, "thread_unarchive")
+    assert hasattr(AsyncSolaiAgent, "thread_resume")
+    assert hasattr(AsyncSolaiAgent, "thread_fork")
+    assert hasattr(AsyncSolaiAgent, "thread_archive")
+    assert hasattr(AsyncSolaiAgent, "thread_unarchive")
+    assert not hasattr(SolaiAgent, "thread")
+    assert not hasattr(AsyncSolaiAgent, "thread")
 
     assert not hasattr(Thread, "resume")
     assert not hasattr(Thread, "fork")
@@ -528,10 +528,10 @@ def test_lifecycle_methods_are_codex_scoped() -> None:
     assert not hasattr(AsyncThread, "unarchive")
 
     for fn in (
-        MidnightCoder.thread_archive,
-        MidnightCoder.thread_unarchive,
-        AsyncMidnightCoder.thread_archive,
-        AsyncMidnightCoder.thread_unarchive,
+        SolaiAgent.thread_archive,
+        SolaiAgent.thread_unarchive,
+        AsyncSolaiAgent.thread_archive,
+        AsyncSolaiAgent.thread_unarchive,
     ):
         _assert_no_any_annotations(fn)
 

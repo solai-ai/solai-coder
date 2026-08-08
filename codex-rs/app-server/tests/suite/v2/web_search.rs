@@ -305,7 +305,7 @@ chatgpt_base_url = "{server_uri}"
 standalone_web_search = true
 
 [model_providers.openai-custom]
-name = "MidnightCoder"
+name = "SolaiAgent"
 base_url = "{server_uri}/api/codex"
 wire_api = "responses"
 request_max_retries = 0

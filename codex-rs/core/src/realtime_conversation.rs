@@ -24,13 +24,13 @@ use codex_api::RealtimeWebsocketWriter;
 use codex_api::map_api_error;
 use codex_config::config_toml::RealtimeWsMode;
 use codex_config::config_toml::RealtimeWsVersion;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_login::default_client::default_headers;
 use codex_login::read_openai_api_key_from_env;
 use codex_model_provider_info::ModelProviderInfo;
 use codex_protocol::auth::AuthMode;
-use codex_protocol::error::MidnightCoderErr;
-use codex_protocol::error::Result as MidnightCoderResult;
+use codex_protocol::error::SolaiAgentErr;
+use codex_protocol::error::Result as SolaiAgentResult;
 use codex_protocol::models::MessagePhase;
 use codex_protocol::protocol::ConversationAudioParams;
 use codex_protocol::protocol::ConversationSpeechParams;
@@ -41,7 +41,7 @@ use codex_protocol::protocol::ConversationTextRole;
 use codex_protocol::protocol::ErrorEvent;
 use codex_protocol::protocol::Event;
 use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::MidnightCoderErrorInfo;
+use codex_protocol::protocol::SolaiAgentErrorInfo;
 use codex_protocol::protocol::RealtimeConversationClosedEvent;
 use codex_protocol::protocol::RealtimeConversationRealtimeEvent;
 use codex_protocol::protocol::RealtimeConversationSdpEvent;
@@ -288,7 +288,7 @@ impl RealtimeConversationManager {
         )
     }
 
-    async fn start(&self, start: RealtimeStart) -> MidnightCoderResult<RealtimeStartOutput> {
+    async fn start(&self, start: RealtimeStart) -> SolaiAgentResult<RealtimeStartOutput> {
         let previous_state = {
             let mut guard = self.state.lock().await;
             guard.take()
@@ -300,7 +300,7 @@ impl RealtimeConversationManager {
         self.start_inner(start).await
     }
 
-    async fn start_inner(&self, start: RealtimeStart) -> MidnightCoderResult<RealtimeStartOutput> {
+    async fn start_inner(&self, start: RealtimeStart) -> SolaiAgentResult<RealtimeStartOutput> {
         let RealtimeStart {
             api_provider,
             extra_headers,
@@ -441,14 +441,14 @@ impl RealtimeConversationManager {
         }
     }
 
-    pub(crate) async fn audio_in(&self, frame: RealtimeAudioFrame) -> MidnightCoderResult<()> {
+    pub(crate) async fn audio_in(&self, frame: RealtimeAudioFrame) -> SolaiAgentResult<()> {
         let sender = {
             let guard = self.state.lock().await;
             guard.as_ref().map(|state| state.audio_tx.clone())
         };
 
         let Some(sender) = sender else {
-            return Err(MidnightCoderErr::InvalidRequest(
+            return Err(SolaiAgentErr::InvalidRequest(
                 "conversation is not running".to_string(),
             ));
         };
@@ -459,7 +459,7 @@ impl RealtimeConversationManager {
                 warn!("dropping input audio frame due to full queue");
                 Ok(())
             }
-            Err(TrySendError::Closed(_)) => Err(MidnightCoderErr::InvalidRequest(
+            Err(TrySendError::Closed(_)) => Err(SolaiAgentErr::InvalidRequest(
                 "conversation is not running".to_string(),
             )),
         }
@@ -468,7 +468,7 @@ impl RealtimeConversationManager {
     pub(crate) async fn text_in(
         &self,
         mut params: ConversationTextParams,
-    ) -> MidnightCoderResult<()> {
+    ) -> SolaiAgentResult<()> {
         let sender = {
             let guard = self.state.lock().await;
             guard
@@ -477,7 +477,7 @@ impl RealtimeConversationManager {
         };
 
         let Some((sender, session_kind)) = sender else {
-            return Err(MidnightCoderErr::InvalidRequest(
+            return Err(SolaiAgentErr::InvalidRequest(
                 "conversation is not running".to_string(),
             ));
         };
@@ -487,7 +487,7 @@ impl RealtimeConversationManager {
                 prefix_realtime_text(params.text, REALTIME_USER_TEXT_PREFIX, session_kind);
         }
         sender.send(params).await.map_err(|_| {
-            MidnightCoderErr::InvalidRequest("conversation is not running".to_string())
+            SolaiAgentErr::InvalidRequest("conversation is not running".to_string())
         })?;
         Ok(())
     }
@@ -496,11 +496,11 @@ impl RealtimeConversationManager {
         &self,
         output_text: String,
         phase: Option<MessagePhase>,
-    ) -> MidnightCoderResult<()> {
+    ) -> SolaiAgentResult<()> {
         let handoff = {
             let guard = self.state.lock().await;
             let Some(state) = guard.as_ref() else {
-                return Err(MidnightCoderErr::InvalidRequest(
+                return Err(SolaiAgentErr::InvalidRequest(
                     "conversation is not running".to_string(),
                 ));
             };
@@ -565,12 +565,12 @@ impl RealtimeConversationManager {
             }
         };
         handoff.output_tx.send(output).await.map_err(|_| {
-            MidnightCoderErr::InvalidRequest("conversation is not running".to_string())
+            SolaiAgentErr::InvalidRequest("conversation is not running".to_string())
         })?;
         Ok(())
     }
 
-    pub(crate) async fn append_speech(&self, text: String) -> MidnightCoderResult<()> {
+    pub(crate) async fn append_speech(&self, text: String) -> SolaiAgentResult<()> {
         if text.trim().is_empty() {
             return Ok(());
         }
@@ -578,7 +578,7 @@ impl RealtimeConversationManager {
         let handoff = {
             let guard = self.state.lock().await;
             let Some(state) = guard.as_ref() else {
-                return Err(MidnightCoderErr::InvalidRequest(
+                return Err(SolaiAgentErr::InvalidRequest(
                     "conversation is not running".to_string(),
                 ));
             };
@@ -592,12 +592,12 @@ impl RealtimeConversationManager {
             })
             .await
             .map_err(|_| {
-                MidnightCoderErr::InvalidRequest("conversation is not running".to_string())
+                SolaiAgentErr::InvalidRequest("conversation is not running".to_string())
             })?;
         Ok(())
     }
 
-    pub(crate) async fn handoff_complete(&self) -> MidnightCoderResult<()> {
+    pub(crate) async fn handoff_complete(&self) -> SolaiAgentResult<()> {
         let handoff = {
             let guard = self.state.lock().await;
             guard.as_ref().map(|state| state.handoff.clone())
@@ -630,7 +630,7 @@ impl RealtimeConversationManager {
         };
 
         handoff.output_tx.send(output).await.map_err(|_| {
-            MidnightCoderErr::InvalidRequest("conversation is not running".to_string())
+            SolaiAgentErr::InvalidRequest("conversation is not running".to_string())
         })
     }
 
@@ -645,7 +645,7 @@ impl RealtimeConversationManager {
         }
     }
 
-    pub(crate) async fn shutdown(&self) -> MidnightCoderResult<()> {
+    pub(crate) async fn shutdown(&self) -> SolaiAgentResult<()> {
         let state = {
             let mut guard = self.state.lock().await;
             guard.take()
@@ -681,7 +681,7 @@ pub(crate) async fn handle_start(
     sess: &Arc<Session>,
     sub_id: String,
     params: ConversationStartParams,
-) -> MidnightCoderResult<()> {
+) -> SolaiAgentResult<()> {
     let prepared_start = match prepare_realtime_start(sess, params).await {
         Ok(prepared_start) => prepared_start,
         Err(err) => {
@@ -735,7 +735,7 @@ pub(crate) enum ConfiguredRealtimeVoice {
 async fn prepare_realtime_start(
     sess: &Arc<Session>,
     params: ConversationStartParams,
-) -> MidnightCoderResult<PreparedRealtimeConversationStart> {
+) -> SolaiAgentResult<PreparedRealtimeConversationStart> {
     let provider = sess.provider().await;
     let auth_manager = sess
         .services
@@ -814,14 +814,14 @@ async fn prepare_realtime_start(
 fn validate_avas_webrtc_start(
     version: RealtimeWsVersion,
     session_type: RealtimeWsMode,
-) -> MidnightCoderResult<()> {
+) -> SolaiAgentResult<()> {
     if version != RealtimeWsVersion::V1 {
-        return Err(MidnightCoderErr::InvalidRequest(
+        return Err(SolaiAgentErr::InvalidRequest(
             "AVAS realtime calls require realtime v1".to_string(),
         ));
     }
     if session_type != RealtimeWsMode::Conversational {
-        return Err(MidnightCoderErr::InvalidRequest(
+        return Err(SolaiAgentErr::InvalidRequest(
             "AVAS realtime calls require conversational realtime".to_string(),
         ));
     }
@@ -833,7 +833,7 @@ pub(crate) async fn build_realtime_session_config(
     params: &ConversationStartParams,
     version: RealtimeWsVersion,
     configured_voice: ConfiguredRealtimeVoice,
-) -> MidnightCoderResult<RealtimeSessionConfig> {
+) -> SolaiAgentResult<RealtimeSessionConfig> {
     let config = sess.get_config().await;
     let prompt = prepare_realtime_backend_prompt(
         params.prompt.clone(),
@@ -871,7 +871,7 @@ pub(crate) async fn build_realtime_session_config(
     if version == RealtimeWsVersion::V1
         && matches!(params.output_modality, RealtimeOutputModality::Text)
     {
-        return Err(MidnightCoderErr::InvalidRequest(
+        return Err(SolaiAgentErr::InvalidRequest(
             "text realtime output modality requires realtime v2".to_string(),
         ));
     }
@@ -935,7 +935,7 @@ fn realtime_backend_item(text: String, prefix: Option<&str>) -> String {
 fn validate_realtime_voice(
     version: RealtimeWsVersion,
     voice: RealtimeVoice,
-) -> MidnightCoderResult<()> {
+) -> SolaiAgentResult<()> {
     let voices = RealtimeVoicesList::builtin();
     let allowed = match version {
         RealtimeWsVersion::V1 => &voices.v1,
@@ -954,7 +954,7 @@ fn validate_realtime_voice(
         .map(|voice| voice.wire_name())
         .collect::<Vec<_>>()
         .join(", ");
-    Err(MidnightCoderErr::InvalidRequest(format!(
+    Err(SolaiAgentErr::InvalidRequest(format!(
         "realtime voice `{}` is not supported for {version}; supported voices: {allowed}",
         voice.wire_name()
     )))
@@ -964,7 +964,7 @@ async fn handle_start_inner(
     sess: &Arc<Session>,
     sub_id: &str,
     prepared_start: PreparedRealtimeConversationStart,
-) -> MidnightCoderResult<()> {
+) -> SolaiAgentResult<()> {
     let PreparedRealtimeConversationStart {
         api_provider,
         extra_headers,
@@ -1103,7 +1103,7 @@ pub(crate) async fn handle_audio(
                 sess,
                 sub_id,
                 err.to_string(),
-                MidnightCoderErrorInfo::BadRequest,
+                SolaiAgentErrorInfo::BadRequest,
             )
             .await;
         }
@@ -1154,9 +1154,9 @@ fn escape_xml_text(input: &str) -> String {
 }
 
 fn realtime_api_key(
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
     provider: &ModelProviderInfo,
-) -> MidnightCoderResult<String> {
+) -> SolaiAgentResult<String> {
     if let Some(api_key) = provider.api_key()? {
         return Ok(api_key);
     }
@@ -1165,7 +1165,7 @@ fn realtime_api_key(
         return Ok(token);
     }
 
-    if let Some(api_key) = auth.and_then(MidnightCoderAuth::api_key) {
+    if let Some(api_key) = auth.and_then(SolaiAgentAuth::api_key) {
         return Ok(api_key.to_string());
     }
 
@@ -1177,7 +1177,7 @@ fn realtime_api_key(
         return Ok(api_key);
     }
 
-    Err(MidnightCoderErr::InvalidRequest(
+    Err(SolaiAgentErr::InvalidRequest(
         "realtime conversation requires API key auth".to_string(),
     ))
 }
@@ -1187,7 +1187,7 @@ fn realtime_request_headers(
     api_key: Option<&str>,
     version: RealtimeWsVersion,
     originator: &str,
-) -> MidnightCoderResult<Option<HeaderMap>> {
+) -> SolaiAgentResult<Option<HeaderMap>> {
     let mut headers = HeaderMap::new();
 
     if version == RealtimeWsVersion::V1 {
@@ -1202,7 +1202,7 @@ fn realtime_request_headers(
 
     if let Some(api_key) = api_key {
         let auth_value = HeaderValue::from_str(&format!("Bearer {api_key}")).map_err(|err| {
-            MidnightCoderErr::InvalidRequest(format!("invalid realtime api key header: {err}"))
+            SolaiAgentErr::InvalidRequest(format!("invalid realtime api key header: {err}"))
         })?;
         headers.insert(AUTHORIZATION, auth_value);
     }
@@ -1227,7 +1227,7 @@ pub(crate) async fn handle_text(
                 sess,
                 sub_id,
                 err.to_string(),
-                MidnightCoderErrorInfo::BadRequest,
+                SolaiAgentErrorInfo::BadRequest,
             )
             .await;
         }
@@ -1249,7 +1249,7 @@ pub(crate) async fn handle_speech(
                 sess,
                 sub_id,
                 err.to_string(),
-                MidnightCoderErrorInfo::BadRequest,
+                SolaiAgentErrorInfo::BadRequest,
             )
             .await;
         }
@@ -1773,7 +1773,7 @@ async fn send_conversation_error(
     sess: &Arc<Session>,
     sub_id: String,
     message: String,
-    codex_error_info: MidnightCoderErrorInfo,
+    codex_error_info: SolaiAgentErrorInfo,
 ) {
     sess.send_event_raw(Event {
         id: sub_id,

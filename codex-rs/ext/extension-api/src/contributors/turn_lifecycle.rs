@@ -1,5 +1,5 @@
 use codex_protocol::config_types::CollaborationMode;
-use codex_protocol::protocol::MidnightCoderErrorInfo;
+use codex_protocol::protocol::SolaiAgentErrorInfo;
 use codex_protocol::protocol::TokenUsage;
 use codex_protocol::protocol::TurnAbortReason;
 
@@ -48,7 +48,7 @@ pub struct TurnErrorInput<'a> {
     /// Stable host-owned turn identifier.
     pub turn_id: &'a str,
     /// Error surfaced by the host for this turn.
-    pub error: MidnightCoderErrorInfo,
+    pub error: SolaiAgentErrorInfo,
     /// Store scoped to the host session runtime.
     pub session_store: &'a ExtensionData,
     /// Store scoped to this thread runtime.

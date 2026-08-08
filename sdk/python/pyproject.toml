@@ -5,11 +5,11 @@ build-backend = "uv_build"
 [project]
 name = "openai-codex"
 version = "0.0.0-dev"
-description = "Python SDK for Midnight Coder"
+description = "Python SDK for SOLAI Agent"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
-authors = [{ name = "Midnight Coder" }]
+authors = [{ name = "SOLAI Agent" }]
 keywords = ["codex", "sdk", "llm", "ai", "agents"]
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -19,10 +19,10 @@ classifiers = [
 dependencies = ["pydantic>=2.12", "openai-codex-cli-bin==0.137.0a4"]
 
 [project.urls]
-Homepage = "https://github.com/modnight/coder"
-Repository = "https://github.com/modnight/coder"
-Issues = "https://github.com/modnight/coder/issues"
-Documentation = "https://github.com/modnight/coder/tree/main/sdk/python/docs"
+Homepage = "https://github.com/solai-ai/solai-agent"
+Repository = "https://github.com/solai-ai/solai-agent"
+Issues = "https://github.com/solai-ai/solai-agent/issues"
+Documentation = "https://github.com/solai-ai/solai-agent/tree/main/sdk/python/docs"
 
 [dependency-groups]
 format = ["ruff>=0.15.8"]

@@ -1,4 +1,4 @@
-//! Asynchronous worker that executes a **MidnightCoder** tool-call inside a spawned
+//! Asynchronous worker that executes a **SolaiAgent** tool-call inside a spawned
 //! Tokio task. Separated from `message_processor.rs` to keep that file small
 //! and to make future feature-growth easier to manage.
 
@@ -9,10 +9,10 @@ use crate::exec_approval::handle_exec_approval_request;
 use crate::outgoing_message::OutgoingMessageSender;
 use crate::outgoing_message::OutgoingNotificationMeta;
 use crate::patch_approval::handle_patch_approval_request;
-use codex_core::MidnightCoderThread;
+use codex_core::SolaiAgentThread;
 use codex_core::NewThread;
 use codex_core::ThreadManager;
-use codex_core::config::Config as MidnightCoderConfig;
+use codex_core::config::Config as SolaiAgentConfig;
 use codex_protocol::ThreadId;
 use codex_protocol::protocol::AgentMessageEvent;
 use codex_protocol::protocol::ApplyPatchApprovalRequestEvent;
@@ -29,7 +29,7 @@ use rmcp::model::RequestId;
 use serde_json::json;
 use tokio::sync::Mutex;
 
-/// To adhere to MCP `tools/call` response format, include the MidnightCoder
+/// To adhere to MCP `tools/call` response format, include the SolaiAgent
 /// `threadId` in the `structured_content` field of the response.
 /// Some MCP clients ignore `content` when `structuredContent` is present, so
 /// mirror the text there as well.
@@ -50,14 +50,14 @@ pub(crate) fn create_call_tool_result_with_thread_id(
     result
 }
 
-/// Run a complete MidnightCoder session and stream events back to the client.
+/// Run a complete SolaiAgent session and stream events back to the client.
 ///
 /// On completion (success or error) the function sends the appropriate
 /// `tools/call` response so the LLM can continue the conversation.
 pub async fn run_codex_tool_session(
     id: RequestId,
     initial_prompt: String,
-    config: MidnightCoderConfig,
+    config: SolaiAgentConfig,
     outgoing: Arc<OutgoingMessageSender>,
     thread_manager: Arc<ThreadManager>,
     running_requests_id_to_codex_uuid: Arc<Mutex<HashMap<RequestId, ThreadId>>>,
@@ -70,7 +70,7 @@ pub async fn run_codex_tool_session(
         Ok(res) => res,
         Err(e) => {
             let result = CallToolResult::error(vec![Content::text(format!(
-                "Failed to start MidnightCoder session: {e}"
+                "Failed to start SolaiAgent session: {e}"
             ))]);
             outgoing.send_response(id.clone(), result).await;
             return;
@@ -92,7 +92,7 @@ pub async fn run_codex_tool_session(
         )
         .await;
 
-    // Use the original MCP request ID as the `sub_id` for the MidnightCoder submission so that
+    // Use the original MCP request ID as the `sub_id` for the SolaiAgent submission so that
     // any events emitted for this tool-call can be correlated with the
     // originating `tools/call` request.
     let sub_id = id.to_string();
@@ -142,7 +142,7 @@ pub async fn run_codex_tool_session(
 
 pub async fn run_codex_tool_session_reply(
     thread_id: ThreadId,
-    thread: Arc<MidnightCoderThread>,
+    thread: Arc<SolaiAgentThread>,
     outgoing: Arc<OutgoingMessageSender>,
     request_id: RequestId,
     prompt: String,
@@ -193,7 +193,7 @@ pub async fn run_codex_tool_session_reply(
 
 async fn run_codex_tool_session_inner(
     thread_id: ThreadId,
-    thread: Arc<MidnightCoderThread>,
+    thread: Arc<SolaiAgentThread>,
     outgoing: Arc<OutgoingMessageSender>,
     request_id: RequestId,
     running_requests_id_to_codex_uuid: Arc<Mutex<HashMap<RequestId, ThreadId>>>,
@@ -402,7 +402,7 @@ async fn run_codex_tool_session_inner(
             Err(e) => {
                 let result = create_call_tool_result_with_thread_id(
                     thread_id,
-                    format!("MidnightCoder runtime error: {e}"),
+                    format!("SolaiAgent runtime error: {e}"),
                     Some(true),
                 );
                 outgoing.send_response(request_id.clone(), result).await;

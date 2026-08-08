@@ -30,7 +30,7 @@ use crate::GitSha;
 ///
 /// Note that this does **not** detect *work‑trees* created with
 /// `git worktree add` where the checkout lives outside the main repository
-/// directory. If you need MidnightCoder to work from such a checkout simply pass the
+/// directory. If you need SolaiAgent to work from such a checkout simply pass the
 /// `--allow-no-git-exec` CLI flag that disables the repo requirement.
 pub fn get_git_repo_root(base_dir: &Path) -> Option<PathBuf> {
     let base = if base_dir.is_dir() {
@@ -911,13 +911,13 @@ mod tests {
     #[test]
     fn canonicalize_git_remote_url_normalizes_github_variants() {
         for remote in [
-            "git@github.com:OpenAI/MidnightCoder.git",
+            "git@github.com:OpenAI/SolaiAgent.git",
             "ssh://git@github.com/openai/codex.git",
-            "ssh://git@github.com:22/OpenAI/MidnightCoder.git",
+            "ssh://git@github.com:22/OpenAI/SolaiAgent.git",
             "https://github.com/openai/codex.git",
             "https://github.com:443/openai/codex.git",
             "https://token@github.com/openai/codex/",
-            "github.com/OpenAI/MidnightCoder.git",
+            "github.com/OpenAI/SolaiAgent.git",
         ] {
             assert_eq!(
                 canonicalize_git_remote_url(remote),

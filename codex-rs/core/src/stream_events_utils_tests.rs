@@ -15,7 +15,7 @@ use crate::tools::parallel::ToolCallRuntime;
 use crate::turn_diff_tracker::TurnDiffTracker;
 use codex_extension_api::ExtensionData;
 use codex_extension_api::TurnItemContributor;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::items::AgentMessageContent;
 use codex_protocol::items::TurnItem;
 use codex_protocol::memory_citation::MemoryCitation;
@@ -478,7 +478,7 @@ async fn save_image_generation_result_rejects_data_url_payload() {
     let err = save_image_generation_result(&codex_home, "session-1", "ig_456", result)
         .await
         .expect_err("data url payload should error");
-    assert!(matches!(err, MidnightCoderErr::InvalidRequest(_)));
+    assert!(matches!(err, SolaiAgentErr::InvalidRequest(_)));
 }
 
 #[tokio::test]
@@ -526,7 +526,7 @@ async fn save_image_generation_result_rejects_non_standard_base64() {
     let err = save_image_generation_result(&codex_home, "session-1", "ig_urlsafe", "_-8")
         .await
         .expect_err("non-standard base64 should error");
-    assert!(matches!(err, MidnightCoderErr::InvalidRequest(_)));
+    assert!(matches!(err, SolaiAgentErr::InvalidRequest(_)));
 }
 
 #[tokio::test]
@@ -541,5 +541,5 @@ async fn save_image_generation_result_rejects_non_base64_data_urls() {
     )
     .await
     .expect_err("non-base64 data url should error");
-    assert!(matches!(err, MidnightCoderErr::InvalidRequest(_)));
+    assert!(matches!(err, SolaiAgentErr::InvalidRequest(_)));
 }

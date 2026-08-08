@@ -1,7 +1,7 @@
 //! Rate-limit warning, prompt, and notice surfaces for `ChatWidget`.
 
 use super::*;
-use codex_app_server_protocol::MidnightCoderErrorInfo as AppServerMidnightCoderErrorInfo;
+use codex_app_server_protocol::SolaiAgentErrorInfo as AppServerSolaiAgentErrorInfo;
 
 pub(super) const NUDGE_MODEL_SLUG: &str = "gpt-5.4-mini";
 pub(super) const RATE_LIMIT_SWITCH_PROMPT_THRESHOLD: f64 = 90.0;
@@ -135,22 +135,22 @@ pub(super) enum RateLimitErrorKind {
 }
 
 pub(super) fn app_server_rate_limit_error_kind(
-    info: &AppServerMidnightCoderErrorInfo,
+    info: &AppServerSolaiAgentErrorInfo,
 ) -> Option<RateLimitErrorKind> {
     match info {
-        AppServerMidnightCoderErrorInfo::ServerOverloaded => {
+        AppServerSolaiAgentErrorInfo::ServerOverloaded => {
             Some(RateLimitErrorKind::ServerOverloaded)
         }
-        AppServerMidnightCoderErrorInfo::UsageLimitExceeded => Some(RateLimitErrorKind::UsageLimit),
-        AppServerMidnightCoderErrorInfo::ResponseTooManyFailedAttempts {
+        AppServerSolaiAgentErrorInfo::UsageLimitExceeded => Some(RateLimitErrorKind::UsageLimit),
+        AppServerSolaiAgentErrorInfo::ResponseTooManyFailedAttempts {
             http_status_code: Some(429),
         } => Some(RateLimitErrorKind::Generic),
         _ => None,
     }
 }
 
-pub(super) fn is_app_server_cyber_policy_error(info: &AppServerMidnightCoderErrorInfo) -> bool {
-    matches!(info, AppServerMidnightCoderErrorInfo::CyberPolicy)
+pub(super) fn is_app_server_cyber_policy_error(info: &AppServerSolaiAgentErrorInfo) -> bool {
+    matches!(info, AppServerSolaiAgentErrorInfo::CyberPolicy)
 }
 
 #[derive(Clone, Copy)]
@@ -344,7 +344,7 @@ impl ChatWidget {
         let default_effort: ReasoningEffortConfig = preset.default_reasoning_effort;
 
         let switch_actions: Vec<SelectionAction> = vec![Box::new(move |tx| {
-            tx.send(AppEvent::MidnightCoderOp(
+            tx.send(AppEvent::SolaiAgentOp(
                 AppCommand::override_turn_context(
                     /*cwd*/ None,
                     /*approval_policy*/ None,

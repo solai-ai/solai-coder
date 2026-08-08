@@ -6,7 +6,7 @@ const MIDCODER_HOME_ENV_VAR: &str = "MIDCODER_HOME";
 const LEGACY_CODEX_HOME_ENV_VAR: &str = "CODEX_HOME";
 const DEFAULT_MIDCODER_HOME_DIR: &str = ".midCoder";
 
-/// Returns the path to the MidnightCoder configuration directory, which can be
+/// Returns the path to the SolaiAgent configuration directory, which can be
 /// specified by the `MIDCODER_HOME` environment variable. If not set, defaults
 /// to `~/.midCoder`.
 ///
@@ -91,7 +91,7 @@ mod tests {
         let missing = temp_home.path().join("missing-codex-home");
         let missing_str = missing
             .to_str()
-            .expect("missing MidnightCoder home path should be valid utf-8");
+            .expect("missing SolaiAgent home path should be valid utf-8");
 
         let err = find_codex_home_from_env(Some(missing_str)).expect_err("missing MIDCODER_HOME");
         assert_eq!(err.kind(), ErrorKind::NotFound);
@@ -108,7 +108,7 @@ mod tests {
         fs::write(&file_path, "not a directory").expect("write temp file");
         let file_str = file_path
             .to_str()
-            .expect("file MidnightCoder home path should be valid utf-8");
+            .expect("file SolaiAgent home path should be valid utf-8");
 
         let err = find_codex_home_from_env(Some(file_str)).expect_err("file MIDCODER_HOME");
         assert_eq!(err.kind(), ErrorKind::InvalidInput);
@@ -124,7 +124,7 @@ mod tests {
         let temp_str = temp_home
             .path()
             .to_str()
-            .expect("temp MidnightCoder home path should be valid utf-8");
+            .expect("temp SolaiAgent home path should be valid utf-8");
 
         let resolved = find_codex_home_from_env(Some(temp_str)).expect("valid MIDCODER_HOME");
         let expected = temp_home

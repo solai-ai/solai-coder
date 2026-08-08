@@ -21,7 +21,7 @@ pub(super) fn ensure_codex_app_runtime_paths_readable(
     };
 
     let read_execute_mask = FILE_GENERIC_READ | FILE_GENERIC_EXECUTE;
-    let codex_root = local_app_data.join("MidnightCoder").join("MidnightCoder");
+    let codex_root = local_app_data.join("SolaiAgent").join("SolaiAgent");
 
     for runtime_path in [codex_root.join("bin"), codex_root.join("runtimes")] {
         if !runtime_path.is_dir() {

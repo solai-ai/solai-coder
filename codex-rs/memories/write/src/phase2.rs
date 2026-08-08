@@ -453,7 +453,7 @@ mod agent {
         db: Arc<StateRuntime>,
         token: String,
         thread_id: ThreadId,
-        thread: &codex_core::MidnightCoderThread,
+        thread: &codex_core::SolaiAgentThread,
     ) -> AgentStatus {
         let mut heartbeat_interval =
             tokio::time::interval(Duration::from_secs(crate::stage_two::JOB_HEARTBEAT_SECONDS));

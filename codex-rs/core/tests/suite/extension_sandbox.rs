@@ -8,7 +8,7 @@ use codex_extension_api::ExtensionRegistry;
 use codex_extension_api::ExtensionRegistryBuilder;
 use codex_features::Feature;
 use codex_image_generation_extension::install as install_image_generation_extension;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_protocol::config_types::ApprovalsReviewer;
 use codex_protocol::config_types::WebSearchMode;
 use codex_protocol::models::FileSystemPermissions;
@@ -50,7 +50,7 @@ const TINY_PNG_BASE64: &str = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAD
 const TINY_PNG_DATA_URL: &str = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==";
 
 fn image_generation_extensions(
-    auth: &MidnightCoderAuth,
+    auth: &SolaiAgentAuth,
     resolve_save_root: impl Fn(&Config) -> Option<AbsolutePathBuf> + Send + Sync + 'static,
 ) -> Arc<ExtensionRegistry<Config>> {
     let auth_manager = codex_core::test_support::auth_manager_from_auth(auth.clone());
@@ -64,7 +64,7 @@ async fn extension_tool_receives_turn_environment_sandbox() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = responses::start_mock_server().await;
-    let auth = MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing();
     let extensions = image_generation_extensions(&auth, |config| Some(config.codex_home.clone()));
     let mut builder = test_codex()
         .with_auth(auth)
@@ -160,7 +160,7 @@ async fn extension_tool_uses_granted_turn_permissions_without_local_persistence(
         .mount(&server)
         .await;
 
-    let auth = MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing();
     let extensions = image_generation_extensions(&auth, |_config| None);
     let base_permission_profile = PermissionProfile::workspace_write_with(
         &[],

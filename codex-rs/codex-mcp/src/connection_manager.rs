@@ -1,4 +1,4 @@
-//! Aggregates MCP server connections for MidnightCoder.
+//! Aggregates MCP server connections for SolaiAgent.
 //!
 //! [`McpConnectionManager`] owns the set of running async RMCP clients keyed by
 //! MCP server name. It coordinates startup status events, keeps server origin
@@ -14,9 +14,9 @@ use std::time::Duration;
 use std::time::Instant;
 
 use crate::McpAuthStatusEntry;
-use crate::codex_apps_cache::MidnightCoderAppsToolsCache;
-use crate::codex_apps_cache::MidnightCoderAppsToolsCacheKey;
-use crate::codex_apps_cache::MidnightCoderAppsToolsFetchSource;
+use crate::codex_apps_cache::SolaiAgentAppsToolsCache;
+use crate::codex_apps_cache::SolaiAgentAppsToolsCacheKey;
+use crate::codex_apps_cache::SolaiAgentAppsToolsFetchSource;
 use crate::elicitation::ElicitationRequestManager;
 use crate::elicitation::ElicitationRequestRouter;
 use crate::elicitation::ElicitationReviewerHandle;
@@ -47,7 +47,7 @@ use codex_config::McpServerAuth;
 use codex_config::McpServerTransportConfig;
 use codex_config::types::AuthKeyringBackendKind;
 use codex_config::types::OAuthCredentialsStoreMode;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_protocol::mcp::CallToolResult;
 use codex_protocol::mcp::McpServerInfo;
 use codex_protocol::models::PermissionProfile;
@@ -134,13 +134,13 @@ impl McpConnectionManager {
         initial_permission_profile: PermissionProfile,
         runtime_context: McpRuntimeContext,
         codex_home: PathBuf,
-        codex_apps_tools_cache: MidnightCoderAppsToolsCache,
-        codex_apps_tools_cache_key: MidnightCoderAppsToolsCacheKey,
+        codex_apps_tools_cache: SolaiAgentAppsToolsCache,
+        codex_apps_tools_cache_key: SolaiAgentAppsToolsCacheKey,
         prefix_mcp_tool_names: bool,
         client_elicitation_capability: ElicitationCapability,
         supports_openai_form_elicitation: bool,
         tool_plugin_provenance: ToolPluginProvenance,
-        auth: Option<&MidnightCoderAuth>,
+        auth: Option<&SolaiAgentAuth>,
         elicitation_reviewer: Option<ElicitationReviewerHandle>,
         elicitation_router: ElicitationRequestRouter,
     ) -> Self {
@@ -181,7 +181,7 @@ impl McpConnectionManager {
             )
             .await;
             let configured_config = server.configured_config();
-            // For built-in MidnightCoder Apps, `CODEX_CONNECTORS_TOKEN` is a debug
+            // For built-in SolaiAgent Apps, `CODEX_CONNECTORS_TOKEN` is a debug
             // override: it supplies runtime auth but bypasses the shared tools
             // cache.
             let uses_env_bearer_token =
@@ -198,8 +198,8 @@ impl McpConnectionManager {
                 codex_apps_tools_cache
                     .context(codex_home.clone(), codex_apps_tools_cache_key.clone())
             });
-            // If MidnightCoder Apps has an env bearer token, that is its auth path. Do
-            // not also attach the ambient MidnightCoderAuth provider.
+            // If SolaiAgent Apps has an env bearer token, that is its auth path. Do
+            // not also attach the ambient SolaiAgentAuth provider.
             let runtime_auth_provider =
                 if server_name == CODEX_APPS_MCP_SERVER_NAME && uses_env_bearer_token {
                     None
@@ -542,7 +542,7 @@ impl McpConnectionManager {
                 .codex_apps_tools_cache_context
                 .as_ref()
                 .map(|cache_context| {
-                    cache_context.begin_fetch(MidnightCoderAppsToolsFetchSource::HardRefresh)
+                    cache_context.begin_fetch(SolaiAgentAppsToolsFetchSource::HardRefresh)
                 });
         let tools = list_tools_for_client_uncached(
             CODEX_APPS_MCP_SERVER_NAME,
@@ -569,7 +569,7 @@ impl McpConnectionManager {
                 (Some(cache_context), Some(fetch_ticket)) => cache_context
                     .publish_if_newest_accepted(fetch_ticket, &managed_client.server_info, tools),
                 (None, None) => tools,
-                _ => unreachable!("MidnightCoder Apps fetch ticket requires cache context"),
+                _ => unreachable!("SolaiAgent Apps fetch ticket requires cache context"),
             };
         emit_duration(
             MCP_TOOLS_LIST_DURATION_METRIC,

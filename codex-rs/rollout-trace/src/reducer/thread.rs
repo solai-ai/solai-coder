@@ -16,8 +16,8 @@ use crate::model::AgentOrigin;
 use crate::model::AgentThread;
 use crate::model::ExecutionStatus;
 use crate::model::ExecutionWindow;
-use crate::model::MidnightCoderTurn;
-use crate::model::MidnightCoderTurnId;
+use crate::model::SolaiAgentTurn;
+use crate::model::SolaiAgentTurnId;
 use crate::model::RolloutStatus;
 use crate::payload::RawPayloadRef;
 use crate::raw_event::RawEventSeq;
@@ -123,12 +123,12 @@ impl TraceReducer {
         Ok(())
     }
 
-    /// Starts a MidnightCoder turn inside an existing thread.
+    /// Starts a SolaiAgent turn inside an existing thread.
     pub(super) fn start_codex_turn(
         &mut self,
         seq: RawEventSeq,
         wall_time_unix_ms: i64,
-        codex_turn_id: MidnightCoderTurnId,
+        codex_turn_id: SolaiAgentTurnId,
         thread_id: String,
     ) -> Result<()> {
         if self.rollout.codex_turns.contains_key(&codex_turn_id) {
@@ -139,7 +139,7 @@ impl TraceReducer {
 
         self.rollout.codex_turns.insert(
             codex_turn_id.clone(),
-            MidnightCoderTurn {
+            SolaiAgentTurn {
                 codex_turn_id,
                 thread_id,
                 execution: ExecutionWindow {
@@ -155,13 +155,13 @@ impl TraceReducer {
         Ok(())
     }
 
-    /// Marks a MidnightCoder turn terminal and validates any thread id carried by the raw event.
+    /// Marks a SolaiAgent turn terminal and validates any thread id carried by the raw event.
     pub(super) fn end_codex_turn(
         &mut self,
         seq: RawEventSeq,
         wall_time_unix_ms: i64,
         thread_id: Option<String>,
-        codex_turn_id: MidnightCoderTurnId,
+        codex_turn_id: SolaiAgentTurnId,
         status: ExecutionStatus,
     ) -> Result<()> {
         if let Some(event_thread_id) = thread_id.as_deref()

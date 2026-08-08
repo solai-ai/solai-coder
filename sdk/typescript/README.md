@@ -1,13 +1,13 @@
-# Midnight Coder SDK
+# SOLAI Agent SDK
 
-Embed the Midnight Coder agent in your workflows and apps.
+Embed the SOLAI Agent agent in your workflows and apps.
 
-The TypeScript SDK wraps the `codex` CLI from `@modnight/coder`. It spawns the CLI and exchanges JSONL events over stdin/stdout.
+The TypeScript SDK wraps the `solai` CLI. It spawns the CLI and exchanges JSONL events over stdin/stdout.
 
 ## Installation
 
 ```bash
-npm install @modnight/coder-sdk
+npm install solai-sdk
 ```
 
 Requires Node.js 18+.
@@ -15,9 +15,9 @@ Requires Node.js 18+.
 ## Quickstart
 
 ```typescript
-import { Midnight Coder } from "@modnight/coder-sdk";
+import { SolaiAgent } from "solai-sdk";
 
-const codex = new Midnight Coder();
+const codex = new SolaiAgent();
 const thread = codex.startThread();
 const turn = await thread.run("Diagnose the test failure and propose a fix");
 
@@ -52,7 +52,7 @@ for await (const event of events) {
 
 ### Structured output
 
-The Midnight Coder agent can produce a JSON response that conforms to a specified schema. The schema can be provided for each turn as a plain JSON object.
+The SOLAI Agent agent can produce a JSON response that conforms to a specified schema. The schema can be provided for each turn as a plain JSON object.
 
 ```typescript
 const schema = {
@@ -85,7 +85,7 @@ console.log(turn.finalResponse);
 
 ### Attaching images
 
-Provide structured input entries when you need to include images alongside text. Text entries are concatenated into the final prompt while image entries are passed to the Midnight Coder via `--image`.
+Provide structured input entries when you need to include images alongside text. Text entries are concatenated into the final prompt while image entries are passed to the SOLAI Agent via `--image`.
 
 ```typescript
 const turn = await thread.run([
@@ -107,7 +107,7 @@ await thread.run("Implement the fix");
 
 ### Working directory controls
 
-Midnight Coder runs in the current working directory by default. To avoid unrecoverable errors, Midnight Coder requires the working directory to be a Git repository. You can skip the Git repository check by passing the `skipGitRepoCheck` option when creating a thread.
+SOLAI Agent runs in the current working directory by default. To avoid unrecoverable errors, SOLAI Agent requires the working directory to be a Git repository. You can skip the Git repository check by passing the `skipGitRepoCheck` option when creating a thread.
 
 ```typescript
 const thread = codex.startThread({
@@ -116,13 +116,13 @@ const thread = codex.startThread({
 });
 ```
 
-### Controlling the Midnight Coder environment
+### Controlling the SOLAI Agent environment
 
-By default, the Midnight Coder inherits the Node.js process environment. Provide the optional `env` parameter when instantiating the
-`Midnight Coder` client to fully control which variables the CLI receives—useful for sandboxed hosts like Electron apps.
+By default, the SOLAI Agent inherits the Node.js process environment. Provide the optional `env` parameter when instantiating the
+`SolaiAgent` client to fully control which variables the CLI receives—useful for sandboxed hosts like Electron apps.
 
 ```typescript
-const codex = new Midnight Coder({
+const codex = new SolaiAgent({
   env: {
     PATH: "/usr/local/bin",
   },
@@ -134,11 +134,11 @@ The SDK still injects its required variables (such as `CODEX_API_KEY`) on top of
 
 ### Passing `--config` overrides
 
-Use the `config` option to provide additional Midnight Coder configuration overrides. The SDK accepts a JSON object, flattens it
+Use the `config` option to provide additional SOLAI Agent configuration overrides. The SDK accepts a JSON object, flattens it
 into dotted paths, and serializes values as TOML literals before passing them as repeated `--config key=value` flags.
 
 ```typescript
-const codex = new Midnight Coder({
+const codex = new SolaiAgent({
   config: {
     show_raw_agent_reasoning: true,
     sandbox_workspace_write: { network_access: true },

@@ -8,7 +8,7 @@ import type { TurnStatus } from "./TurnStatus";
 
 export type Turn = {
 /**
- * Identifier for this turn. MidnightCoder-generated turn IDs are UUIDv7.
+ * Identifier for this turn. SolaiAgent-generated turn IDs are UUIDv7.
  */
 id: string,
 /**

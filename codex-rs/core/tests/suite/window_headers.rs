@@ -1,6 +1,6 @@
 use super::compact::COMPACT_WARNING_MESSAGE;
 use anyhow::Result;
-use codex_core::MidnightCoderThread;
+use codex_core::SolaiAgentThread;
 use codex_core::compact::SUMMARIZATION_PROMPT;
 use codex_protocol::protocol::EventMsg;
 use codex_protocol::protocol::Op;
@@ -42,7 +42,7 @@ async fn window_id_advances_after_compact_persists_on_resume_and_resets_on_fork(
     .await;
 
     let mut builder = test_codex().with_config(|config| {
-        config.model_provider.name = "Non-MidnightCoder Model provider".to_string();
+        config.model_provider.name = "Non-SolaiAgent Model provider".to_string();
         config.compact_prompt = Some(SUMMARIZATION_PROMPT.to_string());
     });
     let initial = builder.build(&server).await?;
@@ -99,7 +99,7 @@ async fn window_id_advances_after_compact_persists_on_resume_and_resets_on_fork(
     Ok(())
 }
 
-async fn submit_user_turn(codex: &Arc<MidnightCoderThread>, text: &str) -> Result<()> {
+async fn submit_user_turn(codex: &Arc<SolaiAgentThread>, text: &str) -> Result<()> {
     codex
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
@@ -116,7 +116,7 @@ async fn submit_user_turn(codex: &Arc<MidnightCoderThread>, text: &str) -> Resul
     Ok(())
 }
 
-async fn submit_compact_turn(codex: &Arc<MidnightCoderThread>) -> Result<()> {
+async fn submit_compact_turn(codex: &Arc<SolaiAgentThread>) -> Result<()> {
     codex.submit(Op::Compact).await?;
     let warning_event = wait_for_event(codex, |event| matches!(event, EventMsg::Warning(_))).await;
     let EventMsg::Warning(WarningEvent { message }) = warning_event else {
@@ -127,7 +127,7 @@ async fn submit_compact_turn(codex: &Arc<MidnightCoderThread>) -> Result<()> {
     Ok(())
 }
 
-async fn shutdown_thread(codex: &Arc<MidnightCoderThread>) -> Result<()> {
+async fn shutdown_thread(codex: &Arc<SolaiAgentThread>) -> Result<()> {
     codex.submit(Op::Shutdown).await?;
     wait_for_event(codex, |event| matches!(event, EventMsg::ShutdownComplete)).await;
     Ok(())

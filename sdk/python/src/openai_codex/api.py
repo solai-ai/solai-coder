@@ -38,8 +38,8 @@ from ._run import (
     _collect_turn_result,
 )
 from ._sandbox import Sandbox as Sandbox, _sandbox_mode, _sandbox_policy
-from .async_client import AsyncMidnightCoderClient
-from .client import MidnightCoderClient, MidnightCoderConfig
+from .async_client import AsyncSolaiAgentClient
+from .client import SolaiAgentClient, SolaiAgentConfig
 from .generated.v2_all import (
     ApiKeyLoginAccountParams,
     GetAccountParams,
@@ -72,15 +72,15 @@ from .generated.v2_all import (
 from .models import InitializeResponse, JsonObject, Notification
 
 
-class MidnightCoder:
-    """Synchronous client for creating threads and running MidnightCoder turns.
+class SolaiAgent:
+    """Synchronous client for creating threads and running SolaiAgent turns.
 
     The client starts its runtime connection during construction. Use it as a
     context manager so resources are closed promptly.
     """
 
-    def __init__(self, config: MidnightCoderConfig | None = None) -> None:
-        self._client = MidnightCoderClient(config=config)
+    def __init__(self, config: SolaiAgentConfig | None = None) -> None:
+        self._client = SolaiAgentClient(config=config)
         try:
             self._client.start()
             self._init = validate_initialize_metadata(self._client.initialize())
@@ -88,7 +88,7 @@ class MidnightCoder:
             self._client.close()
             raise
 
-    def __enter__(self) -> "MidnightCoder":
+    def __enter__(self) -> "SolaiAgent":
         return self
 
     def __exit__(self, _exc_type, _exc, _tb) -> None:
@@ -102,7 +102,7 @@ class MidnightCoder:
         self._client.close()
 
     def login_api_key(self, api_key: str) -> None:
-        """Authenticate MidnightCoder with an API key."""
+        """Authenticate SolaiAgent with an API key."""
         self._client.account_login_start(
             LoginAccountParams(
                 root=ApiKeyLoginAccountParams(
@@ -121,14 +121,14 @@ class MidnightCoder:
         return start_device_code_login(self._client)
 
     def account(self, *, refresh_token: bool = False) -> GetAccountResponse:
-        """Read the current MidnightCoder account state."""
+        """Read the current SolaiAgent account state."""
         return self._client.account_read(GetAccountParams(refresh_token=refresh_token))
 
     def logout(self) -> None:
-        """Clear the current MidnightCoder account session."""
+        """Clear the current SolaiAgent account session."""
         self._client.account_logout()
 
-    # BEGIN GENERATED: MidnightCoder.flat_methods
+    # BEGIN GENERATED: SolaiAgent.flat_methods
     def thread_start(
         self,
         *,
@@ -147,7 +147,7 @@ class MidnightCoder:
         session_start_source: ThreadStartSource | None = None,
         thread_source: ThreadSource | None = None,
     ) -> Thread:
-        """Create a new MidnightCoder conversation thread."""
+        """Create a new SolaiAgent conversation thread."""
         approval_policy, approvals_reviewer = _approval_mode_settings(approval_mode)
         params = ThreadStartParams(
             approval_policy=approval_policy,
@@ -277,28 +277,28 @@ class MidnightCoder:
         unarchived = self._client.thread_unarchive(thread_id)
         return Thread(self._client, unarchived.thread.id)
 
-    # END GENERATED: MidnightCoder.flat_methods
+    # END GENERATED: SolaiAgent.flat_methods
 
     def models(self, *, include_hidden: bool = False) -> ModelListResponse:
-        """List available models reported by MidnightCoder."""
+        """List available models reported by SolaiAgent."""
         return self._client.model_list(include_hidden=include_hidden)
 
 
-class AsyncMidnightCoder:
-    """Async mirror of :class:`MidnightCoder`.
+class AsyncSolaiAgent:
+    """Async mirror of :class:`SolaiAgent`.
 
-    Prefer ``async with AsyncMidnightCoder()`` so initialization and shutdown are
+    Prefer ``async with AsyncSolaiAgent()`` so initialization and shutdown are
     explicit and paired. The async client initializes lazily on context entry
     or first awaited API use.
     """
 
-    def __init__(self, config: MidnightCoderConfig | None = None) -> None:
-        self._client = AsyncMidnightCoderClient(config=config)
+    def __init__(self, config: SolaiAgentConfig | None = None) -> None:
+        self._client = AsyncSolaiAgentClient(config=config)
         self._init: InitializeResponse | None = None
         self._initialized = False
         self._init_lock = asyncio.Lock()
 
-    async def __aenter__(self) -> "AsyncMidnightCoder":
+    async def __aenter__(self) -> "AsyncSolaiAgent":
         await self._ensure_initialized()
         return self
 
@@ -326,7 +326,7 @@ class AsyncMidnightCoder:
     def metadata(self) -> InitializeResponse:
         if self._init is None:
             raise RuntimeError(
-                "AsyncMidnightCoder is not initialized yet. Prefer `async with AsyncMidnightCoder()`; "
+                "AsyncSolaiAgent is not initialized yet. Prefer `async with AsyncSolaiAgent()`; "
                 "initialization also happens on first awaited API use."
             )
         return self._init
@@ -337,7 +337,7 @@ class AsyncMidnightCoder:
         self._initialized = False
 
     async def login_api_key(self, api_key: str) -> None:
-        """Authenticate MidnightCoder with an API key."""
+        """Authenticate SolaiAgent with an API key."""
         await self._ensure_initialized()
         await self._client.account_login_start(
             LoginAccountParams(
@@ -359,16 +359,16 @@ class AsyncMidnightCoder:
         return await async_start_device_code_login(self)
 
     async def account(self, *, refresh_token: bool = False) -> GetAccountResponse:
-        """Read the current MidnightCoder account state."""
+        """Read the current SolaiAgent account state."""
         await self._ensure_initialized()
         return await self._client.account_read(GetAccountParams(refresh_token=refresh_token))
 
     async def logout(self) -> None:
-        """Clear the current MidnightCoder account session."""
+        """Clear the current SolaiAgent account session."""
         await self._ensure_initialized()
         await self._client.account_logout()
 
-    # BEGIN GENERATED: AsyncMidnightCoder.flat_methods
+    # BEGIN GENERATED: AsyncSolaiAgent.flat_methods
     async def thread_start(
         self,
         *,
@@ -387,7 +387,7 @@ class AsyncMidnightCoder:
         session_start_source: ThreadStartSource | None = None,
         thread_source: ThreadSource | None = None,
     ) -> AsyncThread:
-        """Create a new MidnightCoder conversation thread."""
+        """Create a new SolaiAgent conversation thread."""
         await self._ensure_initialized()
         approval_policy, approvals_reviewer = _approval_mode_settings(approval_mode)
         params = ThreadStartParams(
@@ -523,7 +523,7 @@ class AsyncMidnightCoder:
         unarchived = await self._client.thread_unarchive(thread_id)
         return AsyncThread(self, unarchived.thread.id)
 
-    # END GENERATED: AsyncMidnightCoder.flat_methods
+    # END GENERATED: AsyncSolaiAgent.flat_methods
 
     async def models(self, *, include_hidden: bool = False) -> ModelListResponse:
         await self._ensure_initialized()
@@ -534,7 +534,7 @@ class AsyncMidnightCoder:
 class Thread:
     """Synchronous conversation thread used to run one or more turns."""
 
-    _client: MidnightCoderClient
+    _client: SolaiAgentClient
     id: str
 
     def run(
@@ -622,7 +622,7 @@ class Thread:
 class AsyncThread:
     """Asynchronous conversation thread used to run one or more turns."""
 
-    _codex: AsyncMidnightCoder
+    _codex: AsyncSolaiAgent
     id: str
 
     async def run(
@@ -718,7 +718,7 @@ class AsyncThread:
 class TurnHandle:
     """Control and consume a synchronous turn after it has started."""
 
-    _client: MidnightCoderClient
+    _client: SolaiAgentClient
     thread_id: str
     id: str
 
@@ -763,7 +763,7 @@ class TurnHandle:
 class AsyncTurnHandle:
     """Control and consume an asynchronous turn after it has started."""
 
-    _codex: AsyncMidnightCoder
+    _codex: AsyncSolaiAgent
     thread_id: str
     id: str
 

@@ -10,7 +10,7 @@
 - **User input tips, selection, and status indicators:** Use ANSI `cyan`.
 - **Success and additions:** Use ANSI `green`.
 - **Errors, failures and deletions:** Use ANSI `red`.
-- **Midnight Coder:** Use ANSI `magenta`.
+- **SOLAI Agent:** Use ANSI `magenta`.
 
 # Avoid
 

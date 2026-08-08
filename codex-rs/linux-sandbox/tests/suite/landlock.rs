@@ -7,7 +7,7 @@ use codex_core::exec_env::create_env;
 use codex_core::sandboxing::SandboxPermissions;
 use codex_protocol::config_types::ShellEnvironmentPolicy;
 use codex_protocol::config_types::WindowsSandboxLevel;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::error::Result;
 use codex_protocol::error::SandboxErr;
 use codex_protocol::models::PermissionProfile;
@@ -218,12 +218,12 @@ async fn should_skip_bwrap_tests() -> bool {
     .await
     {
         Ok(output) => is_bwrap_unavailable_output(&output),
-        Err(MidnightCoderErr::Sandbox(SandboxErr::Denied { output, .. })) => {
+        Err(SolaiAgentErr::Sandbox(SandboxErr::Denied { output, .. })) => {
             is_bwrap_unavailable_output(&output)
         }
         // Probe timeouts are not actionable for the bwrap-specific assertions below;
         // skip rather than fail the whole suite.
-        Err(MidnightCoderErr::Sandbox(SandboxErr::Timeout { .. })) => true,
+        Err(SolaiAgentErr::Sandbox(SandboxErr::Timeout { .. })) => true,
         Err(err) => panic!("bwrap availability probe failed unexpectedly: {err:?}"),
     }
 }
@@ -237,7 +237,7 @@ fn expect_denied(
             assert_ne!(output.exit_code, 0, "{context}: expected nonzero exit code");
             output
         }
-        Err(MidnightCoderErr::Sandbox(SandboxErr::Denied { output, .. })) => *output,
+        Err(SolaiAgentErr::Sandbox(SandboxErr::Denied { output, .. })) => *output,
         Err(err) => panic!("{context}: {err:?}"),
     }
 }
@@ -456,7 +456,7 @@ async fn assert_network_blocked(cmd: &[&str]) {
 
     let output = match result {
         Ok(output) => output,
-        Err(MidnightCoderErr::Sandbox(SandboxErr::Denied { output, .. })) => *output,
+        Err(SolaiAgentErr::Sandbox(SandboxErr::Denied { output, .. })) => *output,
         _ => {
             panic!("expected sandbox denied error, got: {result:?}");
         }
@@ -612,7 +612,7 @@ async fn sandbox_reports_codex_symlink_build_failure_without_panicking() {
     )
     .await
     {
-        Err(MidnightCoderErr::Sandbox(SandboxErr::Denied { output, .. })) => *output,
+        Err(SolaiAgentErr::Sandbox(SandboxErr::Denied { output, .. })) => *output,
         result => panic!(".codex symlink build failure should deny: {result:?}"),
     };
 

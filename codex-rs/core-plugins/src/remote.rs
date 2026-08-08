@@ -8,7 +8,7 @@ use codex_app_server_protocol::PluginAvailability;
 use codex_app_server_protocol::PluginInstallPolicy;
 use codex_app_server_protocol::PluginInterface;
 use codex_app_server_protocol::SkillInterface;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_login::default_client::build_reqwest_client;
 use codex_plugin::AppConnectorId;
 use codex_plugin::AppDeclaration;
@@ -71,7 +71,7 @@ pub const REMOTE_WORKSPACE_SHARED_WITH_ME_PRIVATE_MARKETPLACE_NAME: &str =
     "workspace-shared-with-me-private";
 pub const REMOTE_WORKSPACE_SHARED_WITH_ME_UNLISTED_MARKETPLACE_NAME: &str =
     "workspace-shared-with-me-unlisted";
-pub const REMOTE_GLOBAL_MARKETPLACE_DISPLAY_NAME: &str = "MidnightCoder Curated Remote";
+pub const REMOTE_GLOBAL_MARKETPLACE_DISPLAY_NAME: &str = "SolaiAgent Curated Remote";
 pub const REMOTE_CREATED_BY_ME_MARKETPLACE_DISPLAY_NAME: &str = "Created by me";
 pub const REMOTE_WORKSPACE_MARKETPLACE_DISPLAY_NAME: &str = "Workspace Directory";
 pub const REMOTE_WORKSPACE_SHARED_WITH_ME_PRIVATE_MARKETPLACE_DISPLAY_NAME: &str = "Shared with me";
@@ -644,7 +644,7 @@ pub struct RemotePluginInstallResult {
 
 pub async fn fetch_remote_marketplaces(
     config: &RemotePluginServiceConfig,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
     sources: &[RemoteMarketplaceSource],
     global_catalog_cache_path: Option<&Path>,
 ) -> Result<Vec<RemoteMarketplace>, RemotePluginCatalogError> {
@@ -808,7 +808,7 @@ pub async fn fetch_remote_marketplaces(
 pub async fn fetch_and_cache_global_remote_plugin_catalog(
     codex_home: &Path,
     config: &RemotePluginServiceConfig,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
 ) -> Result<(), RemotePluginCatalogError> {
     let auth = ensure_chatgpt_auth(auth)?;
     let plugins =
@@ -820,7 +820,7 @@ pub async fn fetch_and_cache_global_remote_plugin_catalog(
 #[instrument(level = "trace", skip_all)]
 pub async fn fetch_recommended_plugins(
     config: &RemotePluginServiceConfig,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
 ) -> Result<RecommendedPluginsMode, RemotePluginCatalogError> {
     let auth = ensure_chatgpt_auth(auth)?;
     let base_url = config.chatgpt_base_url.trim_end_matches('/');
@@ -901,7 +901,7 @@ fn recommended_plugins_mode(response: RecommendedPluginsResponse) -> Recommended
 pub fn has_cached_global_remote_plugin_catalog(
     codex_home: &Path,
     config: &RemotePluginServiceConfig,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
 ) -> bool {
     let Ok(auth) = ensure_chatgpt_auth(auth) else {
         return false;
@@ -912,7 +912,7 @@ pub fn has_cached_global_remote_plugin_catalog(
 pub fn cached_global_remote_discoverable_plugins(
     codex_home: &Path,
     config: &RemotePluginServiceConfig,
-    auth: &MidnightCoderAuth,
+    auth: &SolaiAgentAuth,
 ) -> Vec<RemoteDiscoverablePlugin> {
     catalog_cache::load_cached_global_directory_plugins(codex_home, config, auth)
         .unwrap_or_default()
@@ -929,7 +929,7 @@ pub fn cached_global_remote_discoverable_plugins(
 
 pub async fn fetch_openai_curated_remote_collection_marketplace(
     config: &RemotePluginServiceConfig,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
 ) -> Result<Option<RemoteMarketplace>, RemotePluginCatalogError> {
     let auth = ensure_chatgpt_auth(auth)?;
     let scope = RemotePluginScope::Global;
@@ -991,7 +991,7 @@ fn build_remote_marketplace(
 
 pub(crate) async fn fetch_remote_installed_plugins(
     config: &RemotePluginServiceConfig,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
 ) -> Result<Vec<RemoteInstalledPlugin>, RemotePluginCatalogError> {
     let auth = ensure_chatgpt_auth(auth)?;
     let global = async {
@@ -1074,7 +1074,7 @@ pub fn group_remote_installed_plugins_by_marketplaces(
 
 pub async fn fetch_remote_plugin_detail(
     config: &RemotePluginServiceConfig,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
     marketplace_name: &str,
     plugin_id: &str,
 ) -> Result<RemotePluginDetail, RemotePluginCatalogError> {
@@ -1090,7 +1090,7 @@ pub async fn fetch_remote_plugin_detail(
 
 pub async fn fetch_remote_plugin_share_context(
     config: &RemotePluginServiceConfig,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
     plugin_id: &str,
 ) -> Result<Option<RemotePluginShareContext>, RemotePluginCatalogError> {
     let auth = ensure_chatgpt_auth(auth)?;
@@ -1103,7 +1103,7 @@ pub async fn fetch_remote_plugin_share_context(
 
 pub async fn fetch_remote_plugin_detail_with_download_urls(
     config: &RemotePluginServiceConfig,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
     marketplace_name: &str,
     plugin_id: &str,
 ) -> Result<RemotePluginDetail, RemotePluginCatalogError> {
@@ -1119,7 +1119,7 @@ pub async fn fetch_remote_plugin_detail_with_download_urls(
 
 pub async fn fetch_remote_plugin_skill_detail(
     config: &RemotePluginServiceConfig,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
     marketplace_name: &str,
     plugin_id: &str,
     skill_name: &str,
@@ -1155,7 +1155,7 @@ pub async fn fetch_remote_plugin_skill_detail(
 
 async fn fetch_remote_plugin_detail_with_download_url_option(
     config: &RemotePluginServiceConfig,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
     _marketplace_name: &str,
     plugin_id: &str,
     include_download_urls: bool,
@@ -1173,7 +1173,7 @@ async fn fetch_remote_plugin_detail_with_download_url_option(
 
 async fn build_remote_plugin_detail(
     config: &RemotePluginServiceConfig,
-    auth: &MidnightCoderAuth,
+    auth: &SolaiAgentAuth,
     scope: RemotePluginScope,
     marketplace_name: String,
     plugin_id: &str,
@@ -1278,7 +1278,7 @@ fn app_declarations_from_remote_app_ids(app_ids: &[String]) -> Vec<AppDeclaratio
 
 pub async fn install_remote_plugin(
     config: &RemotePluginServiceConfig,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
     _marketplace_name: &str,
     plugin_id: &str,
 ) -> Result<RemotePluginInstallResult, RemotePluginCatalogError> {
@@ -1317,7 +1317,7 @@ pub async fn install_remote_plugin(
 
 pub async fn resolve_remote_plugin_uninstall_target(
     config: &RemotePluginServiceConfig,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
     remote_plugin_id: &str,
 ) -> Result<RemotePluginUninstallTarget, RemotePluginCatalogError> {
     let auth = ensure_chatgpt_auth(auth)?;
@@ -1366,7 +1366,7 @@ pub async fn resolve_remote_plugin_uninstall_target(
 
 pub async fn uninstall_remote_plugin(
     config: &RemotePluginServiceConfig,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
     codex_home: PathBuf,
     target: RemotePluginUninstallTarget,
 ) -> Result<(), RemotePluginCatalogError> {
@@ -1683,7 +1683,7 @@ fn normalize_remote_default_prompt(prompt: &str) -> Option<String> {
 
 async fn fetch_directory_plugins_for_scope(
     config: &RemotePluginServiceConfig,
-    auth: &MidnightCoderAuth,
+    auth: &SolaiAgentAuth,
     scope: RemotePluginScope,
 ) -> Result<Vec<RemotePluginDirectoryItem>, RemotePluginCatalogError> {
     fetch_directory_plugins_for_scope_with_optional_collection(
@@ -1694,7 +1694,7 @@ async fn fetch_directory_plugins_for_scope(
 
 async fn fetch_directory_plugins_for_scope_with_collection(
     config: &RemotePluginServiceConfig,
-    auth: &MidnightCoderAuth,
+    auth: &SolaiAgentAuth,
     scope: RemotePluginScope,
     collection: &str,
 ) -> Result<Vec<RemotePluginDirectoryItem>, RemotePluginCatalogError> {
@@ -1709,7 +1709,7 @@ async fn fetch_directory_plugins_for_scope_with_collection(
 
 async fn fetch_directory_plugins_for_scope_with_optional_collection(
     config: &RemotePluginServiceConfig,
-    auth: &MidnightCoderAuth,
+    auth: &SolaiAgentAuth,
     scope: RemotePluginScope,
     collection: Option<&str>,
 ) -> Result<Vec<RemotePluginDirectoryItem>, RemotePluginCatalogError> {
@@ -1730,7 +1730,7 @@ async fn fetch_directory_plugins_for_scope_with_optional_collection(
 
 async fn fetch_shared_workspace_plugins(
     config: &RemotePluginServiceConfig,
-    auth: &MidnightCoderAuth,
+    auth: &SolaiAgentAuth,
 ) -> Result<Vec<RemotePluginDirectoryItem>, RemotePluginCatalogError> {
     let mut plugins = Vec::new();
     let mut page_token = None;
@@ -1748,7 +1748,7 @@ async fn fetch_shared_workspace_plugins(
 
 async fn fetch_installed_plugins_for_scope(
     config: &RemotePluginServiceConfig,
-    auth: &MidnightCoderAuth,
+    auth: &SolaiAgentAuth,
     scope: RemotePluginScope,
 ) -> Result<Vec<RemotePluginInstalledItem>, RemotePluginCatalogError> {
     fetch_installed_plugins_for_scope_with_download_url(
@@ -1759,7 +1759,7 @@ async fn fetch_installed_plugins_for_scope(
 
 async fn fetch_installed_plugins_for_scope_with_download_url(
     config: &RemotePluginServiceConfig,
-    auth: &MidnightCoderAuth,
+    auth: &SolaiAgentAuth,
     scope: RemotePluginScope,
     include_download_urls: bool,
 ) -> Result<Vec<RemotePluginInstalledItem>, RemotePluginCatalogError> {
@@ -1785,7 +1785,7 @@ async fn fetch_installed_plugins_for_scope_with_download_url(
 
 async fn get_remote_plugin_list_page(
     config: &RemotePluginServiceConfig,
-    auth: &MidnightCoderAuth,
+    auth: &SolaiAgentAuth,
     scope: RemotePluginScope,
     page_token: Option<&str>,
     collection: Option<&str>,
@@ -1807,7 +1807,7 @@ async fn get_remote_plugin_list_page(
 
 async fn get_remote_shared_workspace_plugins_page(
     config: &RemotePluginServiceConfig,
-    auth: &MidnightCoderAuth,
+    auth: &SolaiAgentAuth,
     page_token: Option<&str>,
 ) -> Result<RemotePluginListResponse, RemotePluginCatalogError> {
     let base_url = config.chatgpt_base_url.trim_end_matches('/');
@@ -1823,7 +1823,7 @@ async fn get_remote_shared_workspace_plugins_page(
 
 async fn get_remote_plugin_installed_page(
     config: &RemotePluginServiceConfig,
-    auth: &MidnightCoderAuth,
+    auth: &SolaiAgentAuth,
     scope: RemotePluginScope,
     page_token: Option<&str>,
     include_download_urls: bool,
@@ -1844,7 +1844,7 @@ async fn get_remote_plugin_installed_page(
 
 async fn fetch_plugin_detail(
     config: &RemotePluginServiceConfig,
-    auth: &MidnightCoderAuth,
+    auth: &SolaiAgentAuth,
     plugin_id: &str,
     include_download_urls: bool,
 ) -> Result<RemotePluginDirectoryItem, RemotePluginCatalogError> {
@@ -1880,8 +1880,8 @@ fn remote_plugin_skill_detail_url(
 }
 
 fn ensure_chatgpt_auth(
-    auth: Option<&MidnightCoderAuth>,
-) -> Result<&MidnightCoderAuth, RemotePluginCatalogError> {
+    auth: Option<&SolaiAgentAuth>,
+) -> Result<&SolaiAgentAuth, RemotePluginCatalogError> {
     let Some(auth) = auth else {
         return Err(RemotePluginCatalogError::AuthRequired);
     };
@@ -1893,7 +1893,7 @@ fn ensure_chatgpt_auth(
 
 fn authenticated_request(
     request: RequestBuilder,
-    auth: &MidnightCoderAuth,
+    auth: &SolaiAgentAuth,
 ) -> Result<RequestBuilder, RemotePluginCatalogError> {
     Ok(request
         .timeout(REMOTE_PLUGIN_CATALOG_TIMEOUT)

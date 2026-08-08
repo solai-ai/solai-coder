@@ -109,7 +109,7 @@ env_http_headers = { "X-Example-Env-Header" = "EXAMPLE_ENV_VAR" }
 #[test]
 fn test_deserialize_chat_wire_api_shows_helpful_error() {
     let provider_toml = r#"
-name = "MidnightCoder using Chat Completions"
+name = "SolaiAgent using Chat Completions"
 base_url = "https://api.openai.com/v1"
 env_key = "OPENAI_API_KEY"
 wire_api = "chat"
@@ -122,7 +122,7 @@ wire_api = "chat"
 #[test]
 fn test_deserialize_websocket_connect_timeout() {
     let provider_toml = r#"
-name = "MidnightCoder"
+name = "SolaiAgent"
 base_url = "https://api.openai.com/v1"
 websocket_connect_timeout_ms = 15000
 supports_websockets = true
@@ -143,7 +143,7 @@ fn test_supports_remote_compaction_for_openai() {
 fn test_personal_access_token_uses_chatgpt_codex_base_url() {
     let api_provider = ModelProviderInfo::create_openai_provider(/*base_url*/ None)
         .to_api_provider(Some(AuthMode::PersonalAccessToken))
-        .expect("MidnightCoder provider should build API provider");
+        .expect("SolaiAgent provider should build API provider");
 
     assert_eq!(api_provider.base_url, CHATGPT_CODEX_BASE_URL);
 }

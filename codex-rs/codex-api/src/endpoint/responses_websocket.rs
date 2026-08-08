@@ -450,7 +450,7 @@ async fn connect_websocket(
     request.headers_mut().extend(headers);
 
     // Secure websocket traffic needs the same custom-CA policy as reqwest-based HTTPS traffic.
-    // If a MidnightCoder-specific CA bundle is configured, build an explicit rustls connector so this
+    // If a SolaiAgent-specific CA bundle is configured, build an explicit rustls connector so this
     // websocket path does not fall back to tungstenite's default native-roots-only behavior.
     let connector = maybe_build_rustls_client_config_with_custom_ca()
         .map_err(|err| ApiError::Stream(format!("failed to configure websocket TLS: {err}")))?

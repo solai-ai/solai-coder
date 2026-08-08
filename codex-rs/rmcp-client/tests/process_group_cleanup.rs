@@ -28,7 +28,7 @@ fn init_params() -> InitializeRequestParams {
     InitializeRequestParams::new(
         ClientCapabilities::default(),
         Implementation::new("codex-test", "0.0.0-test")
-            .with_title("MidnightCoder rmcp shutdown test"),
+            .with_title("SolaiAgent rmcp shutdown test"),
     )
     .with_protocol_version(ProtocolVersion::V_2025_06_18)
 }

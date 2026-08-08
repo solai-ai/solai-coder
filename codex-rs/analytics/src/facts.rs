@@ -1,6 +1,6 @@
 use crate::events::AppServerRpcTransport;
 use crate::events::GuardianReviewEventParams;
-use crate::events::MidnightCoderRuntimeMetadata;
+use crate::events::SolaiAgentRuntimeMetadata;
 use codex_app_server_protocol::ClientRequest;
 use codex_app_server_protocol::ClientResponsePayload;
 use codex_app_server_protocol::InitializeParams;
@@ -15,7 +15,7 @@ use codex_protocol::config_types::ModeKind;
 use codex_protocol::config_types::Personality;
 use codex_protocol::config_types::ReasoningSummary;
 use codex_protocol::config_types::ServiceTier;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::models::PermissionProfile;
 use codex_protocol::openai_models::ReasoningEffort;
 use codex_protocol::protocol::AskForApproval;
@@ -122,25 +122,25 @@ pub struct TurnProfileFact {
 }
 
 #[derive(Clone)]
-pub struct TurnMidnightCoderErrorFact {
+pub struct TurnSolaiAgentErrorFact {
     pub(crate) turn_id: String,
     pub(crate) thread_id: String,
-    pub(crate) error: TurnMidnightCoderError,
+    pub(crate) error: TurnSolaiAgentError,
 }
 
-impl TurnMidnightCoderErrorFact {
-    pub fn from_codex_err(thread_id: String, turn_id: String, error: &MidnightCoderErr) -> Self {
+impl TurnSolaiAgentErrorFact {
+    pub fn from_codex_err(thread_id: String, turn_id: String, error: &SolaiAgentErr) -> Self {
         Self {
             turn_id,
             thread_id,
-            error: TurnMidnightCoderError::from_codex_err(error),
+            error: TurnSolaiAgentError::from_codex_err(error),
         }
     }
 }
 
 #[derive(Clone, Copy, Debug, Serialize)]
 #[serde(rename_all = "snake_case")]
-pub enum MidnightCoderErrKind {
+pub enum SolaiAgentErrKind {
     TurnAborted,
     SessionBudgetExceeded,
     Stream,
@@ -181,13 +181,13 @@ pub enum MidnightCoderErrKind {
 }
 
 #[derive(Clone)]
-pub(crate) struct TurnMidnightCoderError {
-    pub(crate) kind: MidnightCoderErrKind,
+pub(crate) struct TurnSolaiAgentError {
+    pub(crate) kind: SolaiAgentErrKind,
     pub(crate) http_status_code: Option<u16>,
 }
 
-impl TurnMidnightCoderError {
-    fn from_codex_err(error: &MidnightCoderErr) -> Self {
+impl TurnSolaiAgentError {
+    fn from_codex_err(error: &SolaiAgentErr) -> Self {
         Self {
             kind: error.into(),
             http_status_code: error.http_status_code_value(),
@@ -195,50 +195,50 @@ impl TurnMidnightCoderError {
     }
 }
 
-impl From<&MidnightCoderErr> for MidnightCoderErrKind {
-    fn from(error: &MidnightCoderErr) -> Self {
+impl From<&SolaiAgentErr> for SolaiAgentErrKind {
+    fn from(error: &SolaiAgentErr) -> Self {
         match error {
-            MidnightCoderErr::TurnAborted => MidnightCoderErrKind::TurnAborted,
-            MidnightCoderErr::SessionBudgetExceeded => MidnightCoderErrKind::SessionBudgetExceeded,
-            MidnightCoderErr::Stream(..) => MidnightCoderErrKind::Stream,
-            MidnightCoderErr::ContextWindowExceeded => MidnightCoderErrKind::ContextWindowExceeded,
-            MidnightCoderErr::ThreadNotFound(_) => MidnightCoderErrKind::ThreadNotFound,
-            MidnightCoderErr::AgentLimitReached { .. } => MidnightCoderErrKind::AgentLimitReached,
-            MidnightCoderErr::SessionConfiguredNotFirstEvent => {
-                MidnightCoderErrKind::SessionConfiguredNotFirstEvent
+            SolaiAgentErr::TurnAborted => SolaiAgentErrKind::TurnAborted,
+            SolaiAgentErr::SessionBudgetExceeded => SolaiAgentErrKind::SessionBudgetExceeded,
+            SolaiAgentErr::Stream(..) => SolaiAgentErrKind::Stream,
+            SolaiAgentErr::ContextWindowExceeded => SolaiAgentErrKind::ContextWindowExceeded,
+            SolaiAgentErr::ThreadNotFound(_) => SolaiAgentErrKind::ThreadNotFound,
+            SolaiAgentErr::AgentLimitReached { .. } => SolaiAgentErrKind::AgentLimitReached,
+            SolaiAgentErr::SessionConfiguredNotFirstEvent => {
+                SolaiAgentErrKind::SessionConfiguredNotFirstEvent
             }
-            MidnightCoderErr::Timeout => MidnightCoderErrKind::Timeout,
-            MidnightCoderErr::RequestTimeout => MidnightCoderErrKind::RequestTimeout,
-            MidnightCoderErr::Spawn => MidnightCoderErrKind::Spawn,
-            MidnightCoderErr::Interrupted => MidnightCoderErrKind::Interrupted,
-            MidnightCoderErr::UnexpectedStatus(_) => MidnightCoderErrKind::UnexpectedStatus,
-            MidnightCoderErr::InvalidRequest(_) => MidnightCoderErrKind::InvalidRequest,
-            MidnightCoderErr::InvalidImageRequest() => MidnightCoderErrKind::InvalidImageRequest,
-            MidnightCoderErr::UsageLimitReached(_) => MidnightCoderErrKind::UsageLimitReached,
-            MidnightCoderErr::ServerOverloaded => MidnightCoderErrKind::ServerOverloaded,
-            MidnightCoderErr::CyberPolicy { .. } => MidnightCoderErrKind::CyberPolicy,
-            MidnightCoderErr::ResponseStreamFailed(_) => MidnightCoderErrKind::ResponseStreamFailed,
-            MidnightCoderErr::ConnectionFailed(_) => MidnightCoderErrKind::ConnectionFailed,
-            MidnightCoderErr::QuotaExceeded => MidnightCoderErrKind::QuotaExceeded,
-            MidnightCoderErr::UsageNotIncluded => MidnightCoderErrKind::UsageNotIncluded,
-            MidnightCoderErr::InternalServerError => MidnightCoderErrKind::InternalServerError,
-            MidnightCoderErr::RetryLimit(_) => MidnightCoderErrKind::RetryLimit,
-            MidnightCoderErr::InternalAgentDied => MidnightCoderErrKind::InternalAgentDied,
-            MidnightCoderErr::Sandbox(_) => MidnightCoderErrKind::Sandbox,
-            MidnightCoderErr::LandlockSandboxExecutableNotProvided => {
-                MidnightCoderErrKind::LandlockSandboxExecutableNotProvided
+            SolaiAgentErr::Timeout => SolaiAgentErrKind::Timeout,
+            SolaiAgentErr::RequestTimeout => SolaiAgentErrKind::RequestTimeout,
+            SolaiAgentErr::Spawn => SolaiAgentErrKind::Spawn,
+            SolaiAgentErr::Interrupted => SolaiAgentErrKind::Interrupted,
+            SolaiAgentErr::UnexpectedStatus(_) => SolaiAgentErrKind::UnexpectedStatus,
+            SolaiAgentErr::InvalidRequest(_) => SolaiAgentErrKind::InvalidRequest,
+            SolaiAgentErr::InvalidImageRequest() => SolaiAgentErrKind::InvalidImageRequest,
+            SolaiAgentErr::UsageLimitReached(_) => SolaiAgentErrKind::UsageLimitReached,
+            SolaiAgentErr::ServerOverloaded => SolaiAgentErrKind::ServerOverloaded,
+            SolaiAgentErr::CyberPolicy { .. } => SolaiAgentErrKind::CyberPolicy,
+            SolaiAgentErr::ResponseStreamFailed(_) => SolaiAgentErrKind::ResponseStreamFailed,
+            SolaiAgentErr::ConnectionFailed(_) => SolaiAgentErrKind::ConnectionFailed,
+            SolaiAgentErr::QuotaExceeded => SolaiAgentErrKind::QuotaExceeded,
+            SolaiAgentErr::UsageNotIncluded => SolaiAgentErrKind::UsageNotIncluded,
+            SolaiAgentErr::InternalServerError => SolaiAgentErrKind::InternalServerError,
+            SolaiAgentErr::RetryLimit(_) => SolaiAgentErrKind::RetryLimit,
+            SolaiAgentErr::InternalAgentDied => SolaiAgentErrKind::InternalAgentDied,
+            SolaiAgentErr::Sandbox(_) => SolaiAgentErrKind::Sandbox,
+            SolaiAgentErr::LandlockSandboxExecutableNotProvided => {
+                SolaiAgentErrKind::LandlockSandboxExecutableNotProvided
             }
-            MidnightCoderErr::UnsupportedOperation(_) => MidnightCoderErrKind::UnsupportedOperation,
-            MidnightCoderErr::RefreshTokenFailed(_) => MidnightCoderErrKind::RefreshTokenFailed,
-            MidnightCoderErr::Fatal(_) => MidnightCoderErrKind::Fatal,
-            MidnightCoderErr::Io(_) => MidnightCoderErrKind::Io,
-            MidnightCoderErr::Json(_) => MidnightCoderErrKind::Json,
+            SolaiAgentErr::UnsupportedOperation(_) => SolaiAgentErrKind::UnsupportedOperation,
+            SolaiAgentErr::RefreshTokenFailed(_) => SolaiAgentErrKind::RefreshTokenFailed,
+            SolaiAgentErr::Fatal(_) => SolaiAgentErrKind::Fatal,
+            SolaiAgentErr::Io(_) => SolaiAgentErrKind::Io,
+            SolaiAgentErr::Json(_) => SolaiAgentErrKind::Json,
             #[cfg(target_os = "linux")]
-            MidnightCoderErr::LandlockRuleset(_) => MidnightCoderErrKind::LandlockRuleset,
+            SolaiAgentErr::LandlockRuleset(_) => SolaiAgentErrKind::LandlockRuleset,
             #[cfg(target_os = "linux")]
-            MidnightCoderErr::LandlockPathFd(_) => MidnightCoderErrKind::LandlockPathFd,
-            MidnightCoderErr::TokioJoin(_) => MidnightCoderErrKind::TokioJoin,
-            MidnightCoderErr::EnvVar(_) => MidnightCoderErrKind::EnvVar,
+            SolaiAgentErr::LandlockPathFd(_) => SolaiAgentErrKind::LandlockPathFd,
+            SolaiAgentErr::TokioJoin(_) => SolaiAgentErrKind::TokioJoin,
+            SolaiAgentErr::EnvVar(_) => SolaiAgentErrKind::EnvVar,
         }
     }
 }
@@ -270,7 +270,7 @@ pub enum TurnSteerRejectionReason {
 }
 
 #[derive(Clone)]
-pub struct MidnightCoderTurnSteerEvent {
+pub struct SolaiAgentTurnSteerEvent {
     pub expected_turn_id: Option<String>,
     pub accepted_turn_id: Option<String>,
     pub num_input_images: usize,
@@ -404,7 +404,7 @@ pub enum CompactionStatus {
 }
 
 #[derive(Clone)]
-pub struct MidnightCoderCompactionEvent {
+pub struct SolaiAgentCompactionEvent {
     pub thread_id: String,
     pub turn_id: String,
     pub trigger: CompactionTrigger,
@@ -413,7 +413,7 @@ pub struct MidnightCoderCompactionEvent {
     pub phase: CompactionPhase,
     pub strategy: CompactionStrategy,
     pub status: CompactionStatus,
-    pub codex_error_kind: Option<MidnightCoderErrKind>,
+    pub codex_error_kind: Option<SolaiAgentErrKind>,
     pub codex_error_http_status_code: Option<u16>,
     pub active_context_tokens_before: i64,
     pub active_context_tokens_after: i64,
@@ -435,7 +435,7 @@ pub enum GoalEventKind {
 }
 
 #[derive(Clone)]
-pub struct MidnightCoderGoalEvent {
+pub struct SolaiAgentGoalEvent {
     pub thread_id: String,
     pub turn_id: Option<String>,
     pub goal_id: String,
@@ -452,7 +452,7 @@ pub(crate) enum AnalyticsFact {
         connection_id: u64,
         params: InitializeParams,
         product_client_id: String,
-        runtime: MidnightCoderRuntimeMetadata,
+        runtime: SolaiAgentRuntimeMetadata,
         rpc_transport: AppServerRpcTransport,
     },
     ClientRequest {
@@ -497,13 +497,13 @@ pub(crate) enum AnalyticsFact {
 
 pub(crate) enum CustomAnalyticsFact {
     SubAgentThreadStarted(SubAgentThreadStartedInput),
-    Compaction(Box<MidnightCoderCompactionEvent>),
-    Goal(Box<MidnightCoderGoalEvent>),
+    Compaction(Box<SolaiAgentCompactionEvent>),
+    Goal(Box<SolaiAgentGoalEvent>),
     GuardianReview(Box<GuardianReviewEventParams>),
     TurnResolvedConfig(Box<TurnResolvedConfigFact>),
     TurnTokenUsage(Box<TurnTokenUsageFact>),
     TurnProfile(Box<TurnProfileFact>),
-    TurnMidnightCoderError(Box<TurnMidnightCoderErrorFact>),
+    TurnSolaiAgentError(Box<TurnSolaiAgentErrorFact>),
     SkillInvoked(SkillInvokedInput),
     AppMentioned(AppMentionedInput),
     AppUsed(AppUsedInput),

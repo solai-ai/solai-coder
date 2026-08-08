@@ -8,7 +8,7 @@ use codex_config::McpServerTransportConfig;
 use codex_config::types::AuthKeyringBackendKind;
 use codex_config::types::OAuthCredentialsStoreMode;
 use codex_exec_server::HttpClient;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_rmcp_client::McpAuthState;
 use codex_rmcp_client::OAuthProviderError;
 use codex_rmcp_client::determine_streamable_http_auth_status;
@@ -184,7 +184,7 @@ pub async fn compute_auth_statuses<'a, I>(
     servers: I,
     store_mode: OAuthCredentialsStoreMode,
     keyring_backend_kind: AuthKeyringBackendKind,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
     runtime_context: &McpRuntimeContext,
 ) -> HashMap<String, McpAuthStatusEntry>
 where
@@ -197,7 +197,7 @@ where
         let has_runtime_auth = config
             .as_ref()
             .is_some_and(|config| matches!(&config.auth, McpServerAuth::ChatGpt))
-            && auth.is_some_and(MidnightCoderAuth::uses_codex_backend)
+            && auth.is_some_and(SolaiAgentAuth::uses_codex_backend)
             && config.as_ref().is_some_and(|config| {
                 matches!(
                     &config.transport,

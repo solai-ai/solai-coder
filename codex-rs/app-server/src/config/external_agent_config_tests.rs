@@ -668,7 +668,7 @@ description = "Research role"
 model_reasoning_effort = "high"
 sandbox_mode = "workspace-write"
 developer_instructions = """
-Research with MidnightCoder carefully."""
+Research with SolaiAgent carefully."""
 "#,
     )
     .expect("parse expected agent");
@@ -846,7 +846,7 @@ async fn import_home_migrates_supported_config_fields_skills_and_agents_md() {
 
     assert_eq!(
         fs::read_to_string(codex_home.join("AGENTS.md")).expect("read agents"),
-        "MidnightCoder guidance"
+        "SolaiAgent guidance"
     );
 
     let config: TomlValue =
@@ -871,7 +871,7 @@ MY_TEAM = "codex"
     assert_eq!(
         fs::read_to_string(agents_skills.join("skill-a").join("SKILL.md"))
             .expect("read copied skill"),
-        "Use MidnightCoder and MidnightCoder utilities."
+        "Use SolaiAgent and SolaiAgent utilities."
     );
 }
 
@@ -1268,7 +1268,7 @@ async fn import_repo_agents_md_rewrites_terms_and_skips_non_empty_targets() {
     );
     assert_eq!(
         fs::read_to_string(repo_root.join("AGENTS.md")).expect("read target"),
-        "MidnightCoder\nMidnightCoder\nMidnightCoder\nSee AGENTS.md\n"
+        "SolaiAgent\nSolaiAgent\nSolaiAgent\nSee AGENTS.md\n"
     );
     assert_eq!(
         fs::read_to_string(repo_with_existing_target.join("AGENTS.md"))
@@ -1323,7 +1323,7 @@ async fn import_repo_agents_md_overwrites_empty_targets() {
     );
     assert_eq!(
         fs::read_to_string(repo_root.join("AGENTS.md")).expect("read target"),
-        "MidnightCoder guidance"
+        "SolaiAgent guidance"
     );
 }
 
@@ -1645,7 +1645,7 @@ async fn import_repo_uses_non_empty_external_agent_agents_source() {
 
     assert_eq!(
         fs::read_to_string(repo_root.join("AGENTS.md")).expect("read target"),
-        "MidnightCoder guidance"
+        "SolaiAgent guidance"
     );
 }
 
@@ -1678,7 +1678,7 @@ async fn import_continues_after_failed_migration_item() {
 
     assert_eq!(
         fs::read_to_string(repo_root.join("AGENTS.md")).expect("read target"),
-        "MidnightCoder guidance"
+        "SolaiAgent guidance"
     );
 }
 

@@ -396,10 +396,10 @@ def _decode_write_and_downscale(
 
 def _create_client():
     try:
-        from openai import MidnightCoder
+        from openai import SolaiAgent
     except ImportError:
         _die(f"openai SDK not installed in the active environment. {_dependency_hint('openai')}")
-    return MidnightCoder()
+    return SolaiAgent()
 
 
 def _create_async_client():
@@ -413,7 +413,7 @@ def _create_async_client():
                 f"openai SDK not installed in the active environment. {_dependency_hint('openai')}"
             )
         _die(
-            "AsyncMidnightCoder not available in this openai SDK version. "
+            "AsyncSolaiAgent not available in this openai SDK version. "
             f"{_dependency_hint('openai', upgrade=True)}"
         )
     return AsyncOpenAI()

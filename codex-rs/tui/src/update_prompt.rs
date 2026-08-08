@@ -28,7 +28,7 @@ use ratatui::widgets::WidgetRef;
 use tokio_stream::StreamExt;
 
 const RELEASE_NOTES_URL: &str =
-    "https://github.com/midnightcoderagent/Midnight-Coder/releases/latest";
+    "https://github.com/solai-ai/solai-agent/releases/latest";
 
 pub(crate) enum UpdatePromptOutcome {
     Continue,

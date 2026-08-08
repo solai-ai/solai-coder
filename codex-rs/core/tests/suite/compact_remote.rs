@@ -4,7 +4,7 @@ use std::fs;
 use anyhow::Result;
 use codex_core::compact::SUMMARY_PREFIX;
 use codex_features::Feature;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_login::auth::AgentIdentityAuth;
 use codex_login::auth::AgentIdentityAuthRecord;
 use codex_protocol::account::PlanType as AccountPlanType;
@@ -37,8 +37,8 @@ use core_test_support::responses::mount_sse_once;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_websocket_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestMidnightCoderBuilder;
-use core_test_support::test_codex::TestMidnightCoderHarness;
+use core_test_support::test_codex::TestSolaiAgentBuilder;
+use core_test_support::test_codex::TestSolaiAgentHarness;
 use core_test_support::test_codex::test_codex as base_test_codex;
 use core_test_support::test_path_buf;
 use core_test_support::wait_for_event;
@@ -168,7 +168,7 @@ fn compacted_summary_only_output(summary: &str) -> Vec<ResponseItem> {
     }]
 }
 
-fn test_codex() -> TestMidnightCoderBuilder {
+fn test_codex() -> TestSolaiAgentBuilder {
     base_test_codex().with_config(|config| {
         let _ = config.features.disable(Feature::RemoteCompactionV2);
     })
@@ -176,10 +176,10 @@ fn test_codex() -> TestMidnightCoderBuilder {
 
 fn remote_realtime_test_codex_builder(
     realtime_server: &responses::WebSocketTestServer,
-) -> TestMidnightCoderBuilder {
+) -> TestSolaiAgentBuilder {
     let realtime_base_url = realtime_server.uri().to_string();
     test_codex()
-        .with_auth(MidnightCoderAuth::from_api_key("dummy"))
+        .with_auth(SolaiAgentAuth::from_api_key("dummy"))
         .with_config(move |config| {
             config.experimental_realtime_ws_base_url = Some(realtime_base_url);
         })
@@ -205,7 +205,7 @@ async fn start_remote_realtime_server() -> responses::WebSocketTestServer {
     .await
 }
 
-async fn start_realtime_conversation(codex: &codex_core::MidnightCoderThread) -> Result<()> {
+async fn start_realtime_conversation(codex: &codex_core::SolaiAgentThread) -> Result<()> {
     codex
         .submit(Op::RealtimeConversationStart(ConversationStartParams {
             client_managed_handoffs: false,
@@ -246,7 +246,7 @@ async fn start_realtime_conversation(codex: &codex_core::MidnightCoderThread) ->
     Ok(())
 }
 
-async fn close_realtime_conversation(codex: &codex_core::MidnightCoderThread) -> Result<()> {
+async fn close_realtime_conversation(codex: &codex_core::SolaiAgentThread) -> Result<()> {
     codex.submit(Op::RealtimeConversationClose).await?;
     wait_for_event_match(codex, |msg| match msg {
         EventMsg::RealtimeConversationClosed(closed) => Some(closed.clone()),
@@ -299,7 +299,7 @@ fn assert_request_contains_realtime_end(request: &responses::ResponsesRequest) {
     );
 }
 
-async fn wait_for_turn_complete(codex: &codex_core::MidnightCoderThread) {
+async fn wait_for_turn_complete(codex: &codex_core::SolaiAgentThread) {
     wait_for_event_with_timeout(
         codex,
         |ev| matches!(ev, EventMsg::TurnComplete(_)),
@@ -312,8 +312,8 @@ async fn wait_for_turn_complete(codex: &codex_core::MidnightCoderThread) {
 async fn remote_compact_replaces_history_for_followups() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestMidnightCoderHarness::with_builder(
-        test_codex().with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing()),
+    let harness = TestSolaiAgentHarness::with_builder(
+        test_codex().with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing()),
     )
     .await?;
     let codex = harness.test().codex.clone();
@@ -541,8 +541,8 @@ async fn remote_compact_replaces_history_for_followups() -> Result<()> {
 async fn remote_compact_uses_agent_identity_assertion() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestMidnightCoderHarness::with_builder(
-        test_codex().with_auth(MidnightCoderAuth::AgentIdentity(
+    let harness = TestSolaiAgentHarness::with_builder(
+        test_codex().with_auth(SolaiAgentAuth::AgentIdentity(
             AgentIdentityAuth::from_record(
                 AgentIdentityAuthRecord {
                     agent_runtime_id: "agent-runtime-compact".to_string(),
@@ -611,7 +611,7 @@ async fn remote_compact_uses_agent_identity_assertion() -> Result<()> {
 }
 
 async fn assert_remote_manual_compact_request_parity(
-    auth: MidnightCoderAuth,
+    auth: SolaiAgentAuth,
     configured_service_tier: Option<ServiceTier>,
     expected_service_tier: Option<&str>,
     snapshot_name: &str,
@@ -623,7 +623,7 @@ async fn assert_remote_manual_compact_request_parity(
             config.service_tier = Some(service_tier.request_value().to_string());
         });
     }
-    let harness = TestMidnightCoderHarness::with_builder(builder).await?;
+    let harness = TestSolaiAgentHarness::with_builder(builder).await?;
     let codex = harness.test().codex.clone();
     let image_url =
         "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII="
@@ -851,7 +851,7 @@ async fn remote_manual_compact_api_auth_omits_service_tier_and_reuses_prompt_cac
     skip_if_no_network!(Ok(()));
 
     assert_remote_manual_compact_request_parity(
-        MidnightCoderAuth::from_api_key("dummy"),
+        SolaiAgentAuth::from_api_key("dummy"),
         Some(ServiceTier::Fast),
         /*expected_service_tier*/ None,
         "remote_manual_compact_api_auth_prompt_cache_key_request_diff",
@@ -868,7 +868,7 @@ async fn remote_manual_compact_chatgpt_auth_reuses_service_tier_and_prompt_cache
     skip_if_no_network!(Ok(()));
 
     assert_remote_manual_compact_request_parity(
-        MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing(),
+        SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing(),
         Some(ServiceTier::Fast),
         Some("priority"),
         "remote_manual_compact_chatgpt_auth_service_tier_prompt_cache_key_request_diff",
@@ -883,9 +883,9 @@ async fn remote_manual_compact_chatgpt_auth_reuses_service_tier_and_prompt_cache
 async fn remote_compact_v2_reuses_compaction_trigger_for_followups() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestMidnightCoderHarness::with_builder(
+    let harness = TestSolaiAgentHarness::with_builder(
         test_codex()
-            .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+            .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 let _ = config.features.enable(Feature::RemoteCompactionV2);
             }),
@@ -1021,9 +1021,9 @@ async fn remote_compact_v2_reuses_compaction_trigger_for_followups() -> Result<(
 async fn remote_compact_v2_retries_failures_with_stream_retry_budget() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestMidnightCoderHarness::with_builder(
+    let harness = TestSolaiAgentHarness::with_builder(
         test_codex()
-            .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+            .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 let _ = config.features.enable(Feature::RemoteCompactionV2);
                 config.model_provider.request_max_retries = Some(0);
@@ -1133,9 +1133,9 @@ async fn remote_compact_v2_retries_failures_with_stream_retry_budget() -> Result
 async fn remote_compact_v2_accepts_additional_output_items_before_compaction() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestMidnightCoderHarness::with_builder(
+    let harness = TestSolaiAgentHarness::with_builder(
         test_codex()
-            .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+            .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 let _ = config.features.enable(Feature::RemoteCompactionV2);
             }),
@@ -1225,7 +1225,7 @@ async fn remote_compact_filters_deferred_dynamic_tools() -> Result<()> {
 
     let server = responses::start_mock_server().await;
     let mut builder =
-        test_codex().with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing());
+        test_codex().with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing());
     let mut test = builder.build(&server).await?;
     let hidden_tool = "hidden_dynamic_tool";
     let visible_tool = "visible_dynamic_tool";
@@ -1236,7 +1236,7 @@ async fn remote_compact_filters_deferred_dynamic_tools() -> Result<()> {
     });
     let dynamic_tools = vec![DynamicToolSpec::Namespace(DynamicToolNamespaceSpec {
         name: "codex_app".to_string(),
-        description: "MidnightCoder app tools.".to_string(),
+        description: "SolaiAgent app tools.".to_string(),
         tools: vec![
             DynamicToolNamespaceTool::Function(DynamicToolFunctionSpec {
                 name: hidden_tool.to_string(),
@@ -1317,8 +1317,8 @@ async fn remote_compact_filters_deferred_dynamic_tools() -> Result<()> {
 async fn remote_compact_runs_automatically() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestMidnightCoderHarness::with_builder(
-        test_codex().with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing()),
+    let harness = TestSolaiAgentHarness::with_builder(
+        test_codex().with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing()),
     )
     .await?;
     let codex = harness.test().codex.clone();
@@ -1455,9 +1455,9 @@ async fn remote_compact_trims_function_call_history_to_fit_context_window() -> R
     let retained_command = "echo retained-shell-output";
     let trimmed_command = "yes x | head -n 3000";
 
-    let harness = TestMidnightCoderHarness::with_builder(
+    let harness = TestSolaiAgentHarness::with_builder(
         test_codex()
-            .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+            .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_context_window = Some(2_000);
                 config.model_auto_compact_token_limit = Some(200_000);
@@ -1582,9 +1582,9 @@ async fn remote_compact_rewrites_multiple_trailing_function_call_outputs() -> Re
     let first_trimmed_command = "yes x | head -n 3000";
     let second_trimmed_command = "yes y | head -n 3000";
 
-    let harness = TestMidnightCoderHarness::with_builder(
+    let harness = TestSolaiAgentHarness::with_builder(
         test_codex()
-            .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+            .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_context_window = Some(2_000);
                 config.model_auto_compact_token_limit = Some(200_000);
@@ -1699,9 +1699,9 @@ async fn auto_remote_compact_trims_function_call_history_to_fit_context_window()
     let trimmed_call_id = "trimmed-call";
     let retained_command = "echo retained-shell-output";
     let trimmed_command = "yes x | head -n 3000";
-    let harness = TestMidnightCoderHarness::with_builder(
+    let harness = TestSolaiAgentHarness::with_builder(
         test_codex()
-            .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+            .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_context_window = Some(2_000);
                 config.model_auto_compact_token_limit = Some(200_000);
@@ -1875,7 +1875,7 @@ async fn remote_compact_trims_tool_search_output_to_empty_tools_array() -> Resul
     });
     let dynamic_tool = DynamicToolSpec::Namespace(DynamicToolNamespaceSpec {
         name: "codex_app".to_string(),
-        description: "MidnightCoder app tools.".to_string(),
+        description: "SolaiAgent app tools.".to_string(),
         tools: vec![DynamicToolNamespaceTool::Function(
             DynamicToolFunctionSpec {
                 name: tool_name.to_string(),
@@ -1887,7 +1887,7 @@ async fn remote_compact_trims_tool_search_output_to_empty_tools_array() -> Resul
     });
 
     let mut builder = test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             configure_search_capable_model(config);
             config.model_context_window = Some(2_000);
@@ -1948,9 +1948,9 @@ async fn remote_compact_trims_tool_search_output_to_empty_tools_array() -> Resul
 async fn auto_remote_compact_failure_stops_agent_loop() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestMidnightCoderHarness::with_builder(
+    let harness = TestSolaiAgentHarness::with_builder(
         test_codex()
-            .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+            .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_auto_compact_token_limit = Some(120);
             }),
@@ -2057,9 +2057,9 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
     let retained_command = "printf retained-shell-output";
     let trailing_command = "printf '%020000d' 0";
 
-    let baseline_harness = TestMidnightCoderHarness::with_builder(
+    let baseline_harness = TestSolaiAgentHarness::with_builder(
         test_codex()
-            .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+            .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_context_window = Some(200_000);
             }),
@@ -2161,9 +2161,9 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
         "expected override instructions to push pre-trim estimate past the context window"
     );
 
-    let override_harness = TestMidnightCoderHarness::with_builder(
+    let override_harness = TestSolaiAgentHarness::with_builder(
         test_codex()
-            .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+            .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config({
                 let override_base_instructions = override_base_instructions.clone();
                 move |config| {
@@ -2269,8 +2269,8 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
 async fn remote_manual_compact_emits_context_compaction_items() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestMidnightCoderHarness::with_builder(
-        test_codex().with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing()),
+    let harness = TestSolaiAgentHarness::with_builder(
+        test_codex().with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing()),
     )
     .await?;
     let codex = harness.test().codex.clone();
@@ -2350,8 +2350,8 @@ async fn remote_manual_compact_emits_context_compaction_items() -> Result<()> {
 async fn remote_manual_compact_failure_emits_task_error_event() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestMidnightCoderHarness::with_builder(
-        test_codex().with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing()),
+    let harness = TestSolaiAgentHarness::with_builder(
+        test_codex().with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing()),
     )
     .await?;
     let codex = harness.test().codex.clone();
@@ -2415,8 +2415,8 @@ async fn remote_manual_compact_failure_emits_task_error_event() -> Result<()> {
 async fn remote_compact_persists_replacement_history_in_rollout() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestMidnightCoderHarness::with_builder(
-        test_codex().with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing()),
+    let harness = TestSolaiAgentHarness::with_builder(
+        test_codex().with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing()),
     )
     .await?;
     let codex = harness.test().codex.clone();
@@ -2555,7 +2555,7 @@ async fn remote_compact_and_resume_refresh_stale_developer_instructions() -> Res
     let stale_developer_message = "STALE_DEVELOPER_INSTRUCTIONS_SHOULD_BE_REMOVED";
 
     let mut start_builder =
-        test_codex().with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing());
+        test_codex().with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing());
     let initial = start_builder.build(&server).await?;
     let home = initial.home.clone();
     let rollout_path = initial
@@ -2645,7 +2645,7 @@ async fn remote_compact_and_resume_refresh_stale_developer_instructions() -> Res
     .await;
 
     let mut resume_builder =
-        test_codex().with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing());
+        test_codex().with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing());
     let resumed = resume_builder.resume(&server, home, rollout_path).await?;
 
     resumed
@@ -2709,7 +2709,7 @@ async fn remote_compact_refreshes_stale_developer_instructions_without_resume() 
     let stale_developer_message = "STALE_DEVELOPER_INSTRUCTIONS_SHOULD_BE_REMOVED";
 
     let mut builder =
-        test_codex().with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing());
+        test_codex().with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing());
     let test = builder.build(&server).await?;
 
     let responses_mock = responses::mount_sse_sequence(
@@ -3304,7 +3304,7 @@ async fn snapshot_request_shape_remote_compact_resume_restates_realtime_end() ->
     .await;
 
     let mut resume_builder =
-        test_codex().with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing());
+        test_codex().with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing());
     let resumed = resume_builder.resume(&server, home, rollout_path).await?;
 
     resumed
@@ -3351,9 +3351,9 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_including_incoming_us
 -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestMidnightCoderHarness::with_builder(
+    let harness = TestSolaiAgentHarness::with_builder(
         test_codex()
-            .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+            .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_auto_compact_token_limit = Some(200);
             }),
@@ -3453,9 +3453,9 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_strips_incoming_model
 
     let previous_model = "gpt-5.4";
     let next_model = "gpt-5.3-codex";
-    let harness = TestMidnightCoderHarness::with_builder(
+    let harness = TestSolaiAgentHarness::with_builder(
         test_codex()
-            .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+            .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
             .with_model(previous_model)
             .with_config(|config| {
                 config.model_auto_compact_token_limit = Some(200);
@@ -3589,9 +3589,9 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_strips_incoming_model
 async fn snapshot_request_shape_remote_pre_turn_compaction_context_window_exceeded() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestMidnightCoderHarness::with_builder(
+    let harness = TestSolaiAgentHarness::with_builder(
         test_codex()
-            .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+            .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_auto_compact_token_limit = Some(200);
             }),
@@ -3695,9 +3695,9 @@ async fn snapshot_request_shape_remote_pre_turn_compaction_context_window_exceed
 async fn remote_pre_turn_compact_response_seeds_turn_state() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestMidnightCoderHarness::with_builder(
+    let harness = TestSolaiAgentHarness::with_builder(
         test_codex()
-            .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+            .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_auto_compact_token_limit = Some(200);
             }),
@@ -3768,9 +3768,9 @@ async fn remote_pre_turn_compact_response_seeds_turn_state() -> Result<()> {
 async fn remote_mid_turn_compact_v1_sends_turn_state_over_http() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestMidnightCoderHarness::with_builder(
+    let harness = TestSolaiAgentHarness::with_builder(
         test_codex()
-            .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+            .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_auto_compact_token_limit = Some(200);
             }),
@@ -3851,9 +3851,9 @@ async fn remote_mid_turn_compact_v1_sends_turn_state_over_http() -> Result<()> {
 async fn remote_mid_turn_compact_v2_sends_turn_state_over_http() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestMidnightCoderHarness::with_builder(
+    let harness = TestSolaiAgentHarness::with_builder(
         test_codex()
-            .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+            .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 let _ = config.features.enable(Feature::RemoteCompactionV2);
                 config.model_auto_compact_token_limit = Some(200);
@@ -3988,7 +3988,7 @@ async fn remote_mid_turn_compact_v2_sends_turn_state_over_websocket() -> Result<
     ]])
     .await;
     let mut builder = test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             let _ = config.features.enable(Feature::RemoteCompactionV2);
             config.model_auto_compact_token_limit = Some(200);
@@ -4044,9 +4044,9 @@ async fn remote_mid_turn_compact_v2_sends_turn_state_over_websocket() -> Result<
 async fn snapshot_request_shape_remote_mid_turn_continuation_compaction() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestMidnightCoderHarness::with_builder(
+    let harness = TestSolaiAgentHarness::with_builder(
         test_codex()
-            .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+            .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_auto_compact_token_limit = Some(200);
             }),
@@ -4117,9 +4117,9 @@ async fn snapshot_request_shape_remote_mid_turn_compaction_summary_only_reinject
 -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestMidnightCoderHarness::with_builder(
+    let harness = TestSolaiAgentHarness::with_builder(
         test_codex()
-            .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+            .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_auto_compact_token_limit = Some(200);
             }),
@@ -4205,9 +4205,9 @@ async fn snapshot_request_shape_remote_mid_turn_compaction_multi_summary_reinjec
 -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestMidnightCoderHarness::with_builder(
+    let harness = TestSolaiAgentHarness::with_builder(
         test_codex()
-            .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+            .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_auto_compact_token_limit = Some(200);
             }),
@@ -4318,8 +4318,8 @@ async fn snapshot_request_shape_remote_manual_compact_without_previous_user_mess
 {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestMidnightCoderHarness::with_builder(
-        test_codex().with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing()),
+    let harness = TestSolaiAgentHarness::with_builder(
+        test_codex().with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing()),
     )
     .await?;
     let codex = harness.test().codex.clone();

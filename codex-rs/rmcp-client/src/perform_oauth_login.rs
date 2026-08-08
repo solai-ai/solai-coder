@@ -670,7 +670,7 @@ async fn start_authorization(
         let mut oauth_state =
             OAuthState::new_with_oauth_http_client(server_url, http_client).await?;
         oauth_state
-            .start_authorization(scopes, redirect_uri, Some("MidnightCoder"))
+            .start_authorization(scopes, redirect_uri, Some("SolaiAgent"))
             .await?;
         return Ok(oauth_state);
     };

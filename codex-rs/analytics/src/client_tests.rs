@@ -6,8 +6,8 @@ use super::capture_track_events_request;
 #[cfg(debug_assertions)]
 use super::send_track_events_request;
 use super::track_event_request_batches;
-use crate::events::MidnightCoderAcceptedLineFingerprintsEventParams;
-use crate::events::MidnightCoderAcceptedLineFingerprintsEventRequest;
+use crate::events::SolaiAgentAcceptedLineFingerprintsEventParams;
+use crate::events::SolaiAgentAcceptedLineFingerprintsEventRequest;
 use crate::events::SkillInvocationEventParams;
 use crate::events::SkillInvocationEventRequest;
 use crate::events::TrackEventRequest;
@@ -49,9 +49,9 @@ use tokio::sync::mpsc::error::TryRecvError;
 
 fn sample_accepted_line_fingerprint_event(thread_id: &str) -> TrackEventRequest {
     TrackEventRequest::AcceptedLineFingerprints(Box::new(
-        MidnightCoderAcceptedLineFingerprintsEventRequest {
+        SolaiAgentAcceptedLineFingerprintsEventRequest {
             event_type: "codex_accepted_line_fingerprints",
-            event_params: MidnightCoderAcceptedLineFingerprintsEventParams {
+            event_params: SolaiAgentAcceptedLineFingerprintsEventParams {
                 event_type: "codex.accepted_line_fingerprints",
                 turn_id: "turn-1".to_string(),
                 thread_id: thread_id.to_string(),
@@ -179,7 +179,7 @@ async fn capture_file_writes_exact_serialized_request() {
     };
     let event = sample_regular_track_event("thread-1");
     let expected_event = serde_json::to_value(&event).expect("serialize expected event");
-    let auth = codex_login::MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = codex_login::SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing();
 
     send_track_events_request(&auth, &destination, vec![event]).await;
 
@@ -200,7 +200,7 @@ async fn capture_file_writes_final_batches_as_separate_lines() {
     let destination = AnalyticsEventsDestination::CaptureFile {
         path: capture_path.clone(),
     };
-    let auth = codex_login::MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = codex_login::SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing();
     let events = vec![
         sample_regular_track_event("thread-1"),
         sample_accepted_line_fingerprint_event("thread-2"),

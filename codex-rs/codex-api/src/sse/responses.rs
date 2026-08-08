@@ -1241,7 +1241,7 @@ mod tests {
                 "response": {
                     "id": "resp-1",
                     "headers": {
-                        "MidnightCoder-Model": CYBER_RESTRICTED_MODEL_FOR_TESTS
+                        "SolaiAgent-Model": CYBER_RESTRICTED_MODEL_FOR_TESTS
                     }
                 }
             }),

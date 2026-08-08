@@ -1,4 +1,4 @@
-//! Command parsing and safety utilities shared across MidnightCoder crates.
+//! Command parsing and safety utilities shared across SolaiAgent crates.
 
 pub mod shell_detect;
 

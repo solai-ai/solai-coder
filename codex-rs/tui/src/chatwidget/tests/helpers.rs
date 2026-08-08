@@ -187,7 +187,7 @@ pub(super) async fn make_chatwidget_manual_with_auth(
         has_chatgpt_account,
         has_codex_backend_auth,
         model_catalog,
-        feedback: codex_feedback::MidnightCoderFeedback::new(),
+        feedback: codex_feedback::SolaiAgentFeedback::new(),
         is_first_run: true,
         status_account_display: None,
         runtime_model_provider_base_url: None,
@@ -199,10 +199,10 @@ pub(super) async fn make_chatwidget_manual_with_auth(
         session_telemetry,
     };
     let mut widget =
-        ChatWidget::new_with_op_target(common, super::MidnightCoderOpTarget::Direct(op_tx));
+        ChatWidget::new_with_op_target(common, super::SolaiAgentOpTarget::Direct(op_tx));
     widget.transcript.active_cell = None;
     widget.transcript.active_cell_revision = 0;
-    widget.normal_placeholder_text = "Ask MidnightCoder to do anything".to_string();
+    widget.normal_placeholder_text = "Ask SolaiAgent to do anything".to_string();
     widget.side_placeholder_text =
         "Check recently modified functions for compatibility".to_string();
     widget
@@ -416,7 +416,7 @@ pub(super) fn handle_token_count(chat: &mut ChatWidget, info: Option<TokenUsageI
 pub(super) fn handle_error(
     chat: &mut ChatWidget,
     message: impl Into<String>,
-    codex_error_info: Option<MidnightCoderErrorInfo>,
+    codex_error_info: Option<SolaiAgentErrorInfo>,
 ) {
     chat.handle_server_notification(
         ServerNotification::Error(ErrorNotification {

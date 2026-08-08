@@ -1,4 +1,4 @@
-//! Shared command-line flags used by both interactive and non-interactive MidnightCoder entry points.
+//! Shared command-line flags used by both interactive and non-interactive SolaiAgent entry points.
 
 use crate::SandboxModeCliArg;
 use clap::Args;

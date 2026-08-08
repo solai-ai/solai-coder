@@ -140,7 +140,7 @@ pub(crate) trait BottomPaneView: Renderable {
     ///
     /// Views that return `true` surface an "Action Required" terminal title
     /// instead of the normal working spinner so terminal tabs clearly show that
-    /// MidnightCoder needs user input.
+    /// SolaiAgent needs user input.
     fn terminal_title_requires_action(&self) -> bool {
         false
     }

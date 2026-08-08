@@ -228,7 +228,7 @@ static CODEX_AUTH_SECRET_NAME: Lazy<SecretName> =
         Ok(name) => name,
         Err(err) => unreachable!("CODEX_AUTH should be a valid secret name: {err}"),
     });
-const KEYRING_SERVICE: &str = "MidnightCoder Auth";
+const KEYRING_SERVICE: &str = "SolaiAgent Auth";
 
 // turns codex_home path into a stable, short key string
 fn compute_store_key(codex_home: &Path) -> std::io::Result<String> {
@@ -341,7 +341,7 @@ impl SecretsKeyringAuthStorage {
             codex_home.clone(),
             SecretsBackendKind::Local,
             keyring_store,
-            LocalSecretsNamespace::MidnightCoderAuth,
+            LocalSecretsNamespace::SolaiAgentAuth,
         );
         Self {
             codex_home,

@@ -3,7 +3,7 @@ module.exports = {
   preset: "ts-jest/presets/default-esm",
   testEnvironment: "node",
   extensionsToTreatAsEsm: [".ts"],
-  setupFilesAfterEnv: ["<rootDir>/tests/setupMidnightCoderHome.ts"],
+  setupFilesAfterEnv: ["<rootDir>/tests/setupSolaiAgentHome.ts"],
   moduleNameMapper: {
     "^(\\.{1,2}/.*)\\.js$": "$1",
   },

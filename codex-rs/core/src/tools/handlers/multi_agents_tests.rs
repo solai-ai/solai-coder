@@ -20,7 +20,7 @@ use crate::turn_diff_tracker::TurnDiffTracker;
 use codex_extension_api::empty_extension_registry;
 use codex_features::Feature;
 use codex_login::AuthManager;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_model_provider::create_model_provider;
 use codex_model_provider_info::built_in_model_providers;
 use codex_protocol::AgentPath;
@@ -100,7 +100,7 @@ fn parse_agent_id(id: &str) -> ThreadId {
 
 fn thread_manager() -> ThreadManager {
     ThreadManager::with_models_provider_for_tests(
-        MidnightCoderAuth::from_api_key("dummy"),
+        SolaiAgentAuth::from_api_key("dummy"),
         built_in_model_providers(/* openai_base_url */ /*openai_base_url*/ None)["openai"].clone(),
     )
 }
@@ -2819,7 +2819,7 @@ async fn resume_agent_restores_closed_agent_and_accepts_send_input() {
                 phase: None,
                 internal_chat_message_metadata_passthrough: None,
             })]),
-            AuthManager::from_auth_for_testing(MidnightCoderAuth::from_api_key("dummy")),
+            AuthManager::from_auth_for_testing(SolaiAgentAuth::from_api_key("dummy")),
             /*parent_trace*/ None,
             /*supports_openai_form_elicitation*/ false,
         )
@@ -3928,7 +3928,7 @@ async fn multi_agent_v2_interrupt_agent_accepts_unloaded_task_name_target() {
         .await
         .expect("sqlite state db should initialize");
     let manager = ThreadManager::with_models_provider_home_and_state_for_tests(
-        MidnightCoderAuth::from_api_key("dummy"),
+        SolaiAgentAuth::from_api_key("dummy"),
         config.model_provider.clone(),
         config.codex_home.to_path_buf(),
         Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
@@ -4258,7 +4258,7 @@ async fn tool_handlers_cascade_close_and_resume_and_keep_explicitly_closed_subtr
     let state_db = init_state_db(&config).await;
     let manager = ThreadManager::new(
         &config,
-        AuthManager::from_auth_for_testing(MidnightCoderAuth::from_api_key("dummy")),
+        AuthManager::from_auth_for_testing(SolaiAgentAuth::from_api_key("dummy")),
         SessionSource::Exec,
         Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
         empty_extension_registry(),

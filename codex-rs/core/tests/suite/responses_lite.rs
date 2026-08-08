@@ -8,7 +8,7 @@ use codex_extension_api::ExtensionRegistry;
 use codex_extension_api::ExtensionRegistryBuilder;
 use codex_features::Feature;
 use codex_image_generation_extension::install as install_image_generation_extension;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_protocol::config_types::WebSearchMode;
 use codex_protocol::models::ImageDetail;
 use codex_protocol::openai_models::InputModality;
@@ -25,7 +25,7 @@ use serde_json::Value;
 
 const RESPONSES_LITE_HEADER: &str = "x-openai-internal-codex-responses-lite";
 
-fn responses_extensions(auth: &MidnightCoderAuth) -> Arc<ExtensionRegistry<Config>> {
+fn responses_extensions(auth: &SolaiAgentAuth) -> Arc<ExtensionRegistry<Config>> {
     let auth_manager = codex_core::test_support::auth_manager_from_auth(auth.clone());
     let mut extension_builder = ExtensionRegistryBuilder::<Config>::new();
     install_web_search_extension(&mut extension_builder, Arc::clone(&auth_manager));
@@ -217,7 +217,7 @@ async fn responses_lite_uses_standalone_web_search_and_image_generation() -> Res
     )
     .await;
 
-    let auth = MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing();
     let extensions = responses_extensions(&auth);
 
     let mut builder = test_codex()
@@ -262,7 +262,7 @@ async fn responses_lite_exposes_standalone_tools_for_actor_authorized_provider()
     )
     .await;
 
-    let auth = MidnightCoderAuth::from_api_key("dummy");
+    let auth = SolaiAgentAuth::from_api_key("dummy");
     let extensions = responses_extensions(&auth);
     let mut builder = test_codex()
         .with_auth(auth)
@@ -362,7 +362,7 @@ async fn responses_lite_omits_hosted_tools_without_standalone_extensions() -> Re
     .await;
 
     let mut builder = test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_model_info_override("gpt-5.4", |model_info| {
             model_info.use_responses_lite = true;
             configure_image_capable_model(model_info);
@@ -395,7 +395,7 @@ async fn non_lite_uses_hosted_tools_when_standalone_features_are_disabled() -> R
     )
     .await;
 
-    let auth = MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing();
     let extensions = responses_extensions(&auth);
     let mut builder = test_codex()
         .with_auth(auth)

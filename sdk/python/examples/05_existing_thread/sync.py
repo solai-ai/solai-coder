@@ -9,9 +9,9 @@ from _bootstrap import ensure_local_sdk_src, runtime_config
 
 ensure_local_sdk_src()
 
-from openai_codex import MidnightCoder
+from openai_codex import SolaiAgent
 
-with MidnightCoder(config=runtime_config()) as codex:
+with SolaiAgent(config=runtime_config()) as codex:
     # Create an initial thread and turn so we have a real thread to resume.
     original = codex.thread_start(model="gpt-5.4", config={"model_reasoning_effort": "high"})
     first = original.turn("Tell me one fact about Saturn.").run()

@@ -170,7 +170,7 @@ pub(crate) fn new_session_info(
             Line::from(vec![
                 "  ".into(),
                 "/init".into(),
-                " - create an AGENTS.md file with instructions for MidnightCoder".dim(),
+                " - create an AGENTS.md file with instructions for SolaiAgent".dim(),
             ]),
             Line::from(vec![
                 "  ".into(),
@@ -180,7 +180,7 @@ pub(crate) fn new_session_info(
             Line::from(vec![
                 "  ".into(),
                 "/permissions".into(),
-                " - choose what MidnightCoder is allowed to do".dim(),
+                " - choose what SolaiAgent is allowed to do".dim(),
             ]),
             Line::from(vec![
                 "  ".into(),
@@ -332,10 +332,10 @@ impl HistoryCell for SessionHeaderHistoryCell {
 
         let make_row = |spans: Vec<Span<'static>>| Line::from(spans);
 
-        // Title line rendered inside the box: ">_ MidnightCoder (vX)"
+        // Title line rendered inside the box: ">_ SolaiAgent (vX)"
         let title_spans: Vec<Span<'static>> = vec![
             Span::from(">_ ").dim(),
-            Span::from("MidnightCoder").bold(),
+            Span::from("SolaiAgent").bold(),
             Span::from(" ").dim(),
             Span::from(format!("(v{})", self.version)).dim(),
         ];
@@ -402,7 +402,7 @@ impl HistoryCell for SessionHeaderHistoryCell {
 
     fn raw_lines(&self) -> Vec<Line<'static>> {
         let mut lines = vec![
-            Line::from(format!("MidnightCoder (v{})", self.version)),
+            Line::from(format!("SolaiAgent (v{})", self.version)),
             Line::from(format!(
                 "model: {}{}",
                 self.model,

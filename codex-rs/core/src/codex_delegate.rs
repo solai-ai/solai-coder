@@ -45,16 +45,16 @@ use crate::mcp_tool_call::build_guardian_mcp_tool_review_request;
 use crate::mcp_tool_call::is_mcp_tool_approval_question_id;
 use crate::mcp_tool_call::lookup_mcp_tool_metadata;
 use crate::mcp_tool_call::mcp_approvals_reviewer;
-use crate::session::MidnightCoder;
-use crate::session::MidnightCoderSpawnArgs;
-use crate::session::MidnightCoderSpawnOk;
+use crate::session::SolaiAgent;
+use crate::session::SolaiAgentSpawnArgs;
+use crate::session::SolaiAgentSpawnOk;
 use crate::session::SUBMISSION_CHANNEL_CAPACITY;
 use crate::session::emit_subagent_session_started;
 use crate::session::session::Session;
 use crate::session::turn_context::TurnContext;
 use codex_login::AuthManager;
 use codex_models_manager::manager::SharedModelsManager;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::protocol::InitialHistory;
 use codex_protocol::protocol::MultiAgentVersion;
 
@@ -67,7 +67,7 @@ struct PendingMcpInvocation {
     metadata: Option<McpToolApprovalMetadata>,
 }
 
-/// Start an interactive sub-MidnightCoder thread and return IO channels.
+/// Start an interactive sub-SolaiAgent thread and return IO channels.
 ///
 /// The returned `events_rx` yields non-approval events emitted by the sub-agent.
 /// Approval requests are handled via `parent_session` and are not surfaced.
@@ -82,7 +82,7 @@ pub(crate) async fn run_codex_thread_interactive(
     cancel_token: CancellationToken,
     subagent_source: SubAgentSource,
     initial_history: Option<InitialHistory>,
-) -> Result<MidnightCoder, MidnightCoderErr> {
+) -> Result<SolaiAgent, SolaiAgentErr> {
     let (tx_sub, rx_sub) = async_channel::bounded(SUBMISSION_CHANNEL_CAPACITY);
     let (tx_ops, rx_ops) = async_channel::bounded(SUBMISSION_CHANNEL_CAPACITY);
     let conversation_history = initial_history.unwrap_or(InitialHistory::New);
@@ -91,8 +91,8 @@ pub(crate) async fn run_codex_thread_interactive(
         instructions: parent_session.user_instructions().await,
         warnings: Vec::new(),
     };
-    let MidnightCoderSpawnOk { codex, .. } =
-        Box::pin(MidnightCoder::spawn(MidnightCoderSpawnArgs {
+    let SolaiAgentSpawnOk { codex, .. } =
+        Box::pin(SolaiAgent::spawn(SolaiAgentSpawnArgs {
             config,
             allow_provider_model_fallback: false,
             user_instructions,
@@ -184,7 +184,7 @@ pub(crate) async fn run_codex_thread_interactive(
         forward_ops(codex_for_ops, rx_ops, cancel_token_ops).await;
     });
 
-    Ok(MidnightCoder {
+    Ok(SolaiAgent {
         tx_sub: tx_ops,
         rx_event: rx_sub,
         agent_status: codex.agent_status.clone(),
@@ -208,7 +208,7 @@ pub(crate) async fn run_codex_thread_one_shot(
     subagent_source: SubAgentSource,
     final_output_json_schema: Option<Value>,
     initial_history: Option<InitialHistory>,
-) -> Result<MidnightCoder, MidnightCoderErr> {
+) -> Result<SolaiAgent, SolaiAgentErr> {
     // Use a child token so we can stop the delegate after completion without
     // requiring the caller to cancel the parent token.
     let child_cancel = cancel_token.child_token();
@@ -269,7 +269,7 @@ pub(crate) async fn run_codex_thread_one_shot(
     let (tx_closed, rx_closed) = async_channel::bounded(SUBMISSION_CHANNEL_CAPACITY);
     drop(rx_closed);
 
-    Ok(MidnightCoder {
+    Ok(SolaiAgent {
         rx_event: rx_bridge,
         tx_sub: tx_closed,
         agent_status,
@@ -279,7 +279,7 @@ pub(crate) async fn run_codex_thread_one_shot(
 }
 
 async fn forward_events(
-    codex: Arc<MidnightCoder>,
+    codex: Arc<SolaiAgent>,
     tx_sub: Sender<Event>,
     parent_session: Arc<Session>,
     parent_ctx: Arc<TurnContext>,
@@ -444,7 +444,7 @@ async fn forward_events(
 }
 
 /// Ask the delegate to stop and drain its events so background sends do not hit a closed channel.
-async fn shutdown_delegate(codex: &MidnightCoder) {
+async fn shutdown_delegate(codex: &SolaiAgent) {
     let _ = codex.submit(Op::Interrupt).await;
     let _ = codex.submit(Op::Shutdown {}).await;
 
@@ -462,7 +462,7 @@ async fn shutdown_delegate(codex: &MidnightCoder) {
 }
 
 async fn forward_event_or_shutdown(
-    codex: &MidnightCoder,
+    codex: &SolaiAgent,
     tx_sub: &Sender<Event>,
     cancel_token: &CancellationToken,
     event: Event,
@@ -478,7 +478,7 @@ async fn forward_event_or_shutdown(
 
 /// Forward ops from a caller to a sub-agent, respecting cancellation.
 async fn forward_ops(
-    codex: Arc<MidnightCoder>,
+    codex: Arc<SolaiAgent>,
     rx_ops: Receiver<Submission>,
     cancel_token_ops: CancellationToken,
 ) {
@@ -493,7 +493,7 @@ async fn forward_ops(
 
 /// Handle an ExecApprovalRequest by consulting the parent session and replying.
 async fn handle_exec_approval(
-    codex: &MidnightCoder,
+    codex: &SolaiAgent,
     turn_id: String,
     parent_session: &Arc<Session>,
     parent_ctx: &Arc<TurnContext>,
@@ -578,7 +578,7 @@ async fn handle_exec_approval(
 
 /// Handle an ApplyPatchApprovalRequest by consulting the parent session and replying.
 async fn handle_patch_approval(
-    codex: &MidnightCoder,
+    codex: &SolaiAgent,
     _id: String,
     parent_session: &Arc<Session>,
     parent_ctx: &Arc<TurnContext>,
@@ -681,7 +681,7 @@ async fn handle_patch_approval(
 }
 
 async fn handle_request_user_input(
-    codex: &MidnightCoder,
+    codex: &SolaiAgent,
     id: String,
     parent_session: &Arc<Session>,
     parent_ctx: &Arc<TurnContext>,
@@ -798,7 +798,7 @@ async fn maybe_auto_review_mcp_request_user_input(
 }
 
 async fn handle_request_permissions(
-    codex: &MidnightCoder,
+    codex: &SolaiAgent,
     parent_session: &Arc<Session>,
     parent_ctx: &Arc<TurnContext>,
     event: RequestPermissionsEvent,

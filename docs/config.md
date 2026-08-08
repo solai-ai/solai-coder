@@ -8,12 +8,12 @@ For a full configuration reference, see [this documentation](https://developers.
 
 ## Embedded local model instructions
 
-For local MidnightCoder/Ollama models whose Modelfile or template already
-contains the stable MidnightCoder agent instructions, set:
+For local SolaiAgent/Ollama models whose Modelfile or template already
+contains the stable SolaiAgent agent instructions, set:
 
 ```toml
 model_provider = "ollama"
-model = "MidnightCoder-30B-tools"
+model = "SolaiAgent-30B-tools"
 model_has_embedded_instructions = true
 ```
 

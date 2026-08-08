@@ -1,6 +1,6 @@
 //! Minimal Windows exec-server fixture for cross-platform tests.
 //!
-//! Keeping this wrapper separate avoids depending on the full MidnightCoder binary's
+//! Keeping this wrapper separate avoids depending on the full SolaiAgent binary's
 //! Windows cross-build, which is not yet supported by the Bazel graph. Linking
 //! only the exec-server also makes the Wine test substantially faster to
 //! iterate on.

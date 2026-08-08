@@ -5,9 +5,9 @@ expression: render_lines(&view)
                                                 
   Select Approval Mode                          
                                                 
-› 1. Read Only (current)  MidnightCoder can     
+› 1. Read Only (current)  SolaiAgent can     
                           read files            
-  2. Full Access          MidnightCoder can     
+  2. Full Access          SolaiAgent can     
                           edit files            
                                                 
   Press enter to confirm or esc to go back

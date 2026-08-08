@@ -238,11 +238,11 @@ impl ChatWidget {
         header.push(*Box::new(
             Paragraph::new(if allow_unelevated {
                 vec![
-                    line!["Set up the MidnightCoder agent sandbox to protect your files and control network access. Learn more <https://developers.openai.com/codex/windows>"],
+                    line!["Set up the SolaiAgent agent sandbox to protect your files and control network access. Learn more <https://developers.openai.com/codex/windows>"],
                 ]
             } else {
                 vec![
-                    line!["Your organization requires the default MidnightCoder agent sandbox to continue. Set it up to protect your files and control network access."],
+                    line!["Your organization requires the default SolaiAgent agent sandbox to continue. Set it up to protect your files and control network access."],
                     line!["Learn more <https://developers.openai.com/codex/windows>"],
                 ]
             })
@@ -351,11 +351,11 @@ impl ChatWidget {
         lines.push(line![""]);
         if allow_unelevated {
             lines.push(line![
-                "You can still use MidnightCoder in a non-admin sandbox. It carries greater risk if prompt injected."
+                "You can still use SolaiAgent in a non-admin sandbox. It carries greater risk if prompt injected."
             ]);
         } else {
             lines.push(line![
-                "Your organization requires the default sandbox before MidnightCoder can continue."
+                "Your organization requires the default sandbox before SolaiAgent can continue."
             ]);
         }
         lines.push(line![
@@ -395,7 +395,7 @@ impl ChatWidget {
         }];
         if allow_unelevated {
             items.push(SelectionItem {
-                name: "Use MidnightCoder with non-admin sandbox".to_string(),
+                name: "Use SolaiAgent with non-admin sandbox".to_string(),
                 description: None,
                 actions: vec![Box::new({
                     let otel = self.session_telemetry.clone();

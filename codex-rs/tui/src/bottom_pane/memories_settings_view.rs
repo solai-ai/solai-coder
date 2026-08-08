@@ -116,7 +116,7 @@ impl MemoriesSettingsView {
         let mut header = ColumnRenderable::new();
         header.push(Line::from("Memories".bold()));
         header.push(Line::from(
-            "Choose how MidnightCoder uses and creates memories. Changes are saved to config.toml"
+            "Choose how SolaiAgent uses and creates memories. Changes are saved to config.toml"
                 .dim(),
         ));
         header
@@ -126,7 +126,7 @@ impl MemoriesSettingsView {
         let mut header = ColumnRenderable::new();
         header.push(Line::from("Reset all memories?".bold()));
         header.push(Line::from(
-            "This clears local memory files and rollout summaries for the current MidnightCoder home."
+            "This clears local memory files and rollout summaries for the current SolaiAgent home."
                 .dim(),
         ));
         header

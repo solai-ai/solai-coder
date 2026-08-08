@@ -1,6 +1,6 @@
-# Midnight Coder Python SDK (Beta)
+# SOLAI Agent Python SDK (Beta)
 
-Build Python applications that start Midnight Coder threads, run turns, stream progress,
+Build Python applications that start SOLAI Agent threads, run turns, stream progress,
 and control workspace access.
 
 ## Install
@@ -13,13 +13,13 @@ pip install openai-codex
 
 ## Quickstart
 
-The SDK reuses your existing Midnight Coder authentication when one is already
+The SDK reuses your existing SOLAI Agent authentication when one is already
 available:
 
 ```python
-from openai_codex import Midnight Coder
+from openai_codex import SolaiAgent
 
-with Midnight Coder() as codex:
+with SolaiAgent() as codex:
     thread = codex.thread_start()
     result = thread.run("Explain this repository in three bullets.")
     print(result.final_response)
@@ -30,13 +30,13 @@ collected items, and token usage.
 
 ## Authentication
 
-Existing Midnight Coder authentication is reused automatically. To start ChatGPT
+Existing SOLAI Agent authentication is reused automatically. To start ChatGPT
 browser login explicitly:
 
 ```python
-from openai_codex import Midnight Coder
+from openai_codex import SolaiAgent
 
-with Midnight Coder() as codex:
+with SolaiAgent() as codex:
     login = codex.login_chatgpt()
     print(login.auth_url)
     print(login.wait().success)
@@ -45,7 +45,7 @@ with Midnight Coder() as codex:
 For device-code login:
 
 ```python
-with Midnight Coder() as codex:
+with SolaiAgent() as codex:
     login = codex.login_chatgpt_device_code()
     print(login.verification_url, login.user_code)
     login.wait()
@@ -54,21 +54,21 @@ with Midnight Coder() as codex:
 For API-key login:
 
 ```python
-with Midnight Coder() as codex:
+with SolaiAgent() as codex:
     codex.login_api_key("sk-...")
 ```
 
 ## Built-In Help
 
-Use Python's standard `help(openai_codex)`, `help(Midnight Coder)`, or
+Use Python's standard `help(openai_codex)`, `help(SolaiAgent)`, or
 `python -m pydoc openai_codex` documentation tools.
 
 ## Documentation
 
-- [Getting started](https://github.com/modnight/coder/blob/main/sdk/python/docs/getting-started.md)
-- [API reference](https://github.com/modnight/coder/blob/main/sdk/python/docs/api-reference.md)
-- [FAQ](https://github.com/modnight/coder/blob/main/sdk/python/docs/faq.md)
-- [Examples](https://github.com/modnight/coder/blob/main/sdk/python/examples/README.md)
+- [Getting started](https://github.com/solai-ai/solai-agent/blob/main/sdk/python/docs/getting-started.md)
+- [API reference](https://github.com/solai-ai/solai-agent/blob/main/sdk/python/docs/api-reference.md)
+- [FAQ](https://github.com/solai-ai/solai-agent/blob/main/sdk/python/docs/faq.md)
+- [Examples](https://github.com/solai-ai/solai-agent/blob/main/sdk/python/examples/README.md)
 
 The package is licensed under the
-[repository Apache License 2.0](https://github.com/modnight/coder/blob/main/LICENSE).
+[repository Apache License 2.0](https://github.com/solai-ai/solai-agent/blob/main/LICENSE).

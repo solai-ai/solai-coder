@@ -38,7 +38,7 @@ fn init_params() -> InitializeRequestParams {
     InitializeRequestParams::new(
         capabilities,
         Implementation::new("codex-test", "0.0.0-test")
-            .with_title("MidnightCoder rmcp resource test"),
+            .with_title("SolaiAgent rmcp resource test"),
     )
     .with_protocol_version(ProtocolVersion::V_2025_06_18)
 }
@@ -106,7 +106,7 @@ async fn rmcp_client_can_list_and_read_resources() -> anyhow::Result<()> {
                 rmcp::model::RawResourceTemplate {
                     uri_template: "memo://codex/{slug}".to_string(),
                     name: "codex-memo".to_string(),
-                    title: Some("MidnightCoder Memo".to_string()),
+                    title: Some("SolaiAgent Memo".to_string()),
                     description: Some(
                         "Template for memo://codex/{slug} resources used in tests.".to_string(),
                     ),

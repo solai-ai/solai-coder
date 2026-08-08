@@ -34,7 +34,7 @@ use codex_core_skills::HostSkillsSnapshot;
 use core_test_support::test_codex::local_selections;
 
 use codex_features::Feature;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_login::auth::AgentIdentityAuthPolicy;
 use codex_model_provider_info::ModelProviderInfo;
 use codex_model_provider_info::WireApi;
@@ -124,7 +124,7 @@ use codex_protocol::protocol::CreditsSnapshot;
 use codex_protocol::protocol::GranularApprovalConfig;
 use codex_protocol::protocol::InitialHistory;
 use codex_protocol::protocol::InterAgentCommunication;
-use codex_protocol::protocol::MidnightCoderErrorInfo;
+use codex_protocol::protocol::SolaiAgentErrorInfo;
 use codex_protocol::protocol::MultiAgentVersion;
 use codex_protocol::protocol::NetworkApprovalProtocol;
 use codex_protocol::protocol::RateLimitSnapshot;
@@ -1368,8 +1368,8 @@ async fn reload_user_config_layer_refreshes_hooks() -> anyhow::Result<()> {
     let session = make_session_with_config(|config| {
         config
             .features
-            .enable(Feature::MidnightCoderHooks)
-            .expect("enable MidnightCoder hooks");
+            .enable(Feature::SolaiAgentHooks)
+            .expect("enable SolaiAgent hooks");
     })
     .await?;
     let codex_home = session.codex_home().await;
@@ -1445,8 +1445,8 @@ async fn refresh_runtime_config_refreshes_hooks() -> anyhow::Result<()> {
         let mut config = (*state.session_configuration.original_config_do_not_use).clone();
         config
             .features
-            .enable(Feature::MidnightCoderHooks)
-            .expect("enable MidnightCoder hooks");
+            .enable(Feature::SolaiAgentHooks)
+            .expect("enable SolaiAgent hooks");
         state.session_configuration.original_config_do_not_use = Arc::new(config);
     }
     let codex_home = session.codex_home().await;
@@ -1817,7 +1817,7 @@ async fn record_inter_agent_communication_sets_turn_id_in_rollout_and_resume() {
 #[tokio::test]
 async fn record_inter_agent_communication_preserves_item_id_in_rollout_and_resume() {
     let (mut session, turn_context, _rx) = make_session_and_context_with_auth_and_config_and_rx(
-        MidnightCoderAuth::from_api_key("Test API Key"),
+        SolaiAgentAuth::from_api_key("Test API Key"),
         Vec::new(),
         |config| {
             let _ = config.features.enable(Feature::ItemIds);
@@ -1863,7 +1863,7 @@ async fn record_inter_agent_communication_preserves_item_id_in_rollout_and_resum
 
     let (resumed_session, _resumed_turn_context, _rx) =
         make_session_and_context_with_auth_and_config_and_rx(
-            MidnightCoderAuth::from_api_key("Test API Key"),
+            SolaiAgentAuth::from_api_key("Test API Key"),
             Vec::new(),
             |config| {
                 let _ = config.features.enable(Feature::ItemIds);
@@ -1883,7 +1883,7 @@ async fn record_inter_agent_communication_preserves_item_id_in_rollout_and_resum
 #[tokio::test]
 async fn prepares_image_failures_before_history_insertion() {
     let (session, turn_context, _rx) = make_session_and_context_with_auth_and_config_and_rx(
-        MidnightCoderAuth::from_api_key("Test API Key"),
+        SolaiAgentAuth::from_api_key("Test API Key"),
         Vec::new(),
         |config| {
             let _ = config.features.enable(Feature::ItemIds);
@@ -2586,7 +2586,7 @@ async fn turn_error_lifecycle_exposes_error_and_stores() {
         thread_level_id: String,
         turn_level_id: String,
         turn_id: String,
-        error: MidnightCoderErrorInfo,
+        error: SolaiAgentErrorInfo,
         saw_session_store: bool,
         saw_thread_store: bool,
     }
@@ -2644,13 +2644,13 @@ async fn turn_error_lifecycle_exposes_error_and_stores() {
         thread_level_id: session.thread_id.to_string(),
         turn_level_id: turn_context.sub_id.clone(),
         turn_id: turn_context.sub_id.clone(),
-        error: MidnightCoderErrorInfo::UsageLimitExceeded,
+        error: SolaiAgentErrorInfo::UsageLimitExceeded,
         saw_session_store: true,
         saw_thread_store: true,
     };
 
     session
-        .emit_turn_error_lifecycle(&turn_context, MidnightCoderErrorInfo::UsageLimitExceeded)
+        .emit_turn_error_lifecycle(&turn_context, SolaiAgentErrorInfo::UsageLimitExceeded)
         .await;
 
     let actual = records
@@ -2804,7 +2804,7 @@ async fn record_initial_history_reconstructs_forked_transcript() {
 #[tokio::test]
 async fn start_new_context_window_assigns_and_persists_item_ids() {
     let (mut session, turn_context, _rx) = make_session_and_context_with_auth_and_config_and_rx(
-        MidnightCoderAuth::from_api_key("Test API Key"),
+        SolaiAgentAuth::from_api_key("Test API Key"),
         Vec::new(),
         |config| {
             let _ = config.features.enable(Feature::ItemIds);
@@ -2855,7 +2855,7 @@ async fn start_new_context_window_assigns_and_persists_item_ids() {
 #[tokio::test]
 async fn record_initial_history_assigns_and_persists_id_for_forked_response_item() {
     let (mut session, _turn_context, _rx) = make_session_and_context_with_auth_and_config_and_rx(
-        MidnightCoderAuth::from_api_key("Test API Key"),
+        SolaiAgentAuth::from_api_key("Test API Key"),
         Vec::new(),
         |config| {
             let _ = config.features.enable(Feature::ItemIds);
@@ -3295,7 +3295,7 @@ async fn thread_rollback_fails_without_persisted_thread_history() {
     );
     assert_eq!(
         error_event.codex_error_info,
-        Some(MidnightCoderErrorInfo::ThreadRollbackFailed)
+        Some(SolaiAgentErrorInfo::ThreadRollbackFailed)
     );
     assert_eq!(sess.clone_history().await.raw_items(), initial_context);
 }
@@ -3702,7 +3702,7 @@ async fn thread_rollback_fails_when_turn_in_progress() {
     let error_event = wait_for_thread_rollback_failed(&rx).await;
     assert_eq!(
         error_event.codex_error_info,
-        Some(MidnightCoderErrorInfo::ThreadRollbackFailed)
+        Some(SolaiAgentErrorInfo::ThreadRollbackFailed)
     );
 
     let history = sess.clone_history().await;
@@ -3723,7 +3723,7 @@ async fn thread_rollback_fails_when_num_turns_is_zero() {
     assert_eq!(error_event.message, "num_turns must be >= 1");
     assert_eq!(
         error_event.codex_error_info,
-        Some(MidnightCoderErrorInfo::ThreadRollbackFailed)
+        Some(SolaiAgentErrorInfo::ThreadRollbackFailed)
     );
 
     let history = sess.clone_history().await;
@@ -4113,7 +4113,7 @@ async fn wait_for_thread_rollback_failed(rx: &async_channel::Receiver<Event>) ->
         match evt.msg {
             EventMsg::Error(payload)
                 if payload.codex_error_info
-                    == Some(MidnightCoderErrorInfo::ThreadRollbackFailed) =>
+                    == Some(SolaiAgentErrorInfo::ThreadRollbackFailed) =>
             {
                 return payload;
             }
@@ -4439,7 +4439,7 @@ async fn emit_subagent_session_started_includes_fork_lineage_and_originator() {
         .await;
 
     let auth_manager = AuthManager::from_auth_for_testing(
-        MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing(),
+        SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing(),
     );
     let analytics_events_client = AnalyticsEventsClient::new(
         auth_manager,
@@ -5244,7 +5244,7 @@ async fn session_new_fails_when_zsh_fork_enabled_without_packaged_zsh() {
     let config = Arc::new(config);
 
     let auth_manager =
-        AuthManager::from_auth_for_testing(MidnightCoderAuth::from_api_key("Test API Key"));
+        AuthManager::from_auth_for_testing(SolaiAgentAuth::from_api_key("Test API Key"));
     let models_manager = models_manager_with_provider(
         config.codex_home.to_path_buf(),
         auth_manager.clone(),
@@ -5372,7 +5372,7 @@ pub(crate) async fn make_session_and_context() -> (Session, TurnContext) {
     let config = Arc::new(config);
     let thread_id = ThreadId::default();
     let auth_manager =
-        AuthManager::from_auth_for_testing(MidnightCoderAuth::from_api_key("Test API Key"));
+        AuthManager::from_auth_for_testing(SolaiAgentAuth::from_api_key("Test API Key"));
     let models_manager = models_manager_with_provider(
         config.codex_home.to_path_buf(),
         auth_manager.clone(),
@@ -5626,7 +5626,7 @@ async fn make_session_with_config_and_rx(
     mutator(&mut config);
     let config = Arc::new(config);
     let auth_manager =
-        AuthManager::from_auth_for_testing(MidnightCoderAuth::from_api_key("Test API Key"));
+        AuthManager::from_auth_for_testing(SolaiAgentAuth::from_api_key("Test API Key"));
     let models_manager = models_manager_with_provider(
         config.codex_home.to_path_buf(),
         auth_manager.clone(),
@@ -5735,7 +5735,7 @@ async fn make_session_with_history_source_and_agent_control_and_rx(
     config.ephemeral = true;
     let config = Arc::new(config);
     let auth_manager =
-        AuthManager::from_auth_for_testing(MidnightCoderAuth::from_api_key("Test API Key"));
+        AuthManager::from_auth_for_testing(SolaiAgentAuth::from_api_key("Test API Key"));
     let models_manager = models_manager_with_provider(
         config.codex_home.to_path_buf(),
         auth_manager.clone(),
@@ -6518,7 +6518,7 @@ async fn submit_with_id_captures_current_span_trace_context() {
     let (tx_sub, rx_sub) = async_channel::bounded(1);
     let (_tx_event, rx_event) = async_channel::unbounded();
     let (_agent_status_tx, agent_status) = watch::channel(AgentStatus::PendingInit);
-    let codex = MidnightCoder {
+    let codex = SolaiAgent {
         tx_sub,
         rx_event,
         agent_status,
@@ -7250,7 +7250,7 @@ async fn shutdown_and_wait_allows_multiple_waiters() {
         assert_eq!(shutdown.op, Op::Shutdown);
         tokio::time::sleep(StdDuration::from_millis(50)).await;
     });
-    let codex = Arc::new(MidnightCoder {
+    let codex = Arc::new(SolaiAgent {
         tx_sub,
         rx_event,
         agent_status,
@@ -7288,7 +7288,7 @@ async fn shutdown_and_wait_waits_when_shutdown_is_already_in_progress() {
     let session_loop_handle = tokio::spawn(async move {
         let _ = shutdown_complete_rx.await;
     });
-    let codex = Arc::new(MidnightCoder {
+    let codex = Arc::new(SolaiAgent {
         tx_sub,
         rx_event,
         agent_status,
@@ -7326,7 +7326,7 @@ async fn shutdown_and_wait_shuts_down_cached_guardian_subagent() {
     let parent_session_loop_handle = tokio::spawn(async move {
         submission_loop(parent_session_for_loop, parent_config, parent_rx_sub).await;
     });
-    let parent_codex = MidnightCoder {
+    let parent_codex = SolaiAgent {
         tx_sub: parent_tx_sub,
         rx_event: parent_rx_event,
         agent_status: parent_agent_status,
@@ -7349,7 +7349,7 @@ async fn shutdown_and_wait_shuts_down_cached_guardian_subagent() {
             .send(())
             .expect("child shutdown signal should be delivered");
     });
-    let child_codex = MidnightCoder {
+    let child_codex = SolaiAgent {
         tx_sub: child_tx_sub,
         rx_event: child_rx_event,
         agent_status: child_agent_status,
@@ -7382,7 +7382,7 @@ async fn cached_guardian_subagent_exposes_its_rollout_path() {
     let (_child_tx_event, child_rx_event) = async_channel::unbounded();
     let (_child_status_tx, child_agent_status) = watch::channel(AgentStatus::PendingInit);
     let child_session_loop_handle = tokio::spawn(async {});
-    let child_codex = MidnightCoder {
+    let child_codex = SolaiAgent {
         tx_sub: child_tx_sub,
         rx_event: child_rx_event,
         agent_status: child_agent_status,
@@ -7415,7 +7415,7 @@ async fn shutdown_and_wait_shuts_down_tracked_ephemeral_guardian_review() {
     let parent_session_loop_handle = tokio::spawn(async move {
         submission_loop(parent_session_for_loop, parent_config, parent_rx_sub).await;
     });
-    let parent_codex = MidnightCoder {
+    let parent_codex = SolaiAgent {
         tx_sub: parent_tx_sub,
         rx_event: parent_rx_event,
         agent_status: parent_agent_status,
@@ -7438,7 +7438,7 @@ async fn shutdown_and_wait_shuts_down_tracked_ephemeral_guardian_review() {
             .send(())
             .expect("child shutdown signal should be delivered");
     });
-    let child_codex = MidnightCoder {
+    let child_codex = SolaiAgent {
         tx_sub: child_tx_sub,
         rx_event: child_rx_event,
         agent_status: child_agent_status,
@@ -7461,7 +7461,7 @@ async fn shutdown_and_wait_shuts_down_tracked_ephemeral_guardian_review() {
 }
 
 async fn make_session_and_context_with_auth_and_config_and_rx<F>(
-    auth: MidnightCoderAuth,
+    auth: SolaiAgentAuth,
     dynamic_tools: Vec<DynamicToolSpec>,
     configure_config: F,
 ) -> (
@@ -7483,7 +7483,7 @@ where
 }
 
 async fn make_session_and_context_with_auth_config_home_and_rx<F>(
-    auth: MidnightCoderAuth,
+    auth: SolaiAgentAuth,
     dynamic_tools: Vec<DynamicToolSpec>,
     codex_home: &Path,
     configure_config: F,
@@ -7737,7 +7737,7 @@ pub(crate) async fn make_session_and_context_with_dynamic_tools_and_rx(
     async_channel::Receiver<Event>,
 ) {
     make_session_and_context_with_auth_and_config_and_rx(
-        MidnightCoderAuth::from_api_key("Test API Key"),
+        SolaiAgentAuth::from_api_key("Test API Key"),
         dynamic_tools,
         |_config| {},
     )
@@ -8199,7 +8199,7 @@ async fn make_multi_agent_v2_usage_hint_test_session(
     enable_multi_agent_v2: bool,
 ) -> (Arc<Session>, Arc<TurnContext>) {
     let (session, turn_context, _rx_event) = make_session_and_context_with_auth_and_config_and_rx(
-        MidnightCoderAuth::from_api_key("Test API Key"),
+        SolaiAgentAuth::from_api_key("Test API Key"),
         Vec::new(),
         |config| {
             if enable_multi_agent_v2 {
@@ -8465,7 +8465,7 @@ async fn build_initial_context_omits_multi_agent_v2_usage_hints_when_feature_dis
 #[tokio::test]
 async fn build_initial_context_omits_multi_agent_v2_usage_hints_when_hint_is_empty() {
     let (session, turn_context, _rx_event) = make_session_and_context_with_auth_and_config_and_rx(
-        MidnightCoderAuth::from_api_key("Test API Key"),
+        SolaiAgentAuth::from_api_key("Test API Key"),
         Vec::new(),
         |config| {
             let _ = config.features.enable(Feature::MultiAgentV2);

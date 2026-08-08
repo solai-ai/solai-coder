@@ -66,7 +66,7 @@ use codex_core_skills::config_rules::SkillConfigRules;
 use codex_core_skills::config_rules::skill_config_rules_from_stack;
 use codex_hooks::plugin_hook_declarations;
 use codex_login::AuthManager;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_plugin::AppConnectorId;
 use codex_plugin::PluginCapabilitySummary;
 use codex_plugin::PluginId;
@@ -127,7 +127,7 @@ impl PluginsConfigInput {
 pub struct RecommendedPluginCandidatesInput<'a> {
     pub plugins_config: &'a PluginsConfigInput,
     pub loaded_plugins: &'a PluginLoadOutcome,
-    pub auth: Option<&'a MidnightCoderAuth>,
+    pub auth: Option<&'a SolaiAgentAuth>,
     pub disabled_tools: &'a [ToolSuggestDisabledTool],
     pub app_server_client_name: Option<&'a str>,
 }
@@ -154,7 +154,7 @@ struct CachedFeaturedPluginIds {
 
 struct RemoteInstalledPluginsCacheRefreshRequest {
     service_config: RemotePluginServiceConfig,
-    auth: Option<MidnightCoderAuth>,
+    auth: Option<SolaiAgentAuth>,
     notify: RemoteInstalledPluginsCacheRefreshNotify,
     // App-server attaches side effects such as skills metadata invalidation and MCP refreshes when
     // remote installed state changes.
@@ -178,7 +178,7 @@ struct RemoteInstalledPluginsCacheRefreshState {
 
 struct GlobalRemoteCatalogCacheRefreshRequest {
     service_config: RemotePluginServiceConfig,
-    auth: Option<MidnightCoderAuth>,
+    auth: Option<SolaiAgentAuth>,
 }
 
 #[derive(Default)]
@@ -224,13 +224,13 @@ fn remote_plugin_service_config(config: &PluginsConfigInput) -> RemotePluginServ
 
 fn featured_plugin_ids_cache_key(
     config: &PluginsConfigInput,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
 ) -> FeaturedPluginIdsCacheKey {
     FeaturedPluginIdsCacheKey {
         chatgpt_base_url: config.chatgpt_base_url.clone(),
-        account_id: auth.and_then(MidnightCoderAuth::get_account_id),
-        chatgpt_user_id: auth.and_then(MidnightCoderAuth::get_chatgpt_user_id),
-        is_workspace_account: auth.is_some_and(MidnightCoderAuth::is_workspace_account),
+        account_id: auth.and_then(SolaiAgentAuth::get_account_id),
+        chatgpt_user_id: auth.and_then(SolaiAgentAuth::get_chatgpt_user_id),
+        is_workspace_account: auth.is_some_and(SolaiAgentAuth::is_workspace_account),
     }
 }
 
@@ -401,7 +401,7 @@ impl PluginsManager {
     pub fn new(codex_home: PathBuf) -> Self {
         Self::new_with_options(
             codex_home,
-            Some(Product::MidnightCoder),
+            Some(Product::SolaiAgent),
             /*auth_mode*/ None,
         )
     }
@@ -829,7 +829,7 @@ impl PluginsManager {
     pub fn cached_global_remote_discoverable_plugins_for_config(
         &self,
         config: &PluginsConfigInput,
-        auth: Option<&MidnightCoderAuth>,
+        auth: Option<&SolaiAgentAuth>,
     ) -> Vec<crate::remote::RemoteDiscoverablePlugin> {
         if !config.plugins_enabled || !config.remote_plugin_enabled {
             return Vec::new();
@@ -854,7 +854,7 @@ impl PluginsManager {
     pub async fn build_and_cache_remote_installed_plugin_marketplaces(
         &self,
         config: &PluginsConfigInput,
-        auth: Option<&MidnightCoderAuth>,
+        auth: Option<&SolaiAgentAuth>,
         visible_marketplaces: &[&str],
         on_effective_plugins_changed: Option<Arc<dyn Fn() + Send + Sync + 'static>>,
     ) -> Result<Vec<crate::remote::RemoteMarketplace>, RemotePluginCatalogError> {
@@ -905,7 +905,7 @@ impl PluginsManager {
     pub fn maybe_start_remote_plugin_caches_refresh(
         self: &Arc<Self>,
         config: &PluginsConfigInput,
-        auth: Option<MidnightCoderAuth>,
+        auth: Option<SolaiAgentAuth>,
         on_effective_plugins_changed: Option<Arc<dyn Fn() + Send + Sync + 'static>>,
     ) {
         self.maybe_start_remote_installed_plugins_cache_refresh_with_notify(
@@ -927,7 +927,7 @@ impl PluginsManager {
     pub fn maybe_start_remote_installed_plugins_cache_refresh_after_mutation(
         self: &Arc<Self>,
         config: &PluginsConfigInput,
-        auth: Option<MidnightCoderAuth>,
+        auth: Option<SolaiAgentAuth>,
         on_effective_plugins_changed: Option<Arc<dyn Fn() + Send + Sync + 'static>>,
     ) {
         self.maybe_start_remote_installed_plugins_cache_refresh_with_notify(
@@ -941,7 +941,7 @@ impl PluginsManager {
     fn maybe_start_remote_installed_plugins_cache_refresh_with_notify(
         self: &Arc<Self>,
         config: &PluginsConfigInput,
-        auth: Option<MidnightCoderAuth>,
+        auth: Option<SolaiAgentAuth>,
         notify: RemoteInstalledPluginsCacheRefreshNotify,
         on_effective_plugins_changed: Option<Arc<dyn Fn() + Send + Sync + 'static>>,
     ) {
@@ -962,7 +962,7 @@ impl PluginsManager {
     pub fn maybe_start_remote_installed_plugin_bundle_sync(
         self: &Arc<Self>,
         config: &PluginsConfigInput,
-        auth: Option<MidnightCoderAuth>,
+        auth: Option<SolaiAgentAuth>,
         on_effective_plugins_changed: Option<Arc<dyn Fn() + Send + Sync + 'static>>,
     ) {
         if !config.plugins_enabled {
@@ -991,7 +991,7 @@ impl PluginsManager {
     fn maybe_start_global_remote_catalog_cache_refresh(
         self: &Arc<Self>,
         config: &PluginsConfigInput,
-        auth: Option<MidnightCoderAuth>,
+        auth: Option<SolaiAgentAuth>,
     ) {
         if !config.plugins_enabled || !config.remote_plugin_enabled {
             return;
@@ -1006,7 +1006,7 @@ impl PluginsManager {
     pub fn maybe_start_plugin_list_background_tasks_for_config(
         self: &Arc<Self>,
         config: &PluginsConfigInput,
-        auth: Option<MidnightCoderAuth>,
+        auth: Option<SolaiAgentAuth>,
         roots: &[AbsolutePathBuf],
         options: PluginListBackgroundTaskOptions,
         on_effective_plugins_changed: Option<Arc<dyn Fn() + Send + Sync + 'static>>,
@@ -1078,7 +1078,7 @@ impl PluginsManager {
     pub async fn featured_plugin_ids_for_config(
         &self,
         config: &PluginsConfigInput,
-        auth: Option<&MidnightCoderAuth>,
+        auth: Option<&SolaiAgentAuth>,
     ) -> Result<Vec<String>, RemotePluginFetchError> {
         if !config.plugins_enabled {
             return Ok(Vec::new());
@@ -1109,11 +1109,11 @@ impl PluginsManager {
     pub async fn recommended_plugins_mode_for_config(
         &self,
         config: &PluginsConfigInput,
-        auth: Option<&MidnightCoderAuth>,
+        auth: Option<&SolaiAgentAuth>,
     ) -> RecommendedPluginsMode {
         if !config.plugins_enabled
             || !config.remote_plugin_enabled
-            || !auth.is_some_and(MidnightCoderAuth::uses_codex_backend)
+            || !auth.is_some_and(SolaiAgentAuth::uses_codex_backend)
         {
             return RecommendedPluginsMode::Legacy;
         }
@@ -1313,7 +1313,7 @@ impl PluginsManager {
     pub async fn install_plugin_with_remote_sync(
         &self,
         config: &PluginsConfigInput,
-        auth: Option<&MidnightCoderAuth>,
+        auth: Option<&SolaiAgentAuth>,
         request: PluginInstallRequest,
     ) -> Result<PluginInstallOutcome, PluginInstallError> {
         let resolved = self.resolve_installable_plugin(&config.config_layer_stack, &request)?;
@@ -1488,7 +1488,7 @@ impl PluginsManager {
     pub async fn uninstall_plugin_with_remote_sync(
         &self,
         config: &PluginsConfigInput,
-        auth: Option<&MidnightCoderAuth>,
+        auth: Option<&SolaiAgentAuth>,
         plugin_id: String,
     ) -> Result<(), PluginUninstallError> {
         // TODO: Remove this legacy remote-sync path once remote plugins have

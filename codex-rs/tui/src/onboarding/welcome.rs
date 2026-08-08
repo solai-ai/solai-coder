@@ -94,8 +94,8 @@ impl WidgetRef for &WelcomeWidget {
         lines.push(Line::from(vec![
             "  ".into(),
             "Welcome to ".into(),
-            "MidnightCoder".bold(),
-            ", MidnightCoder's command-line coding agent".into(),
+            "SolaiAgent".bold(),
+            ", SolaiAgent's command-line coding agent".into(),
         ]));
 
         Paragraph::new(lines)

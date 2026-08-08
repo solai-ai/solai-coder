@@ -1,4 +1,4 @@
-//! Rollout persistence and discovery for MidnightCoder session files.
+//! Rollout persistence and discovery for SolaiAgent session files.
 
 use std::sync::LazyLock;
 

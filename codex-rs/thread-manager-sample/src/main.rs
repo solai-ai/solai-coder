@@ -26,8 +26,8 @@ use codex_core_api::Features;
 use codex_core_api::GhostSnapshotConfig;
 use codex_core_api::History;
 use codex_core_api::MemoriesConfig;
-use codex_core_api::MidnightCoderHomeUserInstructionsProvider;
-use codex_core_api::MidnightCoderThread;
+use codex_core_api::SolaiAgentHomeUserInstructionsProvider;
+use codex_core_api::SolaiAgentThread;
 use codex_core_api::ModelAvailabilityNuxConfig;
 use codex_core_api::MultiAgentV2Config;
 use codex_core_api::NewThread;
@@ -67,7 +67,7 @@ use codex_core_api::thread_store_from_config;
 #[derive(Debug, Parser)]
 #[command(
     name = "codex-thread-manager-sample",
-    about = "Run one MidnightCoder turn through ThreadManager and print mapped notifications as newline-delimited JSON."
+    about = "Run one SolaiAgent turn through ThreadManager and print mapped notifications as newline-delimited JSON."
 )]
 struct Args {
     /// Override the model for this run.
@@ -122,7 +122,7 @@ async fn run_main(arg0_paths: Arg0DispatchPaths) -> anyhow::Result<()> {
             .await?,
     );
     let installation_id = resolve_installation_id(&config.codex_home).await?;
-    let user_instructions_provider = Arc::new(MidnightCoderHomeUserInstructionsProvider::new(
+    let user_instructions_provider = Arc::new(SolaiAgentHomeUserInstructionsProvider::new(
         config.codex_home.clone(),
     ));
     let thread_manager = ThreadManager::new(
@@ -145,7 +145,7 @@ async fn run_main(arg0_paths: Arg0DispatchPaths) -> anyhow::Result<()> {
     } = thread_manager
         .start_thread(config)
         .await
-        .context("start MidnightCoder thread")?;
+        .context("start SolaiAgent thread")?;
 
     let thread_id_string = thread_id.to_string();
     let turn_output = run_turn(&thread, &thread_id_string, prompt).await;
@@ -153,19 +153,19 @@ async fn run_main(arg0_paths: Arg0DispatchPaths) -> anyhow::Result<()> {
     let _ = thread_manager.remove_thread(&thread_id).await;
 
     turn_output?;
-    shutdown_result.context("shut down MidnightCoder thread")?;
+    shutdown_result.context("shut down SolaiAgent thread")?;
 
     Ok(())
 }
 
 fn new_config(model: Option<String>, arg0_paths: Arg0DispatchPaths) -> anyhow::Result<Config> {
-    let codex_home = find_codex_home().context("find MidnightCoder home")?;
+    let codex_home = find_codex_home().context("find SolaiAgent home")?;
     let cwd = AbsolutePathBuf::current_dir().context("resolve current directory")?;
     let model_provider_id = OPENAI_PROVIDER_ID.to_string();
     let model_providers = built_in_model_providers(/*openai_base_url*/ None);
     let model_provider = model_providers
         .get(&model_provider_id)
-        .context("MidnightCoder model provider should be available")?
+        .context("SolaiAgent model provider should be available")?
         .clone();
 
     let mut config = Config {
@@ -305,7 +305,7 @@ fn new_config(model: Option<String>, arg0_paths: Arg0DispatchPaths) -> anyhow::R
 }
 
 async fn run_turn(
-    thread: &MidnightCoderThread,
+    thread: &SolaiAgentThread,
     thread_id: &str,
     prompt: String,
 ) -> anyhow::Result<()> {
@@ -329,7 +329,7 @@ async fn run_turn(
         let event = thread
             .next_event()
             .await
-            .context("read MidnightCoder event")?;
+            .context("read SolaiAgent event")?;
         let notification = match &event.msg {
             EventMsg::TurnStarted(event) => {
                 current_turn_id = Some(event.turn_id.clone());

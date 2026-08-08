@@ -17,7 +17,7 @@ use core_test_support::responses::ev_response_created;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestMidnightCoder;
+use core_test_support::test_codex::TestSolaiAgent;
 use core_test_support::test_codex::local_selections;
 use core_test_support::test_codex::test_codex;
 use core_test_support::test_codex::turn_permission_fields;
@@ -91,7 +91,7 @@ async fn copy_paste_local_image_persists_rollout_request_shape() -> anyhow::Resu
 
     let server = start_mock_server().await;
 
-    let TestMidnightCoder {
+    let TestSolaiAgent {
         codex,
         cwd,
         session_configured,
@@ -192,7 +192,7 @@ async fn drag_drop_image_persists_rollout_request_shape() -> anyhow::Result<()> 
 
     let server = start_mock_server().await;
 
-    let TestMidnightCoder {
+    let TestSolaiAgent {
         codex,
         cwd,
         session_configured,

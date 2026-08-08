@@ -3,8 +3,8 @@ source: tui/src/keymap_setup.rs
 expression: rendered
 ---
 Keypress Inspector
-Press any key to see what MidnightCoder receives. Esc is inspected; Ctrl+C closes.
-Tip: MidnightCoder can only inspect keys your terminal sends.
+Press any key to see what SolaiAgent receives. Esc is inspected; Ctrl+C closes.
+Tip: SolaiAgent can only inspect keys your terminal sends.
 
 Detected: ctrl + o
 Config key: ctrl-o

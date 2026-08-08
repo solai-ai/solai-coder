@@ -7,7 +7,7 @@ use codex_config::types::ToolSuggestDiscoverable;
 use codex_config::types::ToolSuggestDiscoverableType;
 use codex_core::config::Config;
 use codex_features::Feature;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_models_manager::bundled_models_response;
 use codex_protocol::approvals::ElicitationAction;
 use codex_protocol::approvals::ElicitationRequest;
@@ -31,7 +31,7 @@ use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestMidnightCoder;
+use core_test_support::test_codex::TestSolaiAgent;
 use core_test_support::test_codex::test_codex;
 use core_test_support::test_codex::turn_permission_fields;
 use core_test_support::wait_for_event;
@@ -132,9 +132,9 @@ fn assert_legacy_tools(body: &Value) {
 async fn build_test(
     server: &wiremock::MockServer,
     apps_server: &AppsTestServer,
-) -> Result<TestMidnightCoder> {
+) -> Result<TestSolaiAgent> {
     let mut builder = test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config({
             let apps_base_url = apps_server.chatgpt_base_url.clone();
             move |config| configure_apps_without_search_tool(config, apps_base_url.as_str())
@@ -143,7 +143,7 @@ async fn build_test(
 }
 
 async fn start_install_turn(
-    test: &TestMidnightCoder,
+    test: &TestSolaiAgent,
     prompt: &str,
 ) -> Result<ElicitationRequestEvent> {
     let (sandbox_policy, permission_profile) =
@@ -182,7 +182,7 @@ async fn start_install_turn(
 }
 
 async fn resolve_install_elicitation(
-    test: &TestMidnightCoder,
+    test: &TestSolaiAgent,
     elicitation: ElicitationRequestEvent,
     decision: ElicitationAction,
 ) -> Result<()> {
@@ -663,7 +663,7 @@ async fn endpoint_mode_with_no_eligible_candidates_exposes_no_suggestion_tools()
     )
     .await;
     let mut builder = test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config({
             let apps_base_url = apps_server.chatgpt_base_url.clone();
             move |config| {

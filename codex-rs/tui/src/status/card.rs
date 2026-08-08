@@ -710,7 +710,7 @@ impl HistoryCell for StatusHistoryCell {
         let mut lines: Vec<Line<'static>> = Vec::new();
         lines.push(Line::from(vec![
             Span::from(format!("{}>_ ", FieldFormatter::INDENT)).dim(),
-            Span::from("MidnightCoder").bold(),
+            Span::from("SolaiAgent").bold(),
             Span::from(" ").dim(),
             Span::from(format!("(v{CODEX_CLI_VERSION})")).dim(),
         ]));
@@ -791,7 +791,7 @@ impl HistoryCell for StatusHistoryCell {
             RtOptions::new(available_inner_width),
         );
         lines.push(Line::from(Vec::<Span<'static>>::new()));
-        // The ChatGPT usage page only applies to providers backed by MidnightCoder auth;
+        // The ChatGPT usage page only applies to providers backed by SolaiAgent auth;
         // providers like Bedrock manage limits and billing elsewhere.
         if self.show_chatgpt_usage_link {
             lines.extend(note_lines);

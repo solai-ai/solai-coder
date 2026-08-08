@@ -84,7 +84,7 @@ pub(crate) struct SessionConfiguration {
     /// Thread-scoped runtime workspace roots for materializing symbolic
     /// workspace permissions at session runtime.
     pub(super) workspace_roots: Vec<AbsolutePathBuf>,
-    /// Directory containing all MidnightCoder state for this session.
+    /// Directory containing all SolaiAgent state for this session.
     pub(super) codex_home: AbsolutePathBuf,
     /// Optional user-facing name for the thread, updated during the session.
     pub(super) thread_name: Option<String>,
@@ -793,9 +793,9 @@ impl Session {
                 post_session_configured_events.push(event);
             }
             let auth = auth.as_ref();
-            let auth_mode = auth.map(MidnightCoderAuth::auth_mode).map(TelemetryAuthMode::from);
-            let account_id = auth.and_then(MidnightCoderAuth::get_account_id);
-            let account_email = auth.and_then(MidnightCoderAuth::get_account_email);
+            let auth_mode = auth.map(SolaiAgentAuth::auth_mode).map(TelemetryAuthMode::from);
+            let account_id = auth.and_then(SolaiAgentAuth::get_account_id);
+            let account_email = auth.and_then(SolaiAgentAuth::get_account_email);
             let originator = session_configuration.originator.clone();
             let terminal_type = user_agent();
             let session_model = session_configuration.collaboration_mode.model().to_string();

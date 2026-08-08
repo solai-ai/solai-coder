@@ -5,7 +5,7 @@
 
 `codex-app-server-daemon` backs the machine-readable `codex app-server`
 lifecycle commands used by remote clients such as the desktop and mobile apps.
-It is intended for Midnight Coder instances launched over SSH, including fresh developer
+It is intended for SOLAI Agent instances launched over SSH, including fresh developer
 machines that should expose app-server with `remote_control` enabled.
 
 ## Platform support
@@ -46,7 +46,7 @@ pidfile-backed detached process, and launches a detached updater loop.
 
 ## Installation and update cases
 
-The daemon assumes Midnight Coder is installed through `install.sh` and always launches
+The daemon assumes SOLAI Agent is installed through `install.sh` and always launches
 the standalone managed binary under `CODEX_HOME`.
 
 | Situation | What starts | Does this daemon fetch new binaries? | Does a running app-server eventually move to a newer binary on its own? |

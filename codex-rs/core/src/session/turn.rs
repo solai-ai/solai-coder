@@ -37,8 +37,8 @@ use crate::mentions::collect_explicit_app_ids;
 use crate::mentions::collect_explicit_plugin_mentions;
 use crate::mentions::collect_tool_mentions_from_messages;
 use crate::plugins::build_plugin_injections;
-use crate::responses_metadata::MidnightCoderResponsesMetadata;
-use crate::responses_metadata::MidnightCoderResponsesRequestKind;
+use crate::responses_metadata::SolaiAgentResponsesMetadata;
+use crate::responses_metadata::SolaiAgentResponsesRequestKind;
 use crate::responses_retry::ResponsesStreamRequest;
 use crate::responses_retry::handle_retryable_response_stream_error;
 use crate::session::PreviousTurnSettings;
@@ -86,8 +86,8 @@ use codex_git_utils::get_git_repo_root_with_fs;
 use codex_protocol::config_types::AutoCompactTokenLimitScope;
 use codex_protocol::config_types::ModeKind;
 use codex_protocol::config_types::ServiceTier;
-use codex_protocol::error::MidnightCoderErr;
-use codex_protocol::error::Result as MidnightCoderResult;
+use codex_protocol::error::SolaiAgentErr;
+use codex_protocol::error::Result as SolaiAgentResult;
 use codex_protocol::items::PlanItem;
 use codex_protocol::items::TurnItem;
 use codex_protocol::items::build_hook_prompt_message;
@@ -100,7 +100,7 @@ use codex_protocol::protocol::AgentMessageContentDeltaEvent;
 use codex_protocol::protocol::AgentReasoningSectionBreakEvent;
 use codex_protocol::protocol::ErrorEvent;
 use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::MidnightCoderErrorInfo;
+use codex_protocol::protocol::SolaiAgentErrorInfo;
 use codex_protocol::protocol::PlanDeltaEvent;
 use codex_protocol::protocol::ReasoningContentDeltaEvent;
 use codex_protocol::protocol::ReasoningRawContentDeltaEvent;
@@ -149,7 +149,7 @@ pub(crate) async fn run_turn(
     input: Vec<TurnInput>,
     prewarmed_client_session: Option<ModelClientSession>,
     cancellation_token: CancellationToken,
-) -> MidnightCoderResult<Option<String>> {
+) -> SolaiAgentResult<Option<String>> {
     let mut client_session =
         prewarmed_client_session.unwrap_or_else(|| sess.services.model_client.new_session());
     // TODO(ccunningham): Pre-turn compaction runs before context updates and the
@@ -157,7 +157,7 @@ pub(crate) async fn run_turn(
     // diffs/full reinjection + user input) and trigger compaction preemptively
     // when they would push the thread over the compaction threshold.
     if let Err(err) = run_pre_sampling_compact(&sess, &turn_context, &mut client_session).await {
-        if matches!(err, MidnightCoderErr::TurnAborted) {
+        if matches!(err, SolaiAgentErr::TurnAborted) {
             return Err(err);
         }
         let error = err.to_codex_protocol_error();
@@ -252,7 +252,7 @@ pub(crate) async fn run_turn(
             Some(step_context) => step_context,
             None => sess.capture_step_context(Arc::clone(&turn_context)).await,
         };
-        let sampling_request_result: MidnightCoderResult<_> = async {
+        let sampling_request_result: SolaiAgentResult<_> = async {
             super::time_reminder::maybe_record_current_time_reminder(
                 sess.as_ref(),
                 turn_context.as_ref(),
@@ -282,7 +282,7 @@ pub(crate) async fn run_turn(
             let responses_metadata = turn_context.turn_metadata_state.to_responses_metadata(
                 sess.installation_id.clone(),
                 window_id,
-                MidnightCoderResponsesRequestKind::Turn,
+                SolaiAgentResponsesRequestKind::Turn,
             );
             run_sampling_request(
                 Arc::clone(&sess),
@@ -359,7 +359,7 @@ pub(crate) async fn run_turn(
                     )
                     .await
                     {
-                        if matches!(err, MidnightCoderErr::TurnAborted) {
+                        if matches!(err, SolaiAgentErr::TurnAborted) {
                             return Err(err);
                         }
                         let error = err.to_codex_protocol_error();
@@ -418,10 +418,10 @@ pub(crate) async fn run_turn(
                 }
                 continue;
             }
-            Err(err @ MidnightCoderErr::TurnAborted) => {
+            Err(err @ SolaiAgentErr::TurnAborted) => {
                 return Err(err);
             }
-            Err(codex_error @ MidnightCoderErr::InvalidImageRequest()) => {
+            Err(codex_error @ SolaiAgentErr::InvalidImageRequest()) => {
                 {
                     let mut state = sess.state.lock().await;
                     error_or_panic(
@@ -433,7 +433,7 @@ pub(crate) async fn run_turn(
                 }
 
                 sess.track_turn_codex_error(turn_context.as_ref(), &codex_error);
-                let error = MidnightCoderErrorInfo::BadRequest;
+                let error = SolaiAgentErrorInfo::BadRequest;
                 sess.emit_turn_error_lifecycle(turn_context.as_ref(), error.clone())
                     .await;
                 let event = EventMsg::Error(ErrorEvent {
@@ -801,7 +801,7 @@ async fn run_pre_sampling_compact(
     sess: &Arc<Session>,
     turn_context: &Arc<TurnContext>,
     client_session: &mut ModelClientSession,
-) -> MidnightCoderResult<()> {
+) -> SolaiAgentResult<()> {
     maybe_run_previous_model_inline_compact(sess, turn_context, client_session).await?;
     let token_status =
         super::context_window::context_window_token_status(sess.as_ref(), turn_context.as_ref())
@@ -839,7 +839,7 @@ async fn maybe_run_previous_model_inline_compact(
     sess: &Arc<Session>,
     turn_context: &Arc<TurnContext>,
     client_session: &mut ModelClientSession,
-) -> MidnightCoderResult<()> {
+) -> SolaiAgentResult<()> {
     let Some(previous_turn_settings) = sess.previous_turn_settings().await else {
         return Ok(());
     };
@@ -925,7 +925,7 @@ async fn run_auto_compact(
     initial_context_injection: InitialContextInjection,
     reason: CompactionReason,
     phase: CompactionPhase,
-) -> MidnightCoderResult<()> {
+) -> SolaiAgentResult<()> {
     let turn_context = &step_context.turn;
     if turn_context.config.features.enabled(Feature::TokenBudget) {
         // Compaction is the reset request, so force a new context window
@@ -1086,10 +1086,10 @@ async fn run_sampling_request(
     turn_store: Arc<codex_extension_api::ExtensionData>,
     turn_diff_tracker: SharedTurnDiffTracker,
     client_session: &mut ModelClientSession,
-    responses_metadata: &MidnightCoderResponsesMetadata,
+    responses_metadata: &SolaiAgentResponsesMetadata,
     input: Vec<ResponseItem>,
     cancellation_token: CancellationToken,
-) -> MidnightCoderResult<(SamplingRequestResult, Vec<ResponseItem>)> {
+) -> SolaiAgentResult<(SamplingRequestResult, Vec<ResponseItem>)> {
     let turn_context = Arc::clone(&step_context.turn);
     let router = built_tools(sess.as_ref(), step_context.as_ref(), &cancellation_token).await?;
 
@@ -1141,16 +1141,16 @@ async fn run_sampling_request(
             Ok(output) => {
                 return Ok((output, original_input.unwrap_or(prompt.input)));
             }
-            Err(MidnightCoderErr::ContextWindowExceeded) => {
+            Err(SolaiAgentErr::ContextWindowExceeded) => {
                 sess.set_total_tokens_full(&turn_context).await;
-                return Err(MidnightCoderErr::ContextWindowExceeded);
+                return Err(SolaiAgentErr::ContextWindowExceeded);
             }
-            Err(MidnightCoderErr::UsageLimitReached(e)) => {
+            Err(SolaiAgentErr::UsageLimitReached(e)) => {
                 let rate_limits = e.rate_limits.clone();
                 if let Some(rate_limits) = rate_limits {
                     sess.update_rate_limits(&turn_context, *rate_limits).await;
                 }
-                return Err(MidnightCoderErr::UsageLimitReached(e));
+                return Err(SolaiAgentErr::UsageLimitReached(e));
             }
             Err(err) => err,
         };
@@ -1189,7 +1189,7 @@ pub(crate) async fn built_tools(
     sess: &Session,
     step_context: &StepContext,
     cancellation_token: &CancellationToken,
-) -> MidnightCoderResult<Arc<ToolRouter>> {
+) -> SolaiAgentResult<Arc<ToolRouter>> {
     let turn_context = step_context.turn.as_ref();
     let mcp_connection_manager = step_context.mcp.manager();
     let has_mcp_servers = mcp_connection_manager.has_servers();
@@ -1862,10 +1862,10 @@ async fn handle_assistant_item_done_in_plan_mode(
 
 #[instrument(level = "trace", skip_all)]
 async fn drain_in_flight(
-    in_flight: &mut FuturesOrdered<BoxFuture<'static, MidnightCoderResult<ResponseInputItem>>>,
+    in_flight: &mut FuturesOrdered<BoxFuture<'static, SolaiAgentResult<ResponseInputItem>>>,
     sess: Arc<Session>,
     turn_context: Arc<TurnContext>,
-) -> MidnightCoderResult<()> {
+) -> SolaiAgentResult<()> {
     while let Some(res) = in_flight.next().await {
         match res {
             Ok(response_input) => {
@@ -1901,11 +1901,11 @@ async fn try_run_sampling_request(
     turn_context: Arc<TurnContext>,
     turn_store: Arc<codex_extension_api::ExtensionData>,
     client_session: &mut ModelClientSession,
-    responses_metadata: &MidnightCoderResponsesMetadata,
+    responses_metadata: &SolaiAgentResponsesMetadata,
     turn_diff_tracker: SharedTurnDiffTracker,
     prompt: &Prompt,
     cancellation_token: CancellationToken,
-) -> MidnightCoderResult<SamplingRequestResult> {
+) -> SolaiAgentResult<SamplingRequestResult> {
     feedback_tags!(
         model = turn_context.model_info.slug.clone(),
         approval_policy = turn_context.approval_policy.value(),
@@ -1940,7 +1940,7 @@ async fn try_run_sampling_request(
         .instrument(trace_span!("stream_request"))
         .or_cancel(&cancellation_token)
         .await??;
-    let mut in_flight: FuturesOrdered<BoxFuture<'static, MidnightCoderResult<ResponseInputItem>>> =
+    let mut in_flight: FuturesOrdered<BoxFuture<'static, SolaiAgentResult<ResponseInputItem>>> =
         FuturesOrdered::new();
     let mut needs_follow_up = false;
     let mut last_agent_message: Option<String> = None;
@@ -1959,7 +1959,7 @@ async fn try_run_sampling_request(
         !sess.services.extensions.turn_item_contributors().is_empty();
     let mut active_item_is_streaming_to_client = false;
     let receiving_span = trace_span!("receiving_stream");
-    let outcome: MidnightCoderResult<SamplingRequestResult> = loop {
+    let outcome: SolaiAgentResult<SamplingRequestResult> = loop {
         let handle_responses = trace_span!(
             parent: &receiving_span,
             "handle_responses",
@@ -1982,7 +1982,7 @@ async fn try_run_sampling_request(
         {
             Ok(event) => event,
             Err(codex_async_utils::CancelErr::Cancelled) => {
-                break Err(MidnightCoderErr::TurnAborted);
+                break Err(SolaiAgentErr::TurnAborted);
             }
         };
 
@@ -1990,7 +1990,7 @@ async fn try_run_sampling_request(
             Some(Ok(event)) => event,
             Some(Err(err)) => break Err(err),
             None => {
-                break Err(MidnightCoderErr::Stream(
+                break Err(SolaiAgentErr::Stream(
                     "stream closed before response.completed".into(),
                     None,
                 ));
@@ -2396,7 +2396,7 @@ async fn try_run_sampling_request(
     }
 
     if cancellation_token.is_cancelled() {
-        return Err(MidnightCoderErr::TurnAborted);
+        return Err(SolaiAgentErr::TurnAborted);
     }
 
     if should_emit_turn_diff {

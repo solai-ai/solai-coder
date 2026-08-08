@@ -70,7 +70,7 @@ const REMOTE_LOADING_TAB_ID_PREFIX: &str = "remote-loading:";
 const REMOTE_EMPTY_TAB_ID_PREFIX: &str = "remote-empty:";
 const REMOTE_ERROR_TAB_ID_PREFIX: &str = "remote-error:";
 const OPENAI_CURATED_LOADING_DESCRIPTION: &str =
-    "This updates when MidnightCoder Curated plugins finish loading.";
+    "This updates when SolaiAgent Curated plugins finish loading.";
 const WORKSPACE_SECTION_TAB_ORDER: u8 = 0;
 const SHARED_WITH_ME_SECTION_TAB_ORDER: u8 = 1;
 const SHARED_WITH_ME_LINK_SECTION_TAB_ORDER: u8 = 2;
@@ -129,7 +129,7 @@ impl MarketplaceProduct {
 
     fn label(self) -> Option<&'static str> {
         match self {
-            Self::OpenAiCurated => Some("MidnightCoder Curated"),
+            Self::OpenAiCurated => Some("SolaiAgent Curated"),
             Self::Workspace => Some("Workspace"),
             Self::SharedWithMe => Some("Shared with me"),
             Self::SharedWithMeLink => Some("Shared with me (link)"),
@@ -391,7 +391,7 @@ impl ChatWidget {
             format!("Remove {marketplace_display_name} marketplace?").dim(),
         ));
         header.push(Line::from(
-            "This removes the configured marketplace from MidnightCoder.".dim(),
+            "This removes the configured marketplace from SolaiAgent.".dim(),
         ));
 
         let cwd_for_remove = self.config.cwd.to_path_buf();
@@ -815,20 +815,20 @@ impl ChatWidget {
         let (curated_empty_name, curated_empty_description) =
             if curated_loading && !curated_has_entries {
                 (
-                    "Loading MidnightCoder Curated plugins...",
+                    "Loading SolaiAgent Curated plugins...",
                     OPENAI_CURATED_LOADING_DESCRIPTION,
                 )
             } else if let Some(section_error) = by_openai_section_error
                 && !curated_has_entries
             {
                 (
-                    "MidnightCoder Curated unavailable",
+                    "SolaiAgent Curated unavailable",
                     section_error.message.as_str(),
                 )
             } else {
                 (
-                    "No MidnightCoder Curated plugins available",
-                    "No MidnightCoder Curated plugins available.",
+                    "No SolaiAgent Curated plugins available",
+                    "No SolaiAgent Curated plugins available.",
                 )
             };
         let mut curated_items = self.plugin_selection_items(
@@ -840,7 +840,7 @@ impl ChatWidget {
         );
         if curated_loading && curated_has_entries {
             curated_items.push(remote_section_loading_item(
-                "MidnightCoder Curated",
+                "SolaiAgent Curated",
                 OPENAI_CURATED_LOADING_DESCRIPTION,
             ));
         }
@@ -854,10 +854,10 @@ impl ChatWidget {
         }
         tabs.push(SelectionTab {
             id: OPENAI_CURATED_TAB_ID.to_string(),
-            label: "MidnightCoder Curated".to_string(),
+            label: "SolaiAgent Curated".to_string(),
             header: plugins_header(
-                "MidnightCoder Curated marketplace.".to_string(),
-                format!("Installed {curated_installed} of {curated_total} MidnightCoder Curated plugins."),
+                "SolaiAgent Curated marketplace.".to_string(),
+                format!("Installed {curated_installed} of {curated_total} SolaiAgent Curated plugins."),
             ),
             items: curated_items,
         });

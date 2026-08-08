@@ -9,7 +9,7 @@ from typing import AsyncIterator, Callable, ParamSpec, TypeVar
 from pydantic import BaseModel
 
 from ._goal import _GoalOperationState
-from .client import MidnightCoderClient, MidnightCoderConfig
+from .client import SolaiAgentClient, SolaiAgentConfig
 from .generated.v2_all import (
     AccountLoginCompletedNotification,
     AgentMessageDeltaNotification,
@@ -49,20 +49,20 @@ ParamsT = ParamSpec("ParamsT")
 ReturnT = TypeVar("ReturnT")
 
 
-class AsyncMidnightCoderClient:
-    """Async wrapper around MidnightCoderClient using thread offloading."""
+class AsyncSolaiAgentClient:
+    """Async wrapper around SolaiAgentClient using thread offloading."""
 
-    def __init__(self, config: MidnightCoderConfig | None = None) -> None:
+    def __init__(self, config: SolaiAgentConfig | None = None) -> None:
         """Create the wrapped sync client that owns the transport process."""
-        self._sync = MidnightCoderClient(config=config)
+        self._sync = SolaiAgentClient(config=config)
 
-    async def __aenter__(self) -> "AsyncMidnightCoderClient":
-        """Start the MidnightCoder process when entering an async context."""
+    async def __aenter__(self) -> "AsyncSolaiAgentClient":
+        """Start the SolaiAgent process when entering an async context."""
         await self.start()
         return self
 
     async def __aexit__(self, _exc_type, _exc, _tb) -> None:
-        """Close the MidnightCoder process when leaving an async context."""
+        """Close the SolaiAgent process when leaving an async context."""
         await self.close()
 
     async def _call_sync(
@@ -94,7 +94,7 @@ class AsyncMidnightCoderClient:
         await self._call_sync(self._sync.close)
 
     async def initialize(self) -> InitializeResponse:
-        """Initialize the MidnightCoder session."""
+        """Initialize the SolaiAgent session."""
         return await self._call_sync(self._sync.initialize)
 
     def register_turn_notifications(self, turn_id: str) -> None:

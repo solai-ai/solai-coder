@@ -3,7 +3,7 @@ use codex_protocol::config_types::ApprovalsReviewer as CoreApprovalsReviewer;
 use codex_protocol::config_types::SandboxMode as CoreSandboxMode;
 use codex_protocol::protocol::AskForApproval as CoreAskForApproval;
 use codex_protocol::protocol::GranularApprovalConfig as CoreGranularApprovalConfig;
-use codex_protocol::protocol::MidnightCoderErrorInfo as CoreMidnightCoderErrorInfo;
+use codex_protocol::protocol::SolaiAgentErrorInfo as CoreSolaiAgentErrorInfo;
 use codex_protocol::protocol::NonSteerableTurnKind as CoreNonSteerableTurnKind;
 use schemars::JsonSchema;
 use schemars::r#gen::SchemaGenerator;
@@ -68,7 +68,7 @@ pub enum NonSteerableTurnKind {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, JsonSchema, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export_to = "v2/")]
-pub enum MidnightCoderErrorInfo {
+pub enum SolaiAgentErrorInfo {
     ContextWindowExceeded,
     SessionBudgetExceeded,
     UsageLimitExceeded,
@@ -112,49 +112,49 @@ pub enum MidnightCoderErrorInfo {
     Other,
 }
 
-impl From<CoreMidnightCoderErrorInfo> for MidnightCoderErrorInfo {
-    fn from(value: CoreMidnightCoderErrorInfo) -> Self {
+impl From<CoreSolaiAgentErrorInfo> for SolaiAgentErrorInfo {
+    fn from(value: CoreSolaiAgentErrorInfo) -> Self {
         match value {
-            CoreMidnightCoderErrorInfo::ContextWindowExceeded => {
-                MidnightCoderErrorInfo::ContextWindowExceeded
+            CoreSolaiAgentErrorInfo::ContextWindowExceeded => {
+                SolaiAgentErrorInfo::ContextWindowExceeded
             }
-            CoreMidnightCoderErrorInfo::SessionBudgetExceeded => {
-                MidnightCoderErrorInfo::SessionBudgetExceeded
+            CoreSolaiAgentErrorInfo::SessionBudgetExceeded => {
+                SolaiAgentErrorInfo::SessionBudgetExceeded
             }
-            CoreMidnightCoderErrorInfo::UsageLimitExceeded => {
-                MidnightCoderErrorInfo::UsageLimitExceeded
+            CoreSolaiAgentErrorInfo::UsageLimitExceeded => {
+                SolaiAgentErrorInfo::UsageLimitExceeded
             }
-            CoreMidnightCoderErrorInfo::ServerOverloaded => {
-                MidnightCoderErrorInfo::ServerOverloaded
+            CoreSolaiAgentErrorInfo::ServerOverloaded => {
+                SolaiAgentErrorInfo::ServerOverloaded
             }
-            CoreMidnightCoderErrorInfo::CyberPolicy => MidnightCoderErrorInfo::CyberPolicy,
-            CoreMidnightCoderErrorInfo::HttpConnectionFailed { http_status_code } => {
-                MidnightCoderErrorInfo::HttpConnectionFailed { http_status_code }
+            CoreSolaiAgentErrorInfo::CyberPolicy => SolaiAgentErrorInfo::CyberPolicy,
+            CoreSolaiAgentErrorInfo::HttpConnectionFailed { http_status_code } => {
+                SolaiAgentErrorInfo::HttpConnectionFailed { http_status_code }
             }
-            CoreMidnightCoderErrorInfo::ResponseStreamConnectionFailed { http_status_code } => {
-                MidnightCoderErrorInfo::ResponseStreamConnectionFailed { http_status_code }
+            CoreSolaiAgentErrorInfo::ResponseStreamConnectionFailed { http_status_code } => {
+                SolaiAgentErrorInfo::ResponseStreamConnectionFailed { http_status_code }
             }
-            CoreMidnightCoderErrorInfo::InternalServerError => {
-                MidnightCoderErrorInfo::InternalServerError
+            CoreSolaiAgentErrorInfo::InternalServerError => {
+                SolaiAgentErrorInfo::InternalServerError
             }
-            CoreMidnightCoderErrorInfo::Unauthorized => MidnightCoderErrorInfo::Unauthorized,
-            CoreMidnightCoderErrorInfo::BadRequest => MidnightCoderErrorInfo::BadRequest,
-            CoreMidnightCoderErrorInfo::ThreadRollbackFailed => {
-                MidnightCoderErrorInfo::ThreadRollbackFailed
+            CoreSolaiAgentErrorInfo::Unauthorized => SolaiAgentErrorInfo::Unauthorized,
+            CoreSolaiAgentErrorInfo::BadRequest => SolaiAgentErrorInfo::BadRequest,
+            CoreSolaiAgentErrorInfo::ThreadRollbackFailed => {
+                SolaiAgentErrorInfo::ThreadRollbackFailed
             }
-            CoreMidnightCoderErrorInfo::SandboxError => MidnightCoderErrorInfo::SandboxError,
-            CoreMidnightCoderErrorInfo::ResponseStreamDisconnected { http_status_code } => {
-                MidnightCoderErrorInfo::ResponseStreamDisconnected { http_status_code }
+            CoreSolaiAgentErrorInfo::SandboxError => SolaiAgentErrorInfo::SandboxError,
+            CoreSolaiAgentErrorInfo::ResponseStreamDisconnected { http_status_code } => {
+                SolaiAgentErrorInfo::ResponseStreamDisconnected { http_status_code }
             }
-            CoreMidnightCoderErrorInfo::ResponseTooManyFailedAttempts { http_status_code } => {
-                MidnightCoderErrorInfo::ResponseTooManyFailedAttempts { http_status_code }
+            CoreSolaiAgentErrorInfo::ResponseTooManyFailedAttempts { http_status_code } => {
+                SolaiAgentErrorInfo::ResponseTooManyFailedAttempts { http_status_code }
             }
-            CoreMidnightCoderErrorInfo::ActiveTurnNotSteerable { turn_kind } => {
-                MidnightCoderErrorInfo::ActiveTurnNotSteerable {
+            CoreSolaiAgentErrorInfo::ActiveTurnNotSteerable { turn_kind } => {
+                SolaiAgentErrorInfo::ActiveTurnNotSteerable {
                     turn_kind: turn_kind.into(),
                 }
             }
-            CoreMidnightCoderErrorInfo::Other => MidnightCoderErrorInfo::Other,
+            CoreSolaiAgentErrorInfo::Other => SolaiAgentErrorInfo::Other,
         }
     }
 }

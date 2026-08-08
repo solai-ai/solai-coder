@@ -1573,7 +1573,7 @@ mod tests {
     use codex_protocol::protocol::ItemStartedEvent;
     use codex_protocol::protocol::McpInvocation;
     use codex_protocol::protocol::McpToolCallEndEvent;
-    use codex_protocol::protocol::MidnightCoderErrorInfo;
+    use codex_protocol::protocol::SolaiAgentErrorInfo;
     use codex_protocol::protocol::PatchApplyBeginEvent;
     use codex_protocol::protocol::ThreadRolledBackEvent;
     use codex_protocol::protocol::TurnAbortReason;
@@ -3642,7 +3642,7 @@ mod tests {
             }),
             EventMsg::Error(ErrorEvent {
                 message: "rollback failed".into(),
-                codex_error_info: Some(MidnightCoderErrorInfo::ThreadRollbackFailed),
+                codex_error_info: Some(SolaiAgentErrorInfo::ThreadRollbackFailed),
             }),
         ];
 
@@ -3683,7 +3683,7 @@ mod tests {
             }),
             EventMsg::Error(ErrorEvent {
                 message: "request-level failure".into(),
-                codex_error_info: Some(MidnightCoderErrorInfo::BadRequest),
+                codex_error_info: Some(SolaiAgentErrorInfo::BadRequest),
             }),
         ];
 
@@ -3735,7 +3735,7 @@ mod tests {
             }),
             EventMsg::Error(ErrorEvent {
                 message: "stream failure".into(),
-                codex_error_info: Some(MidnightCoderErrorInfo::ResponseStreamDisconnected {
+                codex_error_info: Some(SolaiAgentErrorInfo::ResponseStreamDisconnected {
                     http_status_code: Some(502),
                 }),
             }),
@@ -3761,7 +3761,7 @@ mod tests {
             Some(TurnError {
                 message: "stream failure".into(),
                 codex_error_info: Some(
-                    crate::protocol::v2::MidnightCoderErrorInfo::ResponseStreamDisconnected {
+                    crate::protocol::v2::SolaiAgentErrorInfo::ResponseStreamDisconnected {
                         http_status_code: Some(502),
                     }
                 ),

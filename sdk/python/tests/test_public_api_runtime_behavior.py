@@ -9,8 +9,8 @@ import pytest
 import openai_codex.api as public_api_module
 from openai_codex.api import (
     ApprovalMode,
-    AsyncMidnightCoder,
-    MidnightCoder,
+    AsyncSolaiAgent,
+    SolaiAgent,
     Sandbox,
 )
 from openai_codex.generated.v2_all import TurnStartParams
@@ -52,17 +52,17 @@ def test_codex_init_failure_closes_client(monkeypatch: pytest.MonkeyPatch) -> No
             self._closed = True
             closed.append(True)
 
-    monkeypatch.setattr(public_api_module, "MidnightCoderClient", FakeClient)
+    monkeypatch.setattr(public_api_module, "SolaiAgentClient", FakeClient)
 
     with pytest.raises(RuntimeError, match="missing required metadata"):
-        MidnightCoder()
+        SolaiAgent()
 
     assert closed == [True]
 
 
 def test_async_codex_init_failure_closes_client() -> None:
     async def scenario() -> None:
-        codex = AsyncMidnightCoder()
+        codex = AsyncSolaiAgent()
         close_calls = 0
 
         async def fake_start() -> None:
@@ -91,7 +91,7 @@ def test_async_codex_init_failure_closes_client() -> None:
 
 def test_async_codex_initializes_only_once_under_concurrency() -> None:
     async def scenario() -> None:
-        codex = AsyncMidnightCoder()
+        codex = AsyncSolaiAgent()
         start_calls = 0
         initialize_calls = 0
         ready = asyncio.Event()

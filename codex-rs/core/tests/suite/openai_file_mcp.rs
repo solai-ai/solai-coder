@@ -28,7 +28,7 @@ use core_test_support::responses::namespace_child_tool;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_wine_exec;
-use core_test_support::test_codex::TestMidnightCoder;
+use core_test_support::test_codex::TestSolaiAgent;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
 use serde_json::json;
@@ -139,7 +139,7 @@ async fn mount_file_upload_mocks(server: &MockServer, file_size_bytes: u64) {
         .await;
 }
 
-async fn run_extract_turn(test: &TestMidnightCoder, server: &MockServer) -> Result<ResponseMock> {
+async fn run_extract_turn(test: &TestSolaiAgent, server: &MockServer) -> Result<ResponseMock> {
     let mock = mount_sse_sequence(
         server,
         vec![

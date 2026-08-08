@@ -19,7 +19,7 @@ use core_test_support::responses::mount_sse_once_match;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestMidnightCoder;
+use core_test_support::test_codex::TestSolaiAgent;
 use core_test_support::test_codex::local_selections;
 use core_test_support::test_codex::test_codex;
 use core_test_support::test_codex::turn_permission_fields;
@@ -140,7 +140,7 @@ async fn responses_api_parent_and_subagent_requests_include_identity_headers() -
     Ok(())
 }
 
-async fn submit_turn_with_timeout(test: &TestMidnightCoder, prompt: &str) -> Result<()> {
+async fn submit_turn_with_timeout(test: &TestSolaiAgent, prompt: &str) -> Result<()> {
     let session_model = test.session_configured.model.clone();
     let cwd = test.config.cwd.clone();
     let (sandbox_policy, permission_profile) =
@@ -213,7 +213,7 @@ where
 }
 
 async fn wait_for_event_result<F>(
-    test: &TestMidnightCoder,
+    test: &TestSolaiAgent,
     stage: &str,
     mut predicate: F,
 ) -> Result<EventMsg>

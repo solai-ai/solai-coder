@@ -77,7 +77,7 @@ mod tests {
         assert!(prompt.starts_with("## Identity, tone, and role"));
         assert!(
             prompt.contains(
-                "You are MidnightCoder, an MidnightCoder general-purpose agentic assistant"
+                "You are SolaiAgent, an SolaiAgent general-purpose agentic assistant"
             )
         );
         assert!(prompt.contains("The user's name is "));

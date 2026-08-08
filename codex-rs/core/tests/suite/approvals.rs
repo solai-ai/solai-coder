@@ -3,7 +3,7 @@
 use anyhow::Context;
 use anyhow::Result;
 use codex_config::types::ApprovalsReviewer;
-use codex_core::MidnightCoderThread;
+use codex_core::SolaiAgentThread;
 use codex_core::config::Constrained;
 use codex_core::sandboxing::SandboxPermissions;
 use codex_features::Feature;
@@ -39,7 +39,7 @@ use core_test_support::responses::mount_sse_once_match;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestMidnightCoder;
+use core_test_support::test_codex::TestSolaiAgent;
 use core_test_support::test_codex::local_selections;
 use core_test_support::test_codex::test_codex;
 use core_test_support::test_codex::turn_permission_fields;
@@ -76,7 +76,7 @@ enum TargetPath {
 }
 
 impl TargetPath {
-    fn resolve_for_patch(self, test: &TestMidnightCoder) -> (PathBuf, String) {
+    fn resolve_for_patch(self, test: &TestSolaiAgent) -> (PathBuf, String) {
         match self {
             TargetPath::Workspace(name) => {
                 let path = test.cwd.path().join(name);
@@ -153,7 +153,7 @@ impl ActionKind {
 
     async fn prepare(
         &self,
-        test: &TestMidnightCoder,
+        test: &TestSolaiAgent,
         server: &MockServer,
         call_id: &str,
         sandbox_permissions: SandboxPermissions,
@@ -290,7 +290,7 @@ impl ActionKind {
                 let _ = fs::remove_file(&path);
                 let patch = build_add_file_patch(&patch_path, content);
                 let command = shell_apply_patch_command(&patch);
-                // Bazel may need to launch the configured MidnightCoder helper binary
+                // Bazel may need to launch the configured SolaiAgent helper binary
                 // to apply the verified patch, which can exceed the normal
                 // short command timeout on slower CI runners.
                 let timeout_ms = 30_000;
@@ -412,7 +412,7 @@ enum Expectation {
 }
 
 impl Expectation {
-    fn verify(&self, test: &TestMidnightCoder, result: &CommandResult) -> Result<()> {
+    fn verify(&self, test: &TestSolaiAgent, result: &CommandResult) -> Result<()> {
         match self {
             Expectation::FileCreated { target, content } => {
                 let (path, _) = target.resolve_for_patch(test);
@@ -651,7 +651,7 @@ struct CommandResult {
 }
 
 async fn submit_turn(
-    test: &TestMidnightCoder,
+    test: &TestSolaiAgent,
     prompt: &str,
     approval_policy: AskForApproval,
     sandbox_policy: SandboxPolicy,
@@ -689,7 +689,7 @@ async fn submit_turn(
 }
 
 async fn submit_turn_preserving_active_permission_profile(
-    test: &TestMidnightCoder,
+    test: &TestSolaiAgent,
     prompt: &str,
     approval_policy: AskForApproval,
 ) -> Result<()> {
@@ -724,7 +724,7 @@ async fn submit_turn_preserving_active_permission_profile(
     Ok(())
 }
 
-fn assert_active_workspace_permission_profile(test: &TestMidnightCoder) {
+fn assert_active_workspace_permission_profile(test: &TestSolaiAgent) {
     assert_eq!(
         test.session_configured
             .active_permission_profile
@@ -775,7 +775,7 @@ fn parse_result(item: &Value) -> CommandResult {
 }
 
 async fn expect_exec_approval(
-    test: &TestMidnightCoder,
+    test: &TestSolaiAgent,
     expected_command: &str,
 ) -> ExecApprovalRequestEvent {
     let event = wait_for_event(&test.codex, |event| {
@@ -802,7 +802,7 @@ async fn expect_exec_approval(
 }
 
 async fn expect_patch_approval(
-    test: &TestMidnightCoder,
+    test: &TestSolaiAgent,
     expected_call_id: &str,
 ) -> ApplyPatchApprovalRequestEvent {
     let event = wait_for_event(&test.codex, |event| {
@@ -823,7 +823,7 @@ async fn expect_patch_approval(
     }
 }
 
-async fn wait_for_completion_without_approval(test: &TestMidnightCoder) {
+async fn wait_for_completion_without_approval(test: &TestSolaiAgent) {
     let event = wait_for_event(&test.codex, |event| {
         matches!(
             event,
@@ -841,7 +841,7 @@ async fn wait_for_completion_without_approval(test: &TestMidnightCoder) {
     }
 }
 
-async fn wait_for_completion(test: &TestMidnightCoder) {
+async fn wait_for_completion(test: &TestSolaiAgent) {
     wait_for_event(&test.codex, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
@@ -868,7 +868,7 @@ fn body_contains(req: &Request, text: &str) -> bool {
         .is_some_and(|body| body.contains(text))
 }
 
-async fn wait_for_spawned_thread(test: &TestMidnightCoder) -> Result<Arc<MidnightCoderThread>> {
+async fn wait_for_spawned_thread(test: &TestSolaiAgent) -> Result<Arc<SolaiAgentThread>> {
     let deadline = tokio::time::Instant::now() + Duration::from_secs(2);
     loop {
         let ids = test.thread_manager.list_thread_ids().await;
@@ -2889,7 +2889,7 @@ ALLOWED_PROFILES = (":workspace",)
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Print an ssh command that recreates the current MidnightCoder sandbox remotely."
+        description="Print an ssh command that recreates the current SolaiAgent sandbox remotely."
     )
     parser.add_argument("--host", required=True)
     try:
@@ -3050,7 +3050,7 @@ exec {remote_bash_exec} "$@"
             "bash",
             "-lc",
         ],
-        "remote_bash.py should use the allowlisted inherited profile and managed configuration to reconstruct the MidnightCoder sandbox"
+        "remote_bash.py should use the allowlisted inherited profile and managed configuration to reconstruct the SolaiAgent sandbox"
     );
     let command_argv = shlex::split(&sandbox_argv[8]).context("parse remote bash command")?;
     assert_eq!(

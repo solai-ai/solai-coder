@@ -24,7 +24,7 @@ use crate::tools::registry::ToolArgumentDiffConsumer;
 use crate::tools::router::ToolCall;
 use crate::tools::router::ToolCallSource;
 use crate::tools::router::ToolRouter;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::models::ResponseInputItem;
 
 #[derive(Clone)]
@@ -65,14 +65,14 @@ impl ToolCallRuntime {
         self,
         call: ToolCall,
         cancellation_token: CancellationToken,
-    ) -> impl std::future::Future<Output = Result<ResponseInputItem, MidnightCoderErr>> {
+    ) -> impl std::future::Future<Output = Result<ResponseInputItem, SolaiAgentErr>> {
         let error_call = call.clone();
         let future =
             self.handle_tool_call_with_source(call, ToolCallSource::Direct, cancellation_token);
         async move {
             match future.await {
                 Ok(response) => Ok(response.into_response()),
-                Err(FunctionCallError::Fatal(message)) => Err(MidnightCoderErr::Fatal(message)),
+                Err(FunctionCallError::Fatal(message)) => Err(SolaiAgentErr::Fatal(message)),
                 Err(other) => Ok(Self::failure_response(error_call, other)),
             }
         }

@@ -61,7 +61,7 @@ fn count_containing(texts: &[&str], target: &str) -> usize {
 }
 
 async fn submit_turn(
-    codex: &codex_core::MidnightCoderThread,
+    codex: &codex_core::SolaiAgentThread,
     prompt: &str,
     effort: Option<ReasoningEffort>,
 ) -> Result<()> {

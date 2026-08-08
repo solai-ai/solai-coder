@@ -1,6 +1,6 @@
 //! Inserts finalized history rows into terminal scrollback.
 //!
-//! MidnightCoder uses the terminal scrollback itself for finalized chat history, so inserting a history
+//! SolaiAgent uses the terminal scrollback itself for finalized chat history, so inserting a history
 //! cell is an escape-sequence operation rather than a normal ratatui render.
 
 use std::fmt;
@@ -48,7 +48,7 @@ pub enum HistoryLineWrapPolicy {
 /// Selects the terminal escape strategy used when writing history above the viewport.
 ///
 /// Raw lines intentionally remain unbroken so terminal selection copies their source faithfully.
-/// Zellij does not constrain soft-wrapped continuation rows to MidnightCoder's scroll region, so its raw
+/// Zellij does not constrain soft-wrapped continuation rows to SolaiAgent's scroll region, so its raw
 /// path appends history through the terminal and reserves blank rows for the next viewport draw.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum InsertHistoryMode {
@@ -906,7 +906,7 @@ mod tests {
         assert!(
             rows.iter()
                 .any(|row| row.trim_end() == "alpha beta gamma del"),
-            "expected terminal soft-wrap instead of MidnightCoder word pre-wrap, rows: {rows:?}"
+            "expected terminal soft-wrap instead of SolaiAgent word pre-wrap, rows: {rows:?}"
         );
     }
 

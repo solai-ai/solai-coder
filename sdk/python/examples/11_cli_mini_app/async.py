@@ -12,7 +12,7 @@ ensure_local_sdk_src()
 import asyncio
 
 from openai_codex import (
-    AsyncMidnightCoder,
+    AsyncSolaiAgent,
 )
 from openai_codex.types import (
     ThreadTokenUsageUpdatedNotification,
@@ -31,9 +31,9 @@ def _format_usage(usage: object) -> str:
 
 
 async def main() -> None:
-    print("MidnightCoder async mini CLI. Type /exit to quit.")
+    print("SolaiAgent async mini CLI. Type /exit to quit.")
 
-    async with AsyncMidnightCoder(config=runtime_config()) as codex:
+    async with AsyncSolaiAgent(config=runtime_config()) as codex:
         thread = await codex.thread_start(
             model="gpt-5.4", config={"model_reasoning_effort": "high"}
         )

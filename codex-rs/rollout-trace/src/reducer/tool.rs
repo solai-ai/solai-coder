@@ -378,14 +378,14 @@ impl TraceReducer {
             return Ok(thread_id);
         }
         let Some(codex_turn_id) = codex_turn_id else {
-            bail!("tool call start did not include thread or MidnightCoder turn context");
+            bail!("tool call start did not include thread or SolaiAgent turn context");
         };
         self.rollout
             .codex_turns
             .get(codex_turn_id)
             .map(|turn| turn.thread_id.clone())
             .with_context(|| {
-                format!("tool call start referenced unknown MidnightCoder turn {codex_turn_id}")
+                format!("tool call start referenced unknown SolaiAgent turn {codex_turn_id}")
             })
     }
 
@@ -395,11 +395,11 @@ impl TraceReducer {
         }
         if let Some(codex_turn_id) = codex_turn_id {
             let Some(turn) = self.rollout.codex_turns.get(codex_turn_id) else {
-                bail!("tool call start referenced unknown MidnightCoder turn {codex_turn_id}");
+                bail!("tool call start referenced unknown SolaiAgent turn {codex_turn_id}");
             };
             if turn.thread_id != thread_id {
                 bail!(
-                    "tool call start used thread {thread_id}, but MidnightCoder turn {codex_turn_id} \
+                    "tool call start used thread {thread_id}, but SolaiAgent turn {codex_turn_id} \
                      belongs to {}",
                     turn.thread_id
                 );

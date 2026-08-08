@@ -15,13 +15,13 @@ use serde::Serialize;
 use strum_macros::Display;
 use ts_rs::TS;
 
-/// Authentication mode for MidnightCoder-backed providers.
+/// Authentication mode for SolaiAgent-backed providers.
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Display, JsonSchema, TS)]
 #[serde(rename_all = "lowercase")]
 pub enum AuthMode {
-    /// MidnightCoder API key provided by the caller and stored by MidnightCoder.
+    /// SolaiAgent API key provided by the caller and stored by SolaiAgent.
     ApiKey,
-    /// ChatGPT OAuth managed by MidnightCoder (tokens persisted and refreshed by MidnightCoder).
+    /// ChatGPT OAuth managed by SolaiAgent (tokens persisted and refreshed by SolaiAgent).
     Chatgpt,
     /// [UNSTABLE] FOR OPENAI INTERNAL USE ONLY - DO NOT USE.
     ///
@@ -31,17 +31,17 @@ pub enum AuthMode {
     #[ts(rename = "chatgptAuthTokens")]
     #[strum(serialize = "chatgptAuthTokens")]
     ChatgptAuthTokens,
-    /// Programmatic MidnightCoder auth backed by a registered Agent Identity.
+    /// Programmatic SolaiAgent auth backed by a registered Agent Identity.
     #[serde(rename = "agentIdentity")]
     #[ts(rename = "agentIdentity")]
     #[strum(serialize = "agentIdentity")]
     AgentIdentity,
-    /// Programmatic MidnightCoder auth backed by a personal access token.
+    /// Programmatic SolaiAgent auth backed by a personal access token.
     #[serde(rename = "personalAccessToken")]
     #[ts(rename = "personalAccessToken")]
     #[strum(serialize = "personalAccessToken")]
     PersonalAccessToken,
-    /// Amazon Bedrock bearer token managed by MidnightCoder.
+    /// Amazon Bedrock bearer token managed by SolaiAgent.
     #[serde(rename = "bedrockApiKey")]
     #[ts(rename = "bedrockApiKey")]
     #[strum(serialize = "bedrockApiKey")]
@@ -57,7 +57,7 @@ impl AuthMode {
         }
     }
 
-    /// Returns whether this mode is backed by MidnightCoder services rather than a direct model API.
+    /// Returns whether this mode is backed by SolaiAgent services rather than a direct model API.
     pub fn uses_codex_backend(self) -> bool {
         match self {
             Self::Chatgpt
@@ -1066,7 +1066,7 @@ client_request_definitions! {
         response: v2::CommandExecResizeResponse,
     },
     #[experimental("process/spawn")]
-    /// Spawn a standalone process (argv vector) without a MidnightCoder sandbox.
+    /// Spawn a standalone process (argv vector) without a SolaiAgent sandbox.
     ProcessSpawn => "process/spawn" {
         params: v2::ProcessSpawnParams,
         serialization: process_handle(params.process_handle),
@@ -1623,7 +1623,7 @@ server_notification_definitions! {
     ItemGuardianApprovalReviewStarted => "item/autoApprovalReview/started" (v2::ItemGuardianApprovalReviewStartedNotification),
     ItemGuardianApprovalReviewCompleted => "item/autoApprovalReview/completed" (v2::ItemGuardianApprovalReviewCompletedNotification),
     ItemCompleted => "item/completed" (v2::ItemCompletedNotification),
-    /// This event is internal-only. Used by MidnightCoder Cloud.
+    /// This event is internal-only. Used by SolaiAgent Cloud.
     RawResponseItemCompleted => "rawResponseItem/completed" (v2::RawResponseItemCompletedNotification),
     AgentMessageDelta => "item/agentMessage/delta" (v2::AgentMessageDeltaNotification),
     /// EXPERIMENTAL - proposed plan streaming deltas for plan items.
@@ -2189,7 +2189,7 @@ mod tests {
             params: v1::InitializeParams {
                 client_info: v1::ClientInfo {
                     name: "codex_vscode".to_string(),
-                    title: Some("MidnightCoder VS Code Extension".to_string()),
+                    title: Some("SolaiAgent VS Code Extension".to_string()),
                     version: "0.1.0".to_string(),
                 },
                 capabilities: Some(v1::InitializeCapabilities {
@@ -2211,7 +2211,7 @@ mod tests {
                 "params": {
                     "clientInfo": {
                         "name": "codex_vscode",
-                        "title": "MidnightCoder VS Code Extension",
+                        "title": "SolaiAgent VS Code Extension",
                         "version": "0.1.0"
                     },
                     "capabilities": {
@@ -2238,7 +2238,7 @@ mod tests {
             "params": {
                 "clientInfo": {
                     "name": "codex_vscode",
-                    "title": "MidnightCoder VS Code Extension",
+                    "title": "SolaiAgent VS Code Extension",
                     "version": "0.1.0"
                 },
                 "capabilities": {
@@ -2260,7 +2260,7 @@ mod tests {
                 params: v1::InitializeParams {
                     client_info: v1::ClientInfo {
                         name: "codex_vscode".to_string(),
-                        title: Some("MidnightCoder VS Code Extension".to_string()),
+                        title: Some("SolaiAgent VS Code Extension".to_string()),
                         version: "0.1.0".to_string(),
                     },
                     capabilities: Some(v1::InitializeCapabilities {
@@ -2885,7 +2885,7 @@ mod tests {
         );
 
         let codex_managed_bedrock = v2::Account::AmazonBedrock {
-            credential_source: AmazonBedrockCredentialSource::MidnightCoderManaged,
+            credential_source: AmazonBedrockCredentialSource::SolaiAgentManaged,
         };
         assert_eq!(
             json!({

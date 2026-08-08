@@ -226,7 +226,7 @@ impl CatalogRequestProcessor {
     async fn workspace_codex_plugins_enabled(
         &self,
         config: &Config,
-        auth: Option<&MidnightCoderAuth>,
+        auth: Option<&SolaiAgentAuth>,
     ) -> bool {
         match workspace_settings::codex_plugins_enabled_for_workspace(
             config,
@@ -238,7 +238,7 @@ impl CatalogRequestProcessor {
             Ok(enabled) => enabled,
             Err(err) => {
                 warn!(
-                    "failed to fetch workspace MidnightCoder plugins setting; allowing MidnightCoder plugins: {err:#}"
+                    "failed to fetch workspace SolaiAgent plugins setting; allowing SolaiAgent plugins: {err:#}"
                 );
                 true
             }
@@ -637,7 +637,7 @@ impl CatalogRequestProcessor {
                 codex_core_plugins::PluginHookLoadOutcome::default()
             };
             let hooks = codex_hooks::list_hooks(codex_hooks::HooksConfig {
-                feature_enabled: config.features.enabled(Feature::MidnightCoderHooks),
+                feature_enabled: config.features.enabled(Feature::SolaiAgentHooks),
                 bypass_hook_trust: config.bypass_hook_trust,
                 config_layer_stack: Some(config.config_layer_stack),
                 plugin_hook_sources: plugin_hooks.hook_sources,

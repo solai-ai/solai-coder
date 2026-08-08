@@ -213,7 +213,7 @@ pub(super) fn log_listener_attach_result(
 pub(super) async fn ensure_listener_task_running(
     listener_task_context: ListenerTaskContext,
     conversation_id: ThreadId,
-    conversation: Arc<MidnightCoderThread>,
+    conversation: Arc<SolaiAgentThread>,
     thread_state: Arc<Mutex<ThreadState>>,
 ) -> Result<(), JSONRPCErrorError> {
     let (cancel_tx, mut cancel_rx) = oneshot::channel();
@@ -397,7 +397,7 @@ pub(super) async fn ensure_listener_task_running(
 }
 
 pub(super) async fn wait_for_thread_shutdown(
-    thread: &Arc<MidnightCoderThread>,
+    thread: &Arc<SolaiAgentThread>,
 ) -> ThreadShutdownResult {
     match tokio::time::timeout(Duration::from_secs(10), thread.shutdown_and_wait()).await {
         Ok(Ok(())) => ThreadShutdownResult::Complete,
@@ -413,7 +413,7 @@ pub(super) async fn unload_thread_without_subscribers(
     thread_state_manager: ThreadStateManager,
     thread_watch_manager: ThreadWatchManager,
     thread_id: ThreadId,
-    thread: Arc<MidnightCoderThread>,
+    thread: Arc<SolaiAgentThread>,
 ) {
     info!("thread {thread_id} has no subscribers and is idle; shutting down");
 
@@ -461,7 +461,7 @@ pub(super) async fn unload_thread_without_subscribers(
 #[allow(clippy::too_many_arguments)]
 pub(super) async fn handle_thread_listener_command(
     conversation_id: ThreadId,
-    conversation: &Arc<MidnightCoderThread>,
+    conversation: &Arc<SolaiAgentThread>,
     codex_home: &Path,
     thread_state_manager: &ThreadStateManager,
     thread_state: &Arc<Mutex<ThreadState>>,
@@ -531,7 +531,7 @@ pub(super) async fn handle_thread_listener_command(
 )]
 pub(super) async fn handle_pending_thread_resume_request(
     conversation_id: ThreadId,
-    conversation: &Arc<MidnightCoderThread>,
+    conversation: &Arc<SolaiAgentThread>,
     _codex_home: &Path,
     thread_state_manager: &ThreadStateManager,
     thread_state: &Arc<Mutex<ThreadState>>,

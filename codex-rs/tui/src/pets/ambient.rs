@@ -1,4 +1,4 @@
-//! Ambient terminal rendering for the MidnightCoder companion.
+//! Ambient terminal rendering for the SolaiAgent companion.
 //!
 //! Ambient pets reuse the same extracted image frames as the full-screen viewer
 //! but are rendered through a different ownership split: ratatui still owns the

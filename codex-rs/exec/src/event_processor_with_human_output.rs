@@ -17,7 +17,7 @@ use owo_colors::OwoColorize;
 use owo_colors::Style;
 
 use crate::event_processor::EventProcessor;
-use crate::event_processor::MidnightCoderStatus;
+use crate::event_processor::SolaiAgentStatus;
 use crate::event_processor::handle_last_message;
 
 pub(crate) struct EventProcessorWithHumanOutput {
@@ -215,7 +215,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
         session_configured_event: &SessionConfiguredEvent,
     ) {
         const VERSION: &str = env!("CARGO_PKG_VERSION");
-        eprintln!("MidnightCoder v{VERSION}\n--------");
+        eprintln!("SolaiAgent v{VERSION}\n--------");
         for (key, value) in config_summary_entries(config, session_configured_event) {
             eprintln!("{} {}", format!("{key}:").style(self.bold), value);
         }
@@ -226,7 +226,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
     fn process_server_notification(
         &mut self,
         notification: ServerNotification,
-    ) -> MidnightCoderStatus {
+    ) -> SolaiAgentStatus {
         match notification {
             ServerNotification::ConfigWarning(notification) => {
                 let details = notification
@@ -239,7 +239,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                     notification.summary,
                     details
                 );
-                MidnightCoderStatus::Running
+                SolaiAgentStatus::Running
             }
             ServerNotification::Warning(notification) => self.process_warning(notification.message),
             ServerNotification::Error(notification) => {
@@ -248,7 +248,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                     "ERROR:".style(self.red).style(self.bold),
                     notification.error
                 );
-                MidnightCoderStatus::Running
+                SolaiAgentStatus::Running
             }
             ServerNotification::DeprecationNotice(notification) => {
                 eprintln!(
@@ -259,7 +259,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                 if let Some(details) = notification.details {
                     eprintln!("{}", details.style(self.dimmed));
                 }
-                MidnightCoderStatus::Running
+                SolaiAgentStatus::Running
             }
             ServerNotification::HookStarted(notification) => {
                 eprintln!(
@@ -267,7 +267,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                     "hook:".style(self.bold),
                     format!("{:?}", notification.run.event_name).style(self.dimmed)
                 );
-                MidnightCoderStatus::Running
+                SolaiAgentStatus::Running
             }
             ServerNotification::HookCompleted(notification) => {
                 eprintln!(
@@ -276,15 +276,15 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                     format!("{:?}", notification.run.event_name).style(self.dimmed),
                     notification.run.status
                 );
-                MidnightCoderStatus::Running
+                SolaiAgentStatus::Running
             }
             ServerNotification::ItemStarted(notification) => {
                 self.render_item_started(&notification.item);
-                MidnightCoderStatus::Running
+                SolaiAgentStatus::Running
             }
             ServerNotification::ItemCompleted(notification) => {
                 self.render_item_completed(notification.item);
-                MidnightCoderStatus::Running
+                SolaiAgentStatus::Running
             }
             ServerNotification::ModelRerouted(notification) => {
                 eprintln!(
@@ -293,12 +293,12 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                     notification.from_model,
                     notification.to_model
                 );
-                MidnightCoderStatus::Running
+                SolaiAgentStatus::Running
             }
-            ServerNotification::ModelVerification(_) => MidnightCoderStatus::Running,
+            ServerNotification::ModelVerification(_) => SolaiAgentStatus::Running,
             ServerNotification::ThreadTokenUsageUpdated(notification) => {
                 self.last_total_token_usage = Some(notification.token_usage);
-                MidnightCoderStatus::Running
+                SolaiAgentStatus::Running
             }
             ServerNotification::TurnCompleted(notification) => match notification.turn.status {
                 TurnStatus::Completed => {
@@ -314,7 +314,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                         self.final_message = Some(final_message);
                     }
                     self.emit_final_message_on_shutdown = true;
-                    MidnightCoderStatus::InitiateShutdown
+                    SolaiAgentStatus::InitiateShutdown
                 }
                 TurnStatus::Failed => {
                     self.final_message = None;
@@ -323,22 +323,22 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                     if let Some(error) = notification.turn.error {
                         eprintln!("{} {}", "ERROR:".style(self.red).style(self.bold), error);
                     }
-                    MidnightCoderStatus::InitiateShutdown
+                    SolaiAgentStatus::InitiateShutdown
                 }
                 TurnStatus::Interrupted => {
                     self.final_message = None;
                     self.final_message_rendered = false;
                     self.emit_final_message_on_shutdown = false;
                     eprintln!("{}", "turn interrupted".style(self.dimmed));
-                    MidnightCoderStatus::InitiateShutdown
+                    SolaiAgentStatus::InitiateShutdown
                 }
-                TurnStatus::InProgress => MidnightCoderStatus::Running,
+                TurnStatus::InProgress => SolaiAgentStatus::Running,
             },
             ServerNotification::TurnDiffUpdated(notification) => {
                 if !notification.diff.trim().is_empty() {
                     eprintln!("{}", notification.diff);
                 }
-                MidnightCoderStatus::Running
+                SolaiAgentStatus::Running
             }
             ServerNotification::TurnPlanUpdated(notification) => {
                 if let Some(explanation) = notification.explanation {
@@ -361,19 +361,19 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                         }
                     }
                 }
-                MidnightCoderStatus::Running
+                SolaiAgentStatus::Running
             }
-            ServerNotification::TurnStarted(_) => MidnightCoderStatus::Running,
-            _ => MidnightCoderStatus::Running,
+            ServerNotification::TurnStarted(_) => SolaiAgentStatus::Running,
+            _ => SolaiAgentStatus::Running,
         }
     }
 
-    fn process_warning(&mut self, message: String) -> MidnightCoderStatus {
+    fn process_warning(&mut self, message: String) -> SolaiAgentStatus {
         eprintln!(
             "{} {message}",
             "warning:".style(self.yellow).style(self.bold)
         );
-        MidnightCoderStatus::Running
+        SolaiAgentStatus::Running
     }
 
     fn print_final_output(&mut self) {

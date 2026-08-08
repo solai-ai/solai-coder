@@ -26,7 +26,7 @@ use codex_exec_server::CreateDirectoryOptions;
 use codex_exec_server::Environment;
 use codex_exec_server::HttpRedirectPolicy;
 use codex_exec_server::HttpRequestParams;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_mcp::MCP_SANDBOX_STATE_META_CAPABILITY;
 use codex_mcp::SandboxState;
 use codex_models_manager::manager::RefreshStrategy;
@@ -60,7 +60,7 @@ use core_test_support::skip_if_no_network;
 use core_test_support::skip_if_no_remote_env;
 use core_test_support::skip_if_wine_exec;
 use core_test_support::stdio_server_bin;
-use core_test_support::test_codex::TestMidnightCoder;
+use core_test_support::test_codex::TestSolaiAgent;
 use core_test_support::test_codex::test_codex;
 use core_test_support::test_codex::turn_permission_fields;
 use core_test_support::test_docker_container_name;
@@ -106,19 +106,19 @@ fn assert_wall_time_header(output: &str) {
     assert_eq!(marker, "Output:");
 }
 
-fn read_only_user_turn(fixture: &TestMidnightCoder, text: impl Into<String>) -> Op {
+fn read_only_user_turn(fixture: &TestSolaiAgent, text: impl Into<String>) -> Op {
     read_only_user_turn_with_model(fixture, text, fixture.session_configured.model.clone())
 }
 
 fn read_only_user_turn_with_model(
-    fixture: &TestMidnightCoder,
+    fixture: &TestSolaiAgent,
     text: impl Into<String>,
     model: String,
 ) -> Op {
     user_turn_with_permission_profile(fixture, text, model, PermissionProfile::read_only())
 }
 
-fn auto_approved_user_turn(fixture: &TestMidnightCoder, text: impl Into<String>) -> Op {
+fn auto_approved_user_turn(fixture: &TestSolaiAgent, text: impl Into<String>) -> Op {
     user_turn_with_permission_profile(
         fixture,
         text,
@@ -128,7 +128,7 @@ fn auto_approved_user_turn(fixture: &TestMidnightCoder, text: impl Into<String>)
 }
 
 fn user_turn_with_permission_profile(
-    fixture: &TestMidnightCoder,
+    fixture: &TestSolaiAgent,
     text: impl Into<String>,
     model: String,
     permission_profile: PermissionProfile,
@@ -345,7 +345,7 @@ fn insert_mcp_server(
 
 async fn call_cwd_tool(
     server: &MockServer,
-    fixture: &TestMidnightCoder,
+    fixture: &TestSolaiAgent,
     server_name: &str,
     call_id: &str,
 ) -> anyhow::Result<Value> {
@@ -354,7 +354,7 @@ async fn call_cwd_tool(
 
 async fn call_structured_tool(
     server: &MockServer,
-    fixture: &TestMidnightCoder,
+    fixture: &TestSolaiAgent,
     server_name: &str,
     tool_name: &str,
     call_id: &str,
@@ -1702,7 +1702,7 @@ async fn stdio_image_responses_are_sanitized_for_text_only_model() -> anyhow::Re
     let rmcp_test_server_bin = remote_aware_stdio_server_bin()?;
 
     let fixture = test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(move |config| {
             insert_mcp_server(
                 config,
@@ -2132,7 +2132,7 @@ impl RemoteStreamableHttpServer {
 }
 
 impl StreamableHttpTestServer {
-    /// Returns the MCP endpoint URL that MidnightCoder should connect to.
+    /// Returns the MCP endpoint URL that SolaiAgent should connect to.
     fn url(&self) -> &str {
         &self.server_url
     }
@@ -2162,14 +2162,14 @@ impl StreamableHttpTestServer {
     }
 }
 
-/// What this tests: MidnightCoder can discover and call a Streamable HTTP MCP tool in
+/// What this tests: SolaiAgent can discover and call a Streamable HTTP MCP tool in
 /// both local and remote-aware placements, and the tool observes the expected
 /// environment value from the server process that actually handled the request.
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn streamable_http_tool_call_round_trip() -> anyhow::Result<()> {
     skip_if_no_network!(Ok(()));
 
-    // Phase 1: script the model responses so MidnightCoder will call the MCP echo tool
+    // Phase 1: script the model responses so SolaiAgent will call the MCP echo tool
     // and then complete the turn after the tool result is returned.
     let server = responses::start_mock_server().await;
 
@@ -2214,7 +2214,7 @@ async fn streamable_http_tool_call_round_trip() -> anyhow::Result<()> {
     };
     let server_url = http_server.url().to_string();
 
-    // Phase 3: configure MidnightCoder with the Streamable HTTP MCP server and build a
+    // Phase 3: configure SolaiAgent with the Streamable HTTP MCP server and build a
     // fixture that selects remote MCP placement only when the remote test
     // environment is active.
     let fixture = test_codex()
@@ -2247,7 +2247,7 @@ async fn streamable_http_tool_call_round_trip() -> anyhow::Result<()> {
         ))
         .await?;
 
-    // Phase 5: assert MidnightCoder begins the expected tool invocation.
+    // Phase 5: assert SolaiAgent begins the expected tool invocation.
     let begin_event = wait_for_event(&fixture.codex, |ev| {
         matches!(ev, EventMsg::McpToolCallBegin(_))
     })
@@ -2321,7 +2321,7 @@ async fn streamable_http_configured_auth_precedes_chatgpt_auth() -> anyhow::Resu
     let configured_auth_url = configured_auth_server.url().to_string();
 
     let configured_auth_fixture = test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(move |config| {
             insert_mcp_server(
                 config,
@@ -2363,7 +2363,7 @@ async fn streamable_http_chatgpt_auth_is_not_sent_to_configured_origin() -> anyh
     let untrusted_chatgpt_base_url = untrusted_apps.chatgpt_base_url;
 
     let fixture = test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(move |config| {
             config.chatgpt_base_url = untrusted_chatgpt_base_url;
             insert_mcp_server(
@@ -2426,7 +2426,7 @@ async fn configured_chatgpt_base_url_does_not_grant_mcp_chatgpt_auth() -> anyhow
     let untrusted_chatgpt_base_url = untrusted_apps.chatgpt_base_url;
 
     let fixture = test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_pre_build_hook(move |codex_home| {
             fs::write(
                 codex_home.join("config.toml"),
@@ -2505,7 +2505,7 @@ fn streamable_http_with_oauth_round_trip() -> anyhow::Result<()> {
 async fn streamable_http_with_oauth_round_trip_impl() -> anyhow::Result<()> {
     skip_if_no_network!(Ok(()));
 
-    // Phase 1: script the model responses so MidnightCoder will call the OAuth-backed
+    // Phase 1: script the model responses so SolaiAgent will call the OAuth-backed
     // MCP echo tool and then finish the turn after receiving the result.
     let server = responses::start_mock_server().await;
 
@@ -2565,7 +2565,7 @@ async fn streamable_http_with_oauth_round_trip_impl() -> anyhow::Result<()> {
         refresh_token,
     )?;
 
-    // Phase 4: configure MidnightCoder with the OAuth-backed Streamable HTTP MCP
+    // Phase 4: configure SolaiAgent with the OAuth-backed Streamable HTTP MCP
     // server and build the fixture in the active local or remote-aware mode.
     let fixture = test_codex()
         .with_home(temp_home.clone())
@@ -2604,7 +2604,7 @@ async fn streamable_http_with_oauth_round_trip_impl() -> anyhow::Result<()> {
         ))
         .await?;
 
-    // Phase 7: assert MidnightCoder begins the expected tool invocation.
+    // Phase 7: assert SolaiAgent begins the expected tool invocation.
     let begin_event = wait_for_event(&fixture.codex, |ev| {
         matches!(ev, EventMsg::McpToolCallBegin(_))
     })
@@ -2777,7 +2777,7 @@ async fn start_remote_streamable_http_test_server(
     let server_url = format!("http://{}:{}/mcp", container_ip, remote_bind_addr.port());
     // The orchestrator can see the Docker container IP, but the behavior under
     // test is whether the remote-side MCP client can reach it. Probe through
-    // remote HTTP before handing the URL to the MidnightCoder fixture.
+    // remote HTTP before handing the URL to the SolaiAgent fixture.
     wait_for_remote_streamable_http_server(&server_url, Duration::from_secs(5)).await?;
     if expected_token.is_some() {
         wait_for_streamable_http_metadata(&server_url, Duration::from_secs(5)).await?;

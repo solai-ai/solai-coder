@@ -11,11 +11,11 @@ ensure_local_sdk_src()
 
 import asyncio
 
-from openai_codex import AsyncMidnightCoder
+from openai_codex import AsyncSolaiAgent
 
 
 async def main() -> None:
-    async with AsyncMidnightCoder(config=runtime_config()) as codex:
+    async with AsyncSolaiAgent(config=runtime_config()) as codex:
         print("server:", server_label(codex.metadata))
         models = await codex.models()
         print("models.count:", len(models.data))

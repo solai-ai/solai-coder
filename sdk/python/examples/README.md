@@ -2,8 +2,8 @@
 
 Each example folder contains runnable versions:
 
-- `sync.py` (public sync surface: `Midnight Coder`)
-- `async.py` (public async surface: `AsyncMidnightCoder`)
+- `sync.py` (public sync surface: `SolaiAgent`)
+- `async.py` (public async surface: `AsyncSolaiAgent`)
 
 All examples intentionally use only public SDK exports from `openai_codex`
 and `openai_codex.types`.

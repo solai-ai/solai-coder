@@ -3,12 +3,12 @@ use std::path::Path;
 use tempfile::TempDir;
 use wiremock::MockServer;
 
-pub struct TestMidnightCoderExecBuilder {
+pub struct TestSolaiAgentExecBuilder {
     home: TempDir,
     cwd: TempDir,
 }
 
-impl TestMidnightCoderExecBuilder {
+impl TestSolaiAgentExecBuilder {
     pub fn cmd(&self) -> assert_cmd::Command {
         let mut cmd = assert_cmd::Command::new(
             codex_utils_cargo_bin::cargo_bin("codex-exec")
@@ -40,8 +40,8 @@ fn toml_string_literal(value: &str) -> String {
     serde_json::to_string(value).expect("serialize TOML string literal")
 }
 
-pub fn test_codex_exec() -> TestMidnightCoderExecBuilder {
-    TestMidnightCoderExecBuilder {
+pub fn test_codex_exec() -> TestSolaiAgentExecBuilder {
+    TestSolaiAgentExecBuilder {
         home: TempDir::new().expect("create temp home"),
         cwd: TempDir::new().expect("create temp cwd"),
     }

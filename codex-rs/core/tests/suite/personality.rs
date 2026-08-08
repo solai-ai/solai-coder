@@ -25,7 +25,7 @@ use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse_completed;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestMidnightCoder;
+use core_test_support::test_codex::TestSolaiAgent;
 use core_test_support::test_codex::local_selections;
 use core_test_support::test_codex::test_codex;
 use core_test_support::test_codex::turn_permission_fields;
@@ -43,7 +43,7 @@ const LOCAL_FRIENDLY_TEMPLATE: &str =
 const LOCAL_PRAGMATIC_TEMPLATE: &str = "You are a deeply pragmatic, effective software engineer.";
 
 fn read_only_text_turn(
-    test: &TestMidnightCoder,
+    test: &TestSolaiAgent,
     text: &str,
     model: String,
     approval_policy: AskForApproval,
@@ -53,7 +53,7 @@ fn read_only_text_turn(
 }
 
 fn read_only_text_turn_with_personality(
-    test: &TestMidnightCoder,
+    test: &TestSolaiAgent,
     text: &str,
     model: String,
     approval_policy: AskForApproval,
@@ -610,7 +610,7 @@ async fn remote_model_friendly_personality_instructions_with_feature() -> anyhow
     let resp_mock = mount_sse_once(&server, sse_completed("resp-1")).await;
 
     let mut builder = test_codex()
-        .with_auth(codex_login::MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(codex_login::SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             config
                 .features
@@ -729,7 +729,7 @@ async fn user_turn_personality_remote_model_template_includes_update_message() -
     .await;
 
     let mut builder = test_codex()
-        .with_auth(codex_login::MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(codex_login::SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             config
                 .features

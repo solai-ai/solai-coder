@@ -333,7 +333,7 @@ impl App {
             AppEvent::FatalExitRequest(message) => {
                 return Ok(AppRunControl::Exit(ExitReason::Fatal(message)));
             }
-            AppEvent::MidnightCoderOp(op) => {
+            AppEvent::SolaiAgentOp(op) => {
                 self.chat_widget.prepare_local_op_submission(&op);
                 self.submit_active_thread_op(app_server, op).await?;
             }
@@ -1501,7 +1501,7 @@ impl App {
                             if let Some((sample_paths, extra_count, failed_scan)) =
                                 self.chat_widget.world_writable_warning_details()
                             {
-                                self.app_event_tx.send(AppEvent::MidnightCoderOp(
+                                self.app_event_tx.send(AppEvent::SolaiAgentOp(
                                     AppCommand::override_turn_context(
                                         /*cwd*/ None,
                                         /*approval_policy*/ None,
@@ -1528,7 +1528,7 @@ impl App {
                                     },
                                 );
                             } else if let Some(selection) = profile_selection {
-                                self.app_event_tx.send(AppEvent::MidnightCoderOp(
+                                self.app_event_tx.send(AppEvent::SolaiAgentOp(
                                     AppCommand::override_turn_context(
                                         /*cwd*/ None,
                                         /*approval_policy*/ None,
@@ -1552,12 +1552,12 @@ impl App {
                                     Line::from(vec!["• ".dim(), "Sandbox ready".into()]),
                                     Line::from(vec![
                                         "  ".into(),
-                                        "MidnightCoder can now safely edit files and execute commands in your computer"
+                                        "SolaiAgent can now safely edit files and execute commands in your computer"
                                             .dark_gray(),
                                     ]),
                                 ]);
                             } else {
-                                self.app_event_tx.send(AppEvent::MidnightCoderOp(
+                                self.app_event_tx.send(AppEvent::SolaiAgentOp(
                                     AppCommand::override_turn_context(
                                         /*cwd*/ None,
                                         Some(AskForApproval::from(preset.approval)),
@@ -1585,7 +1585,7 @@ impl App {
                                     Line::from(vec!["• ".dim(), "Sandbox ready".into()]),
                                     Line::from(vec![
                                         "  ".into(),
-                                        "MidnightCoder can now safely edit files and execute commands in your computer"
+                                        "SolaiAgent can now safely edit files and execute commands in your computer"
                                             .dark_gray(),
                                     ]),
                                 ]);

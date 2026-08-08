@@ -43,13 +43,13 @@ function createEarlyExitChild(exitCode = 2): FakeChildProcess {
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-describe("MidnightCoderExec", () => {
+describe("SolaiAgentExec", () => {
   it("rejects when exit happens before stdout closes", async () => {
-    const { MidnightCoderExec } = await import("../src/exec");
+    const { SolaiAgentExec } = await import("../src/exec");
     const child = createEarlyExitChild();
     spawnMock.mockReturnValue(child as unknown as child_process.ChildProcess);
 
-    const exec = new MidnightCoderExec("codex");
+    const exec = new SolaiAgentExec("codex");
     const runPromise = (async () => {
       for await (const _ of exec.run({ input: "hi" })) {
         // no-op
@@ -67,12 +67,12 @@ describe("MidnightCoderExec", () => {
     expect(result.status).toBe("rejected");
     if (result.status === "rejected") {
       expect(result.error).toBeInstanceOf(Error);
-      expect(result.error.message).toMatch(/MidnightCoder Exec exited/);
+      expect(result.error.message).toMatch(/SolaiAgent Exec exited/);
     }
   });
 
   it("places resume args before image args", async () => {
-    const { MidnightCoderExec } = await import("../src/exec");
+    const { SolaiAgentExec } = await import("../src/exec");
     spawnMock.mockClear();
     const child = new FakeChildProcess();
     spawnMock.mockReturnValue(child as unknown as child_process.ChildProcess);
@@ -83,7 +83,7 @@ describe("MidnightCoderExec", () => {
       child.emit("exit", 0, null);
     });
 
-    const exec = new MidnightCoderExec("codex");
+    const exec = new SolaiAgentExec("codex");
     for await (const _ of exec.run({ input: "hi", images: ["img.png"], threadId: "thread-id" })) {
       // no-op
     }
@@ -97,8 +97,8 @@ describe("MidnightCoderExec", () => {
     expect(resumeIndex).toBeLessThan(imageIndex);
   });
 
-  it("allows overriding the env passed to the MidnightCoder", async () => {
-    const { MidnightCoderExec } = await import("../src/exec");
+  it("allows overriding the env passed to the SolaiAgent", async () => {
+    const { SolaiAgentExec } = await import("../src/exec");
     spawnMock.mockClear();
     const child = new FakeChildProcess();
     spawnMock.mockReturnValue(child as unknown as child_process.ChildProcess);
@@ -112,7 +112,7 @@ describe("MidnightCoderExec", () => {
     process.env.CODEX_ENV_SHOULD_NOT_LEAK = "leak";
 
     try {
-      const exec = new MidnightCoderExec("codex", {
+      const exec = new SolaiAgentExec("codex", {
         CODEX_HOME: "/tmp/codex-home",
         CUSTOM_ENV: "custom",
       });

@@ -165,7 +165,7 @@ pub struct StateRuntime {
 }
 
 impl StateRuntime {
-    /// Initialize the state runtime using the provided MidnightCoder home and default provider.
+    /// Initialize the state runtime using the provided SolaiAgent home and default provider.
     ///
     /// This opens (and migrates) the SQLite databases under `codex_home`,
     /// keeping logs in a dedicated file to reduce lock contention with the
@@ -313,7 +313,7 @@ impl StateRuntime {
         Ok(runtime)
     }
 
-    /// Return the configured MidnightCoder home directory for this runtime.
+    /// Return the configured SolaiAgent home directory for this runtime.
     pub fn codex_home(&self) -> &Path {
         self.codex_home.as_path()
     }

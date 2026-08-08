@@ -104,7 +104,7 @@ use codex_app_server_protocol::McpAuthStatus;
 use codex_app_server_protocol::McpServerStatus;
 use codex_app_server_protocol::McpServerStatusDetail;
 use codex_app_server_protocol::MergeStrategy;
-use codex_app_server_protocol::MidnightCoderErrorInfo as AppServerMidnightCoderErrorInfo;
+use codex_app_server_protocol::SolaiAgentErrorInfo as AppServerSolaiAgentErrorInfo;
 use codex_app_server_protocol::PluginInstallParams;
 use codex_app_server_protocol::PluginInstallResponse;
 use codex_app_server_protocol::PluginListMarketplaceKind;
@@ -549,7 +549,7 @@ pub(crate) struct App {
     /// This is used after a confirmed thread rollback to ensure scrollback reflects the trimmed
     /// transcript cells.
     pub(crate) backtrack_render_pending: bool,
-    pub(crate) feedback: codex_feedback::MidnightCoderFeedback,
+    pub(crate) feedback: codex_feedback::SolaiAgentFeedback,
     feedback_audience: FeedbackAudience,
     environment_manager: Arc<EnvironmentManager>,
     app_server_target: AppServerTarget,
@@ -613,7 +613,7 @@ fn active_turn_not_steerable_turn_error(error: &TypedRequestError) -> Option<App
     let turn_error: AppServerTurnError = serde_json::from_value(source.data.clone()?).ok()?;
     matches!(
         turn_error.codex_error_info,
-        Some(AppServerMidnightCoderErrorInfo::ActiveTurnNotSteerable { .. })
+        Some(AppServerSolaiAgentErrorInfo::ActiveTurnNotSteerable { .. })
     )
     .then_some(turn_error)
 }
@@ -770,7 +770,7 @@ impl App {
         initial_prompt: Option<String>,
         initial_images: Vec<PathBuf>,
         session_selection: SessionSelection,
-        feedback: codex_feedback::MidnightCoderFeedback,
+        feedback: codex_feedback::SolaiAgentFeedback,
         is_first_run: bool,
         should_prompt_windows_sandbox_nux_at_startup: bool,
         app_server_target: AppServerTarget,
@@ -1015,7 +1015,7 @@ impl App {
             color_eyre::eyre::eyre!(
                 "Invalid `tui.keymap` configuration: {err}\n\
 Fix the config and retry.\n\
-See the MidnightCoder keymap documentation for supported actions and examples."
+See the SolaiAgent keymap documentation for supported actions and examples."
             )
         })?;
         #[cfg(not(debug_assertions))]

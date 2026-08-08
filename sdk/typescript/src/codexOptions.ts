@@ -1,21 +1,21 @@
-export type MidnightCoderConfigValue = string | number | boolean | MidnightCoderConfigValue[] | MidnightCoderConfigObject;
+export type SolaiAgentConfigValue = string | number | boolean | SolaiAgentConfigValue[] | SolaiAgentConfigObject;
 
-export type MidnightCoderConfigObject = { [key: string]: MidnightCoderConfigValue };
+export type SolaiAgentConfigObject = { [key: string]: SolaiAgentConfigValue };
 
-export type MidnightCoderOptions = {
+export type SolaiAgentOptions = {
   codexPathOverride?: string;
   baseUrl?: string;
   apiKey?: string;
   /**
-   * Additional `--config key=value` overrides to pass to the MidnightCoder.
+   * Additional `--config key=value` overrides to pass to the SolaiAgent.
    *
    * Provide a JSON object and the SDK will flatten it into dotted paths and
    * serialize values as TOML literals so they are compatible with the CLI's
    * `--config` parsing.
    */
-  config?: MidnightCoderConfigObject;
+  config?: SolaiAgentConfigObject;
   /**
-   * Environment variables passed to the MidnightCoder process. When provided, the SDK
+   * Environment variables passed to the SolaiAgent process. When provided, the SDK
    * will not inherit variables from `process.env`.
    */
   env?: Record<string, string>;

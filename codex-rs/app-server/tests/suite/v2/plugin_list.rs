@@ -1183,7 +1183,7 @@ async fn plugin_list_returns_plugin_interface_with_absolute_asset_paths() -> Res
     "displayName": "Plugin Display Name",
     "shortDescription": "Short description for subtitle",
     "longDescription": "Long description for details page",
-    "developerName": "MidnightCoder",
+    "developerName": "SolaiAgent",
     "category": "Productivity",
     "capabilities": ["Interactive", "Write"],
     "websiteURL": "https://openai.com/",
@@ -1802,7 +1802,7 @@ async fn plugin_list_includes_remote_marketplaces_when_remote_plugin_enabled() -
             .interface
             .as_ref()
             .and_then(|interface| interface.display_name.as_deref()),
-        Some("MidnightCoder Curated Remote")
+        Some("SolaiAgent Curated Remote")
     );
     assert_eq!(remote_marketplace.plugins.len(), 1);
     assert_eq!(
@@ -2062,7 +2062,7 @@ async fn plugin_list_includes_openai_curated_remote_collection_when_requested() 
             .interface
             .as_ref()
             .and_then(|interface| interface.display_name.as_deref()),
-        Some("MidnightCoder Curated Remote")
+        Some("SolaiAgent Curated Remote")
     );
     assert_eq!(remote_marketplace.plugins.len(), 1);
     let plugin = &remote_marketplace.plugins[0];
@@ -2142,7 +2142,7 @@ async fn plugin_list_propagates_explicit_openai_curated_remote_collection_errors
     assert!(
         err.error
             .message
-            .contains("list MidnightCoder Curated remote plugin catalog")
+            .contains("list SolaiAgent Curated remote plugin catalog")
     );
     Ok(())
 }
@@ -2227,7 +2227,7 @@ async fn plugin_list_includes_api_curated_marketplace_for_api_auth_when_remote_p
             .interface
             .as_ref()
             .and_then(|interface| interface.display_name.as_deref()),
-        Some("MidnightCoder Curated")
+        Some("SolaiAgent Curated")
     );
     assert_eq!(api_curated_marketplace.plugins.len(), 1);
     assert_eq!(
@@ -4059,7 +4059,7 @@ fn write_openai_api_curated_marketplace(
         codex_home,
         "api_marketplace.json",
         "openai-api-curated",
-        Some("MidnightCoder Curated"),
+        Some("SolaiAgent Curated"),
         plugin_names,
     )
 }

@@ -9,7 +9,7 @@ use codex_utils_absolute_path::AbsolutePathBuf;
 pub fn trust_discovered_hooks(config: &mut Config) {
     config
         .features
-        .enable(Feature::MidnightCoderHooks)
+        .enable(Feature::SolaiAgentHooks)
         .expect("test config should allow feature update");
 
     let listed = codex_hooks::list_hooks(codex_hooks::HooksConfig {

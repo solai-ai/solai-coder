@@ -1,11 +1,11 @@
 # Configuration Guide
 
-This document describes how Midnight Coder is configured and how the main
+This document describes how SOLAI Agent is configured and how the main
 pieces fit together.
 
 ## Configuration layers
 
-Midnight Coder resolves configuration from multiple layers. In practice, the
+SOLAI Agent resolves configuration from multiple layers. In practice, the
 important files are:
 
 - user config: `~/.codex/config.toml`
@@ -50,7 +50,7 @@ Notes:
 - the default Ollama port is `11434`
 - the provider should expose `/api/tags` and `/v1/*` endpoints
 - the model catalog can advertise `capabilities = ["tools"]`; when it does,
-  Midnight Coder treats that model as tool-capable
+  SOLAI Agent treats that model as tool-capable
 
 ## LM Studio example
 
@@ -117,7 +117,7 @@ For the runtime to behave well, provider metadata should include:
 - `used_fallback_model_metadata = false` for authoritative catalog entries
 
 If `tool_mode` is omitted and the provider does not advertise a tool-capable
-model, Midnight Coder may fall back to direct mode behavior.
+model, SOLAI Agent may fall back to direct mode behavior.
 
 ## Practical defaults
 
@@ -146,5 +146,5 @@ sandbox_mode = "workspace-write"
   return an authoritative `ModelInfo` for that slug.
 - If `exec` is missing, check whether the resolved `ModelInfo` has
   `tool_mode` set or whether the provider catalog advertises `tools`.
-- If the provider does not support `/models`, Midnight Coder falls back to its
+- If the provider does not support `/models`, SOLAI Agent falls back to its
   built-in catalog and the selected model may inherit generic metadata.

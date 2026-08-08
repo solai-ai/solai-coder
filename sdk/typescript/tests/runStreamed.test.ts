@@ -9,9 +9,9 @@ import {
   sse,
   startResponsesTestProxy,
 } from "./responsesProxy";
-import { createMockClient } from "./testMidnightCoder";
+import { createMockClient } from "./testSolaiAgent";
 
-describe("MidnightCoder", () => {
+describe("SolaiAgent", () => {
   it("returns thread events", async () => {
     const { url, close } = await startResponsesTestProxy({
       statusCode: 200,

@@ -6,7 +6,7 @@ use codex_exec_server::CreateDirectoryOptions;
 use codex_exec_server::LOCAL_ENVIRONMENT_ID;
 use codex_exec_server::REMOTE_ENVIRONMENT_ID;
 use codex_features::Feature;
-use codex_home::MidnightCoderHomeUserInstructionsProvider;
+use codex_home::SolaiAgentHomeUserInstructionsProvider;
 use codex_protocol::protocol::EventMsg;
 use codex_protocol::protocol::InitialHistory;
 use codex_protocol::protocol::Op;
@@ -28,7 +28,7 @@ use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
 use core_test_support::skip_if_no_remote_env;
 use core_test_support::test_codex::RecordingUserInstructionsProvider;
-use core_test_support::test_codex::TestMidnightCoderBuilder;
+use core_test_support::test_codex::TestSolaiAgentBuilder;
 use core_test_support::test_codex::test_codex;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
@@ -52,7 +52,7 @@ const SPAWN_FRESH_PARENT_PROMPT: &str = "spawn a child with fresh context";
 const SPAWN_PARENT_PROMPT: &str = "spawn a child with the parent context";
 const SPAWN_SEED_PROMPT: &str = "seed parent history";
 
-async fn agents_instructions(mut builder: TestMidnightCoderBuilder) -> Result<String> {
+async fn agents_instructions(mut builder: TestSolaiAgentBuilder) -> Result<String> {
     let server = start_mock_server().await;
     let resp_mock = mount_sse_once(
         &server,
@@ -149,7 +149,7 @@ fn assert_single_instruction_fragment(request: &responses::ResponsesRequest, exp
 }
 
 async fn submit_thread_turn(
-    thread: &Arc<codex_core::MidnightCoderThread>,
+    thread: &Arc<codex_core::SolaiAgentThread>,
     prompt: &str,
 ) -> Result<()> {
     thread
@@ -463,7 +463,7 @@ async fn loads_user_instructions_without_a_primary_environment() -> Result<()> {
     let global_source =
         write_global_file(home.as_ref(), GLOBAL_AGENTS_FILENAME, GLOBAL_INSTRUCTIONS)?;
     let provider = Arc::new(RecordingUserInstructionsProvider::new(Arc::new(
-        MidnightCoderHomeUserInstructionsProvider::new(AbsolutePathBuf::try_from(
+        SolaiAgentHomeUserInstructionsProvider::new(AbsolutePathBuf::try_from(
             home.path().to_path_buf(),
         )?),
     )));
@@ -671,7 +671,7 @@ async fn multi_environment_thread_loads_every_project_and_keeps_creation_snapsho
     let global_source =
         write_global_file(home.as_ref(), GLOBAL_AGENTS_FILENAME, GLOBAL_INSTRUCTIONS)?;
     let provider = Arc::new(RecordingUserInstructionsProvider::new(Arc::new(
-        MidnightCoderHomeUserInstructionsProvider::new(AbsolutePathBuf::try_from(
+        SolaiAgentHomeUserInstructionsProvider::new(AbsolutePathBuf::try_from(
             home.path().to_path_buf(),
         )?),
     )));

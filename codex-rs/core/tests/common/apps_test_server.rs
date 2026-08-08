@@ -1,9 +1,9 @@
-use crate::test_codex::TestMidnightCoderBuilder;
+use crate::test_codex::TestSolaiAgentBuilder;
 use crate::test_codex::test_codex;
 use anyhow::Result;
 use codex_core::config::Config;
 use codex_features::Feature;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_models_manager::bundled_models_response;
 use serde_json::Value;
 use serde_json::json;
@@ -237,17 +237,17 @@ pub fn configure_search_capable_apps(config: &mut Config, apps_base_url: &str) {
     configure_search_capable_model(config);
 }
 
-pub fn apps_enabled_builder(apps_base_url: impl Into<String>) -> TestMidnightCoderBuilder {
+pub fn apps_enabled_builder(apps_base_url: impl Into<String>) -> TestSolaiAgentBuilder {
     let apps_base_url = apps_base_url.into();
     test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(move |config| configure_apps(config, apps_base_url.as_str()))
 }
 
-pub fn search_capable_apps_builder(apps_base_url: impl Into<String>) -> TestMidnightCoderBuilder {
+pub fn search_capable_apps_builder(apps_base_url: impl Into<String>) -> TestSolaiAgentBuilder {
     let apps_base_url = apps_base_url.into();
     test_codex()
-        .with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing())
+        .with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(move |config| configure_search_capable_apps(config, apps_base_url.as_str()))
 }
 
@@ -385,7 +385,7 @@ async fn mount_streamable_http_json_rpc_with_startup_control(
 ) {
     Mock::given(method("POST"))
         .and(path_regex("^/api/codex/apps/?$"))
-        .respond_with(MidnightCoderAppsJsonRpcResponder {
+        .respond_with(SolaiAgentAppsJsonRpcResponder {
             connector_name,
             connector_description,
             searchable,
@@ -399,7 +399,7 @@ async fn mount_streamable_http_json_rpc_with_startup_control(
         .await;
 }
 
-struct MidnightCoderAppsJsonRpcResponder {
+struct SolaiAgentAppsJsonRpcResponder {
     connector_name: String,
     connector_description: String,
     searchable: bool,
@@ -410,7 +410,7 @@ struct MidnightCoderAppsJsonRpcResponder {
     remaining_initialize_failures: Option<Arc<AtomicUsize>>,
 }
 
-impl Respond for MidnightCoderAppsJsonRpcResponder {
+impl Respond for SolaiAgentAppsJsonRpcResponder {
     fn respond(&self, request: &Request) -> ResponseTemplate {
         let body: Value = match serde_json::from_slice(&request.body) {
             Ok(body) => body,

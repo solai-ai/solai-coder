@@ -105,10 +105,10 @@ fn usage_limit_reached_error_formats_rate_limit_reached_types() {
 
 #[test]
 fn server_overloaded_maps_to_protocol() {
-    let err = MidnightCoderErr::ServerOverloaded;
+    let err = SolaiAgentErr::ServerOverloaded;
     assert_eq!(
         err.to_codex_protocol_error(),
-        MidnightCoderErrorInfo::ServerOverloaded
+        SolaiAgentErrorInfo::ServerOverloaded
     );
 }
 
@@ -122,7 +122,7 @@ fn sandbox_denied_uses_aggregated_output_when_stderr_empty() {
         duration: Duration::from_millis(10),
         timed_out: false,
     };
-    let err = MidnightCoderErr::Sandbox(SandboxErr::Denied {
+    let err = SolaiAgentErr::Sandbox(SandboxErr::Denied {
         output: Box::new(output),
         network_policy_decision: None,
     });
@@ -139,7 +139,7 @@ fn sandbox_denied_reports_both_streams_when_available() {
         duration: Duration::from_millis(10),
         timed_out: false,
     };
-    let err = MidnightCoderErr::Sandbox(SandboxErr::Denied {
+    let err = SolaiAgentErr::Sandbox(SandboxErr::Denied {
         output: Box::new(output),
         network_policy_decision: None,
     });
@@ -156,7 +156,7 @@ fn sandbox_denied_reports_stdout_when_no_stderr() {
         duration: Duration::from_millis(8),
         timed_out: false,
     };
-    let err = MidnightCoderErr::Sandbox(SandboxErr::Denied {
+    let err = SolaiAgentErr::Sandbox(SandboxErr::Denied {
         output: Box::new(output),
         network_policy_decision: None,
     });
@@ -171,7 +171,7 @@ fn to_error_event_handles_response_stream_failed() {
         .body("")
         .unwrap();
     let source = Response::from(response).error_for_status_ref().unwrap_err();
-    let err = MidnightCoderErr::ResponseStreamFailed(ResponseStreamFailed {
+    let err = SolaiAgentErr::ResponseStreamFailed(ResponseStreamFailed {
         source,
         request_id: Some("req-123".to_string()),
     });
@@ -184,7 +184,7 @@ fn to_error_event_handles_response_stream_failed() {
     );
     assert_eq!(
         event.codex_error_info,
-        Some(MidnightCoderErrorInfo::ResponseStreamConnectionFailed {
+        Some(SolaiAgentErrorInfo::ResponseStreamConnectionFailed {
             http_status_code: Some(429)
         })
     );
@@ -200,7 +200,7 @@ fn sandbox_denied_reports_exit_code_when_no_output_available() {
         duration: Duration::from_millis(5),
         timed_out: false,
     };
-    let err = MidnightCoderErr::Sandbox(SandboxErr::Denied {
+    let err = SolaiAgentErr::Sandbox(SandboxErr::Denied {
         output: Box::new(output),
         network_policy_decision: None,
     });
@@ -221,7 +221,7 @@ fn usage_limit_reached_error_formats_free_plan() {
     };
     assert_eq!(
         err.to_string(),
-        "You've hit your usage limit. Upgrade to Plus to continue using MidnightCoder (https://chatgpt.com/explore/plus), or try again later."
+        "You've hit your usage limit. Upgrade to Plus to continue using SolaiAgent (https://chatgpt.com/explore/plus), or try again later."
     );
 }
 
@@ -236,7 +236,7 @@ fn usage_limit_reached_error_formats_go_plan() {
     };
     assert_eq!(
         err.to_string(),
-        "You've hit your usage limit. Upgrade to Plus to continue using MidnightCoder (https://chatgpt.com/explore/plus), or try again later."
+        "You've hit your usage limit. Upgrade to Plus to continue using SolaiAgent (https://chatgpt.com/explore/plus), or try again later."
     );
 }
 
@@ -594,12 +594,12 @@ fn usage_limit_reached_with_promo_message() {
             resets_at: Some(resets_at),
             rate_limits: Some(Box::new(rate_limit_snapshot())),
             promo_message: Some(
-                "To continue using MidnightCoder, start a free trial of <PLAN> today".to_string(),
+                "To continue using SolaiAgent, start a free trial of <PLAN> today".to_string(),
             ),
             rate_limit_reached_type: None,
         };
         let expected = format!(
-            "You've hit your usage limit. To continue using MidnightCoder, start a free trial of <PLAN> today, or try again at {expected_time}."
+            "You've hit your usage limit. To continue using SolaiAgent, start a free trial of <PLAN> today, or try again at {expected_time}."
         );
         assert_eq!(err.to_string(), expected);
     });

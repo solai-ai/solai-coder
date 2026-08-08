@@ -4,11 +4,11 @@ expression: render_lines(&view)
 ---
                                                 
   Select Approval Mode                          
-  Switch between MidnightCoder approval preset  
+  Switch between SolaiAgent approval preset  
                                                 
-› 1. Read Only (current)  MidnightCoder can     
+› 1. Read Only (current)  SolaiAgent can     
                           read files            
-  2. Full Access          MidnightCoder can     
+  2. Full Access          SolaiAgent can     
                           edit files            
                                                 
   Press enter to confirm or esc to go back

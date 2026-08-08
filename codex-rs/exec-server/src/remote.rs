@@ -285,7 +285,7 @@ impl HarnessKeyValidator for RegistryHarnessKeyValidator {
     }
 }
 
-/// Noise connection configuration for a MidnightCoder harness.
+/// Noise connection configuration for a SolaiAgent harness.
 ///
 /// The provider holds the authenticated registry client so every reconnect
 /// receives fresh URL and harness-key authorization material.

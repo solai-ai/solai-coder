@@ -66,17 +66,17 @@ impl From<ThreadRealtimeAudioChunk> for CoreRealtimeAudioFrame {
 #[ts(export_to = "v2/")]
 pub struct ThreadRealtimeStartParams {
     pub thread_id: String,
-    /// Leaves MidnightCoder response handoffs to the client's explicit append calls instead of forwarding
+    /// Leaves SolaiAgent response handoffs to the client's explicit append calls instead of forwarding
     /// them automatically. Defaults to false.
     #[ts(optional = nullable)]
     pub client_managed_handoffs: Option<bool>,
-    /// Sends automatic MidnightCoder responses as realtime conversation items instead of handoff appends.
+    /// Sends automatic SolaiAgent responses as realtime conversation items instead of handoff appends.
     #[ts(optional = nullable)]
     pub codex_responses_as_items: Option<bool>,
-    /// Optional prefix added to automatic MidnightCoder response items when `codexResponsesAsItems` is true.
+    /// Optional prefix added to automatic SolaiAgent response items when `codexResponsesAsItems` is true.
     #[ts(optional = nullable)]
     pub codex_response_item_prefix: Option<String>,
-    /// Optional prefix added to automatic V1 MidnightCoder commentary sent with
+    /// Optional prefix added to automatic V1 SolaiAgent commentary sent with
     /// `conversation.handoff.append` when `codexResponsesAsItems` is not true. Final answers are
     /// sent without the prefix.
     #[ts(optional = nullable)]
@@ -87,7 +87,7 @@ pub struct ThreadRealtimeStartParams {
     /// Selects text or audio output for the realtime session. Transport and voice stay
     /// independent so clients can choose how they connect separately from what the model emits.
     pub output_modality: RealtimeOutputModality,
-    /// Set to false to start without MidnightCoder's startup context. Omitted or null includes it.
+    /// Set to false to start without SolaiAgent's startup context. Omitted or null includes it.
     #[ts(optional = nullable)]
     pub include_startup_context: Option<bool>,
     #[serde(

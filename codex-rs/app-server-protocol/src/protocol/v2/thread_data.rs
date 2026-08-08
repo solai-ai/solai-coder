@@ -1,4 +1,4 @@
-use super::MidnightCoderErrorInfo;
+use super::SolaiAgentErrorInfo;
 use super::ThreadItem;
 use super::ThreadStatus;
 use super::TurnStatus;
@@ -168,7 +168,7 @@ pub struct GitInfo {
 #[serde(rename_all = "camelCase")]
 #[ts(export_to = "v2/")]
 pub struct Thread {
-    /// Identifier for this thread. MidnightCoder-generated thread IDs are UUIDv7.
+    /// Identifier for this thread. SolaiAgent-generated thread IDs are UUIDv7.
     pub id: String,
     /// Optional implementation-specific thread data.
     #[experimental("thread.extra")]
@@ -229,7 +229,7 @@ pub struct Thread {
 #[serde(rename_all = "camelCase")]
 #[ts(export_to = "v2/")]
 pub struct Turn {
-    /// Identifier for this turn. MidnightCoder-generated turn IDs are UUIDv7.
+    /// Identifier for this turn. SolaiAgent-generated turn IDs are UUIDv7.
     pub id: String,
     /// Thread items currently included in this turn payload.
     pub items: Vec<ThreadItem>,
@@ -269,7 +269,7 @@ pub enum TurnItemsView {
 #[error("{message}")]
 pub struct TurnError {
     pub message: String,
-    pub codex_error_info: Option<MidnightCoderErrorInfo>,
+    pub codex_error_info: Option<SolaiAgentErrorInfo>,
     #[serde(default)]
     pub additional_details: Option<String>,
 }

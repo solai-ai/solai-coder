@@ -84,7 +84,7 @@
       ]
     },
     "CollaborationMode": {
-      "description": "Collaboration mode for a Midnight Coder session.",
+      "description": "Collaboration mode for a SOLAI Agent session.",
       "properties": {
         "mode": {
           "$ref": "#/definitions/ModeKind"

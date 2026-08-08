@@ -630,7 +630,7 @@ policy:
         outcome.skills[0].policy,
         Some(SkillPolicy {
             allow_implicit_invocation: None,
-            products: vec![Product::MidnightCoder, Product::Chatgpt, Product::Atlas],
+            products: vec![Product::SolaiAgent, Product::Chatgpt, Product::Atlas],
         })
     );
 }

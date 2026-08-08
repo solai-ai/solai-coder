@@ -2,7 +2,7 @@ use super::*;
 
 use crate::responses_metadata::CompactionTurnMetadata;
 use crate::responses_metadata::INSTALLATION_ID_KEY;
-use crate::responses_metadata::MidnightCoderResponsesRequestKind;
+use crate::responses_metadata::SolaiAgentResponsesRequestKind;
 use crate::responses_metadata::WINDOW_ID_KEY;
 use crate::sandbox_tags::permission_profile_sandbox_tag;
 use codex_analytics::CompactionImplementation;
@@ -34,7 +34,7 @@ fn test_mcp_turn_metadata_context() -> McpTurnMetadataContext<'static> {
 fn test_responses_metadata_json(
     state: &TurnMetadataState,
     window_id: &str,
-    request_kind: MidnightCoderResponsesRequestKind,
+    request_kind: SolaiAgentResponsesRequestKind,
 ) -> String {
     state
         .to_responses_metadata(
@@ -47,7 +47,7 @@ fn test_responses_metadata_json(
 }
 
 fn test_turn_responses_metadata_json(state: &TurnMetadataState, window_id: &str) -> String {
-    test_responses_metadata_json(state, window_id, MidnightCoderResponsesRequestKind::Turn)
+    test_responses_metadata_json(state, window_id, SolaiAgentResponsesRequestKind::Turn)
 }
 
 fn test_compaction_responses_metadata_json(
@@ -58,7 +58,7 @@ fn test_compaction_responses_metadata_json(
     test_responses_metadata_json(
         state,
         window_id,
-        MidnightCoderResponsesRequestKind::Compaction(compaction),
+        SolaiAgentResponsesRequestKind::Compaction(compaction),
     )
 }
 

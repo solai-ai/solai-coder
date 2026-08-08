@@ -4,7 +4,7 @@ use codex_config::types::McpServerTransportConfig;
 use codex_core::config::Config;
 use codex_extension_api::ExtensionRegistryBuilder;
 use codex_features::Feature;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_protocol::ThreadId;
 use codex_protocol::config_types::WebSearchMode;
 use codex_protocol::dynamic_tools::DynamicToolFunctionSpec;
@@ -575,7 +575,7 @@ async fn standalone_web_search_marks_thread_memory_mode_polluted_when_configured
     )
     .await;
 
-    let auth = MidnightCoderAuth::from_api_key("dummy");
+    let auth = SolaiAgentAuth::from_api_key("dummy");
     let auth_manager = codex_core::test_support::auth_manager_from_auth(auth.clone());
     let mut extension_builder = ExtensionRegistryBuilder::<Config>::new();
     install_web_search_extension(&mut extension_builder, auth_manager);

@@ -96,27 +96,27 @@ impl CompactionTurnMetadata {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub(crate) enum MidnightCoderResponsesRequestKind {
+pub(crate) enum SolaiAgentResponsesRequestKind {
     Turn,
     Prewarm,
     Compaction(CompactionTurnMetadata),
     Memory,
 }
 
-impl MidnightCoderResponsesRequestKind {
+impl SolaiAgentResponsesRequestKind {
     fn metadata(self) -> (&'static str, Option<CompactionTurnMetadata>) {
         match self {
-            MidnightCoderResponsesRequestKind::Turn => ("turn", None),
-            MidnightCoderResponsesRequestKind::Prewarm => ("prewarm", None),
-            MidnightCoderResponsesRequestKind::Compaction(metadata) => {
+            SolaiAgentResponsesRequestKind::Turn => ("turn", None),
+            SolaiAgentResponsesRequestKind::Prewarm => ("prewarm", None),
+            SolaiAgentResponsesRequestKind::Compaction(metadata) => {
                 ("compaction", Some(metadata))
             }
-            MidnightCoderResponsesRequestKind::Memory => ("memory", None),
+            SolaiAgentResponsesRequestKind::Memory => ("memory", None),
         }
     }
 
     fn has_turn_identity(self) -> bool {
-        !matches!(self, MidnightCoderResponsesRequestKind::Memory)
+        !matches!(self, SolaiAgentResponsesRequestKind::Memory)
     }
 }
 
@@ -130,20 +130,20 @@ pub(crate) struct TurnMetadataWorkspace {
     pub(crate) has_changes: Option<bool>,
 }
 
-/// Caller-owned snapshot of MidnightCoder metadata sent to ResponsesAPI.
+/// Caller-owned snapshot of SolaiAgent metadata sent to ResponsesAPI.
 ///
-/// The full MidnightCoder turn metadata blob is transported canonically as
+/// The full SolaiAgent turn metadata blob is transported canonically as
 /// `client_metadata["x-codex-turn-metadata"]`. Flat `client_metadata` keys and direct HTTP/ws
 /// headers are generated compatibility projections of this snapshot, not separate sources of
 /// truth.
 #[derive(Clone, Debug)]
-pub struct MidnightCoderResponsesMetadata {
+pub struct SolaiAgentResponsesMetadata {
     pub(crate) installation_id: String,
     pub(crate) session_id: String,
     pub(crate) thread_id: String,
     pub(crate) turn_id: Option<String>,
     pub(crate) window_id: String,
-    pub(crate) request_kind: Option<MidnightCoderResponsesRequestKind>,
+    pub(crate) request_kind: Option<SolaiAgentResponsesRequestKind>,
     pub(crate) forked_from_thread_id: Option<ThreadId>,
     pub(crate) parent_thread_id: Option<ThreadId>,
     pub(crate) subagent_header: Option<String>,
@@ -155,7 +155,7 @@ pub struct MidnightCoderResponsesMetadata {
     pub(crate) extra: BTreeMap<String, String>,
 }
 
-impl MidnightCoderResponsesMetadata {
+impl SolaiAgentResponsesMetadata {
     pub(crate) fn new(
         installation_id: String,
         session_id: String,
@@ -253,17 +253,17 @@ impl MidnightCoderResponsesMetadata {
         headers
     }
 
-    fn turn_metadata_payload(&self) -> MidnightCoderTurnMetadataPayload<'_> {
+    fn turn_metadata_payload(&self) -> SolaiAgentTurnMetadataPayload<'_> {
         let request_kind = self.request_kind;
         let (request_kind_value, compaction) = request_kind.map_or((None, None), |request_kind| {
             let (request_kind, compaction) = request_kind.metadata();
             (Some(request_kind), compaction)
         });
         let has_turn_identity =
-            request_kind.is_none_or(MidnightCoderResponsesRequestKind::has_turn_identity);
+            request_kind.is_none_or(SolaiAgentResponsesRequestKind::has_turn_identity);
         let has_request_identity =
-            request_kind.is_some_and(MidnightCoderResponsesRequestKind::has_turn_identity);
-        MidnightCoderTurnMetadataPayload {
+            request_kind.is_some_and(SolaiAgentResponsesRequestKind::has_turn_identity);
+        SolaiAgentTurnMetadataPayload {
             installation_id: has_request_identity.then_some(self.installation_id.as_str()),
             session_id: has_turn_identity.then_some(self.session_id.as_str()),
             thread_id: has_turn_identity.then_some(self.thread_id.as_str()),
@@ -280,8 +280,8 @@ impl MidnightCoderResponsesMetadata {
             workspaces: non_empty_workspaces(&self.workspaces),
             turn_started_at_unix_ms: self.turn_started_at_unix_ms,
             compaction,
-            // responsesapi_client_metadata enriches the MidnightCoder turn metadata blob, not literal
-            // top-level Responses client_metadata. Reserved MidnightCoder-owned keys are filtered when
+            // responsesapi_client_metadata enriches the SolaiAgent turn metadata blob, not literal
+            // top-level Responses client_metadata. Reserved SolaiAgent-owned keys are filtered when
             // these extras enter turn state.
             extra: &self.extra,
         }
@@ -342,7 +342,7 @@ fn non_empty_workspaces(
 }
 
 #[derive(Serialize)]
-struct MidnightCoderTurnMetadataPayload<'a> {
+struct SolaiAgentTurnMetadataPayload<'a> {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     installation_id: Option<&'a str>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

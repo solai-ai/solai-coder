@@ -14,9 +14,9 @@ import {
   startResponsesTestProxy,
   SseResponseBody,
 } from "./responsesProxy";
-import { createMockClient, createTestClient } from "./testMidnightCoder";
+import { createMockClient, createTestClient } from "./testSolaiAgent";
 
-describe("MidnightCoder", () => {
+describe("SolaiAgent", () => {
   it("returns thread events", async () => {
     const { url, close } = await startResponsesTestProxy({
       statusCode: 200,
@@ -408,7 +408,7 @@ describe("MidnightCoder", () => {
     }
   });
 
-  it("passes MidnightCoderOptions config overrides as TOML --config flags", async () => {
+  it("passes SolaiAgentOptions config overrides as TOML --config flags", async () => {
     const { url, close } = await startResponsesTestProxy({
       statusCode: 200,
       responseBodies: [
@@ -449,7 +449,7 @@ describe("MidnightCoder", () => {
     }
   });
 
-  it("lets thread options override MidnightCoderOptions config overrides", async () => {
+  it("lets thread options override SolaiAgentOptions config overrides", async () => {
     const { url, close } = await startResponsesTestProxy({
       statusCode: 200,
       responseBodies: [

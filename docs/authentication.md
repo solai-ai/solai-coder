@@ -1,3 +1,3 @@
 # Authentication
 
-For information about Midnight Coder authentication, see [this documentation](https://developers.openai.com/codex/auth).
+For information about SOLAI Agent authentication, see [this documentation](https://developers.openai.com/codex/auth).

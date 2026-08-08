@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "definitions": {
-    "MidnightCoderErrorInfo": {
+    "SolaiAgentErrorInfo": {
       "description": "This translation layer make sure that we expose codex error code in camel case.\n\nWhen an upstream HTTP status is available (for example, from the Responses API or a provider), it is forwarded in `httpStatusCode` on the relevant `codexErrorInfo` variant.",
       "oneOf": [
         {
@@ -40,7 +40,7 @@
           "required": [
             "httpConnectionFailed"
           ],
-          "title": "HttpConnectionFailedMidnightCoderErrorInfo",
+          "title": "HttpConnectionFailedSolaiAgentErrorInfo",
           "type": "object"
         },
         {
@@ -64,7 +64,7 @@
           "required": [
             "responseStreamConnectionFailed"
           ],
-          "title": "ResponseStreamConnectionFailedMidnightCoderErrorInfo",
+          "title": "ResponseStreamConnectionFailedSolaiAgentErrorInfo",
           "type": "object"
         },
         {
@@ -88,7 +88,7 @@
           "required": [
             "responseStreamDisconnected"
           ],
-          "title": "ResponseStreamDisconnectedMidnightCoderErrorInfo",
+          "title": "ResponseStreamDisconnectedSolaiAgentErrorInfo",
           "type": "object"
         },
         {
@@ -112,7 +112,7 @@
           "required": [
             "responseTooManyFailedAttempts"
           ],
-          "title": "ResponseTooManyFailedAttemptsMidnightCoderErrorInfo",
+          "title": "ResponseTooManyFailedAttemptsSolaiAgentErrorInfo",
           "type": "object"
         },
         {
@@ -134,7 +134,7 @@
           "required": [
             "activeTurnNotSteerable"
           ],
-          "title": "ActiveTurnNotSteerableMidnightCoderErrorInfo",
+          "title": "ActiveTurnNotSteerableSolaiAgentErrorInfo",
           "type": "object"
         }
       ]
@@ -158,7 +158,7 @@
         "codexErrorInfo": {
           "anyOf": [
             {
-              "$ref": "#/definitions/MidnightCoderErrorInfo"
+              "$ref": "#/definitions/SolaiAgentErrorInfo"
             },
             {
               "type": "null"

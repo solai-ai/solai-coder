@@ -5,7 +5,7 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::error::Result;
 use codex_protocol::error::SandboxErr;
 use codex_protocol::models::PermissionProfile;
@@ -70,7 +70,7 @@ pub(crate) fn apply_permission_profile_to_current_thread(
 
     if apply_landlock_fs && !file_system_sandbox_policy.has_full_disk_write_access() {
         if !file_system_sandbox_policy.has_full_disk_read_access() {
-            return Err(MidnightCoderErr::UnsupportedOperation(
+            return Err(SolaiAgentErr::UnsupportedOperation(
                 "Restricted read-only access is not supported by the legacy Linux Landlock filesystem backend."
                     .to_string(),
             ));
@@ -130,7 +130,7 @@ fn set_no_new_privs() -> Result<()> {
 /// `/dev/null` and the provided list of `writable_roots`.
 ///
 /// # Errors
-/// Returns [`MidnightCoderErr::Sandbox`] variants when the ruleset fails to apply.
+/// Returns [`SolaiAgentErr::Sandbox`] variants when the ruleset fails to apply.
 ///
 /// Note: this is currently unused because filesystem sandboxing is performed
 /// via bubblewrap. It is kept for reference and potential fallback use.
@@ -156,7 +156,7 @@ fn install_filesystem_landlock_rules_on_current_thread(
     let status = ruleset.restrict_self()?;
 
     if status.ruleset == landlock::RulesetStatus::NotEnforced {
-        return Err(MidnightCoderErr::Sandbox(SandboxErr::LandlockRestrict));
+        return Err(SolaiAgentErr::Sandbox(SandboxErr::LandlockRestrict));
     }
 
     Ok(())

@@ -16,7 +16,7 @@ use crate::test_support::write_file;
 use crate::test_support::write_openai_api_curated_marketplace;
 use crate::test_support::write_openai_curated_marketplace;
 use codex_config::CONFIG_TOML_FILE;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_protocol::auth::AuthMode;
 use codex_utils_absolute_path::AbsolutePathBuf;
 use pretty_assertions::assert_eq;
@@ -43,7 +43,7 @@ async fn returns_fallback_plugins_when_remote_disabled_for_codex_auth() {
     let plugins = load_plugins_config(codex_home.path(), codex_home.path()).await;
     let plugins_manager = PluginsManager::new(codex_home.path().to_path_buf());
     plugins_manager.set_auth_mode(Some(AuthMode::Chatgpt));
-    let auth = MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing();
     let discoverable_plugins = list_discoverable_plugins(
         &plugins_manager,
         discovery_input(plugins, &[], &[], &[]),
@@ -73,7 +73,7 @@ async fn returns_api_curated_fallback_plugins_for_direct_provider_auth() {
     plugins.remote_plugin_enabled = true;
     let plugins_manager = PluginsManager::new(codex_home.path().to_path_buf());
     plugins_manager.set_auth_mode(Some(AuthMode::ApiKey));
-    let auth = MidnightCoderAuth::from_api_key("test-api-key");
+    let auth = SolaiAgentAuth::from_api_key("test-api-key");
     let discoverable_plugins = list_discoverable_plugins(
         &plugins_manager,
         discovery_input(plugins, &[], &[], &[]),
@@ -165,7 +165,7 @@ source = "/tmp/{bundled_marketplace_name}"
     let plugins = load_plugins_config(codex_home.path(), codex_home.path()).await;
     let plugins_manager = PluginsManager::new(codex_home.path().to_path_buf());
     plugins_manager.set_auth_mode(Some(AuthMode::Chatgpt));
-    let auth = MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing();
     let discoverable_plugins = list_discoverable_plugins(
         &plugins_manager,
         discovery_input(plugins, &[], &[], &[]),
@@ -842,7 +842,7 @@ remote_plugin = true
         .mount(&server)
         .await;
 
-    let auth = MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing();
     let mut plugins = load_plugins_config(codex_home.path(), codex_home.path()).await;
     plugins.chatgpt_base_url = format!("{}/backend-api", server.uri());
     let plugins_manager = PluginsManager::new(codex_home.path().to_path_buf());
@@ -918,7 +918,7 @@ fn discovery_input(
 async fn list_discoverable_plugins(
     plugins_manager: &PluginsManager,
     input: ToolSuggestPluginDiscoveryInput,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
 ) -> Vec<ToolSuggestDiscoverablePlugin> {
     plugins_manager
         .list_tool_suggest_discoverable_plugins(&input, auth)

@@ -1,4 +1,4 @@
-//! Plugin path resolution, plaintext mention sigils, and MCP connector helpers shared across MidnightCoder
+//! Plugin path resolution, plaintext mention sigils, and MCP connector helpers shared across SolaiAgent
 //! crates.
 
 use codex_utils_absolute_path::AbsolutePathBuf;

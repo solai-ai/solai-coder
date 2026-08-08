@@ -1,4 +1,4 @@
-/// Identify whether a base_url points at an MidnightCoder-compatible root (".../v1").
+/// Identify whether a base_url points at an SolaiAgent-compatible root (".../v1").
 pub(crate) fn is_openai_compatible_base_url(base_url: &str) -> bool {
     base_url.trim_end_matches('/').ends_with("/v1")
 }

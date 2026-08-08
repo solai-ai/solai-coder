@@ -206,7 +206,7 @@ restrict_to_allowed_sources = {restricted}
 
 #[test]
 fn strict_install_validates_configured_name_source_and_root() {
-    let codex_home = TempDir::new().expect("create MidnightCoder home");
+    let codex_home = TempDir::new().expect("create SolaiAgent home");
     let configured_root = TempDir::new().expect("create configured marketplace");
     let other_root = TempDir::new().expect("create other marketplace");
     let configured_root = configured_root
@@ -268,7 +268,7 @@ source = {configured_root:?}
 
 #[test]
 fn blocked_configured_source_is_not_installable() {
-    let codex_home = TempDir::new().expect("create MidnightCoder home");
+    let codex_home = TempDir::new().expect("create SolaiAgent home");
     let config_file = AbsolutePathBuf::try_from(codex_home.path().join("config.toml"))
         .expect("absolute config path");
     let stack = config_layer_stack_with_user_config(
@@ -320,7 +320,7 @@ source = "marketplaces/company"
 
 #[test]
 fn curated_marketplace_requires_its_expected_name() {
-    let codex_home = TempDir::new().expect("create MidnightCoder home");
+    let codex_home = TempDir::new().expect("create SolaiAgent home");
     let stack = config_layer_stack(
         r#"
 [marketplaces]
@@ -356,7 +356,7 @@ restrict_to_allowed_sources = true
 
 #[test]
 fn managed_bundled_source_is_bound_to_its_expected_name() {
-    let codex_home = TempDir::new().expect("create MidnightCoder home");
+    let codex_home = TempDir::new().expect("create SolaiAgent home");
     let bundled_root = codex_home
         .path()
         .join(".tmp/bundled-marketplaces")
@@ -385,7 +385,7 @@ restrict_to_allowed_sources = true
 
 #[test]
 fn blocked_upgrade_is_rejected_before_marketplace_installation() {
-    let codex_home = TempDir::new().expect("create MidnightCoder home");
+    let codex_home = TempDir::new().expect("create SolaiAgent home");
     let config_file = AbsolutePathBuf::try_from(codex_home.path().join("config.toml"))
         .expect("absolute config path");
     let stack = config_layer_stack_with_user_config(

@@ -3,7 +3,7 @@
 use codex_config::CONFIG_TOML_FILE;
 use codex_core::NewThread;
 use codex_features::Feature;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_protocol::protocol::EventMsg;
 use codex_protocol::protocol::InitialHistory;
 use codex_protocol::protocol::WarningEvent;
@@ -32,11 +32,11 @@ async fn emits_warning_when_unstable_features_enabled_via_config() {
     );
 
     let thread_manager = codex_core::test_support::thread_manager_with_models_provider(
-        MidnightCoderAuth::from_api_key("test"),
+        SolaiAgentAuth::from_api_key("test"),
         config.model_provider.clone(),
     );
     let auth_manager =
-        codex_core::test_support::auth_manager_from_auth(MidnightCoderAuth::from_api_key("test"));
+        codex_core::test_support::auth_manager_from_auth(SolaiAgentAuth::from_api_key("test"));
 
     let NewThread {
         thread: conversation,
@@ -79,11 +79,11 @@ async fn suppresses_warning_when_configured() {
     );
 
     let thread_manager = codex_core::test_support::thread_manager_with_models_provider(
-        MidnightCoderAuth::from_api_key("test"),
+        SolaiAgentAuth::from_api_key("test"),
         config.model_provider.clone(),
     );
     let auth_manager =
-        codex_core::test_support::auth_manager_from_auth(MidnightCoderAuth::from_api_key("test"));
+        codex_core::test_support::auth_manager_from_auth(SolaiAgentAuth::from_api_key("test"));
 
     let NewThread {
         thread: conversation,

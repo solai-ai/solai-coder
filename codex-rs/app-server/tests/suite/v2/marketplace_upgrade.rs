@@ -49,7 +49,7 @@ fn write_marketplace_files(root: &Path, marketplace_name: &str, marker: &str) ->
 fn init_marketplace_repo(root: &Path, marketplace_name: &str, marker: &str) -> Result<String> {
     run_git(root, &["init"])?;
     run_git(root, &["config", "user.email", "codex@example.com"])?;
-    run_git(root, &["config", "user.name", "MidnightCoder Tests"])?;
+    run_git(root, &["config", "user.name", "SolaiAgent Tests"])?;
     write_marketplace_files(root, marketplace_name, marker)?;
     run_git(root, &["add", "."])?;
     run_git(root, &["commit", "-m", "initial marketplace"])?;

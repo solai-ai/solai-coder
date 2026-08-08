@@ -590,7 +590,7 @@
         {
           "description": "Path to a .codex/ folder within a project. There could be multiple of these between `cwd` and the project/repo root.",
           "properties": {
-            "dotMidnightCoderFolder": {
+            "dotSolaiAgentFolder": {
               "$ref": "#/definitions/AbsolutePathBuf"
             },
             "type": {
@@ -602,7 +602,7 @@
             }
           },
           "required": [
-            "dotMidnightCoderFolder",
+            "dotSolaiAgentFolder",
             "type"
           ],
           "title": "ProjectConfigLayerSource",
@@ -758,7 +758,7 @@
       "type": "object"
     },
     "Verbosity": {
-      "description": "Controls output length/detail on GPT-5 models via the Responses API. Serialized with lowercase values to match the Midnight Coder API.",
+      "description": "Controls output length/detail on GPT-5 models via the Responses API. Serialized with lowercase values to match the SOLAI Agent API.",
       "enum": [
         "low",
         "medium",

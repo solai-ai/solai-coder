@@ -1,4 +1,4 @@
-use codex_core::MidnightCoderThread;
+use codex_core::SolaiAgentThread;
 use codex_core::REVIEW_PROMPT;
 use codex_core::config::Config;
 use codex_core::review_format::render_review_output_text;
@@ -39,7 +39,7 @@ use wiremock::MockServer;
 /// in that order when the model returns a structured review JSON payload.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn review_op_emits_lifecycle_and_review_output() {
-    // Skip under MidnightCoder sandbox network restrictions.
+    // Skip under SolaiAgent sandbox network restrictions.
     skip_if_no_network!();
 
     // Start mock Responses API server. Return a single assistant message whose
@@ -895,7 +895,7 @@ async fn new_conversation_for_server<F>(
     server: &MockServer,
     codex_home: Arc<TempDir>,
     mutator: F,
-) -> Arc<MidnightCoderThread>
+) -> Arc<SolaiAgentThread>
 where
     F: FnOnce(&mut Config) + Send + 'static,
 {
@@ -919,7 +919,7 @@ async fn resume_conversation_for_server<F>(
     codex_home: Arc<TempDir>,
     resume_path: std::path::PathBuf,
     mutator: F,
-) -> Arc<MidnightCoderThread>
+) -> Arc<SolaiAgentThread>
 where
     F: FnOnce(&mut Config) + Send + 'static,
 {

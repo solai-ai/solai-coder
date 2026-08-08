@@ -10,7 +10,7 @@ use codex_api::ApiError;
 use codex_api::Provider;
 use codex_api::SharedAuthProvider;
 use codex_login::AuthManager;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_login::auth::BedrockApiKeyAuth;
 use codex_model_provider_info::AMAZON_BEDROCK_GPT_5_4_MODEL_ID;
 use codex_model_provider_info::ModelProviderAwsAuthInfo;
@@ -19,7 +19,7 @@ use codex_models_manager::manager::SharedModelsManager;
 use codex_models_manager::manager::StaticModelsManager;
 use codex_protocol::account::AmazonBedrockCredentialSource;
 use codex_protocol::account::ProviderAccount;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::error::Result;
 use codex_protocol::openai_models::ModelsResponse;
 
@@ -33,7 +33,7 @@ pub(crate) use catalog::static_model_catalog;
 use catalog::with_default_only_service_tier;
 use mantle::runtime_base_url;
 
-/// Runtime provider for Amazon Bedrock's MidnightCoder-compatible Mantle endpoint.
+/// Runtime provider for Amazon Bedrock's SolaiAgent-compatible Mantle endpoint.
 #[derive(Clone, Debug)]
 pub(crate) struct AmazonBedrockModelProvider {
     pub(crate) info: ModelProviderInfo,
@@ -65,17 +65,17 @@ impl AmazonBedrockModelProvider {
             .as_ref()
             .and_then(|auth_manager| auth_manager.auth_cached())
             .and_then(|auth| match auth {
-                MidnightCoderAuth::BedrockApiKey(auth) => Some(auth),
-                MidnightCoderAuth::ApiKey(_)
-                | MidnightCoderAuth::Chatgpt(_)
-                | MidnightCoderAuth::ChatgptAuthTokens(_)
-                | MidnightCoderAuth::AgentIdentity(_)
-                | MidnightCoderAuth::PersonalAccessToken(_) => None,
+                SolaiAgentAuth::BedrockApiKey(auth) => Some(auth),
+                SolaiAgentAuth::ApiKey(_)
+                | SolaiAgentAuth::Chatgpt(_)
+                | SolaiAgentAuth::ChatgptAuthTokens(_)
+                | SolaiAgentAuth::AgentIdentity(_)
+                | SolaiAgentAuth::PersonalAccessToken(_) => None,
             })
     }
 
-    async fn auth(&self) -> Option<MidnightCoderAuth> {
-        self.managed_auth().map(MidnightCoderAuth::BedrockApiKey)
+    async fn auth(&self) -> Option<SolaiAgentAuth> {
+        self.managed_auth().map(SolaiAgentAuth::BedrockApiKey)
     }
 
     async fn api_provider(&self) -> Result<Provider> {
@@ -129,13 +129,13 @@ impl ModelProvider for AmazonBedrockModelProvider {
             .and_then(|_| self.auth_manager.as_ref().cloned())
     }
 
-    fn auth(&self) -> ModelProviderFuture<'_, Option<MidnightCoderAuth>> {
+    fn auth(&self) -> ModelProviderFuture<'_, Option<SolaiAgentAuth>> {
         Box::pin(AmazonBedrockModelProvider::auth(self))
     }
 
     fn account_state(&self) -> ProviderAccountResult {
         let credential_source = if self.managed_auth().is_some() {
-            AmazonBedrockCredentialSource::MidnightCoderManaged
+            AmazonBedrockCredentialSource::SolaiAgentManaged
         } else {
             AmazonBedrockCredentialSource::AwsManaged
         };
@@ -145,7 +145,7 @@ impl ModelProvider for AmazonBedrockModelProvider {
         })
     }
 
-    fn map_api_error(&self, error: ApiError) -> MidnightCoderErr {
+    fn map_api_error(&self, error: ApiError) -> SolaiAgentErr {
         error::map_api_error(error)
     }
 
@@ -206,7 +206,7 @@ mod tests {
             api_key: "managed-bedrock-api-key".to_string(),
             region: "us-east-1".to_string(),
         };
-        let auth_manager = AuthManager::from_auth_for_testing(MidnightCoderAuth::BedrockApiKey(
+        let auth_manager = AuthManager::from_auth_for_testing(SolaiAgentAuth::BedrockApiKey(
             managed_auth.clone(),
         ));
         let provider = AmazonBedrockModelProvider::new(
@@ -225,13 +225,13 @@ mod tests {
         ));
         assert_eq!(
             provider.auth().await,
-            Some(MidnightCoderAuth::BedrockApiKey(managed_auth))
+            Some(SolaiAgentAuth::BedrockApiKey(managed_auth))
         );
         assert_eq!(
             provider.account_state(),
             Ok(ProviderAccountState {
                 account: Some(ProviderAccount::AmazonBedrock {
-                    credential_source: AmazonBedrockCredentialSource::MidnightCoderManaged,
+                    credential_source: AmazonBedrockCredentialSource::SolaiAgentManaged,
                 }),
                 requires_openai_auth: false,
             })
@@ -259,7 +259,7 @@ mod tests {
         let provider = AmazonBedrockModelProvider::new(
             ModelProviderInfo::create_amazon_bedrock_provider(/*aws*/ None),
             Some(AuthManager::from_auth_for_testing(
-                MidnightCoderAuth::from_api_key("openai-api-key"),
+                SolaiAgentAuth::from_api_key("openai-api-key"),
             )),
         );
 

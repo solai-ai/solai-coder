@@ -58,7 +58,7 @@ use crate::unified_exec::process::SpawnLifecycleHandle;
 use crate::unified_exec::process::UnifiedExecProcess;
 use codex_network_proxy::NetworkProxy;
 use codex_protocol::config_types::ShellEnvironmentPolicy;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::error::SandboxErr;
 use codex_protocol::protocol::ExecCommandSource;
 use codex_sandboxing::SandboxCommand;
@@ -79,7 +79,7 @@ const UNIFIED_EXEC_ENV: [(&str, &str); 10] = [
     ("CODEX_CI", "1"),
 ];
 const NETWORK_ACCESS_DENIED_MESSAGE: &str =
-    "Network access was denied by the MidnightCoder sandbox network proxy.";
+    "Network access was denied by the SolaiAgent sandbox network proxy.";
 const LATE_NETWORK_DENIAL_GRACE_PERIOD: Duration = Duration::from_millis(100);
 const INTERRUPT: &str = "\u{3}";
 
@@ -260,7 +260,7 @@ async fn finish_deferred_network_approval_for_session(
 fn network_approval_error_message(err: ToolError) -> String {
     match err {
         ToolError::Rejected(message) => message,
-        ToolError::MidnightCoder(err) => err.to_string(),
+        ToolError::SolaiAgent(err) => err.to_string(),
     }
 }
 
@@ -931,7 +931,7 @@ impl UnifiedExecProcessManager {
         } else {
             attempt.env_for(command, options, network, environment_id)
         }
-        .map_err(ToolError::MidnightCoder)?;
+        .map_err(ToolError::SolaiAgent)?;
         request.exec_server_env_config = exec_server_env_config;
         self.open_session_with_prepared_exec_env(
             process_id,
@@ -943,7 +943,7 @@ impl UnifiedExecProcessManager {
         .await
         .map_err(|err| match err {
             UnifiedExecError::SandboxDenied { output, .. } => {
-                ToolError::MidnightCoder(MidnightCoderErr::Sandbox(SandboxErr::Denied {
+                ToolError::SolaiAgent(SolaiAgentErr::Sandbox(SandboxErr::Denied {
                     output: Box::new(output),
                     network_policy_decision: None,
                 }))
@@ -1190,7 +1190,7 @@ impl UnifiedExecProcessManager {
             .await
             .map(|result| (result.output, result.deferred_network_approval))
             .map_err(|err| match err {
-                ToolError::MidnightCoder(MidnightCoderErr::Sandbox(SandboxErr::Denied {
+                ToolError::SolaiAgent(SolaiAgentErr::Sandbox(SandboxErr::Denied {
                     output,
                     ..
                 })) => {

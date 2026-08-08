@@ -15,7 +15,7 @@ from collections.abc import Awaitable, Callable
 from typing import TypeVar
 
 from openai_codex import (
-    AsyncMidnightCoder,
+    AsyncSolaiAgent,
     JsonRpcError,
     ServerBusyError,
     is_retryable_error,
@@ -53,7 +53,7 @@ async def retry_on_overload_async(
 
 
 async def main() -> None:
-    async with AsyncMidnightCoder(config=runtime_config()) as codex:
+    async with AsyncSolaiAgent(config=runtime_config()) as codex:
         thread = await codex.thread_start(
             model="gpt-5.4", config={"model_reasoning_effort": "high"}
         )

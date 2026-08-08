@@ -7,6 +7,6 @@ expression: normalize_snapshot_paths(rendered)
     • rm -rf '/tmp/guardian target 2'
 
 
-› Ask MidnightCoder to do anything
+› Ask SolaiAgent to do anything
 
   gpt-5.5 default · /tmp/project

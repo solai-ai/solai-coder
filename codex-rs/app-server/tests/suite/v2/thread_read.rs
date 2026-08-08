@@ -47,7 +47,7 @@ use codex_config::LoaderOverrides;
 use codex_core::ARCHIVED_SESSIONS_SUBDIR;
 use codex_core::config::ConfigBuilder;
 use codex_exec_server::EnvironmentManager;
-use codex_feedback::MidnightCoderFeedback;
+use codex_feedback::SolaiAgentFeedback;
 use codex_protocol::models::BaseInstructions;
 use codex_protocol::protocol::AgentMessageEvent;
 use codex_protocol::protocol::EventMsg;
@@ -494,7 +494,7 @@ async fn thread_turns_list_reads_store_history_without_rollout_path() -> Result<
         strict_config: false,
         cloud_config_bundle: CloudConfigBundleLoader::default(),
         thread_config_loader: Arc::new(codex_config::NoopThreadConfigLoader),
-        feedback: MidnightCoderFeedback::new(),
+        feedback: SolaiAgentFeedback::new(),
         log_db: None,
         state_db: None,
         environment_manager: Arc::new(EnvironmentManager::default_for_tests()),
@@ -560,7 +560,7 @@ async fn thread_read_loaded_include_turns_reads_store_history_without_rollout_pa
         strict_config: false,
         cloud_config_bundle: CloudConfigBundleLoader::default(),
         thread_config_loader: Arc::new(codex_config::NoopThreadConfigLoader),
-        feedback: MidnightCoderFeedback::new(),
+        feedback: SolaiAgentFeedback::new(),
         log_db: None,
         state_db: None,
         environment_manager: Arc::new(EnvironmentManager::default_for_tests()),
@@ -646,7 +646,7 @@ async fn thread_list_includes_store_thread_without_rollout_path() -> Result<()> 
         strict_config: false,
         cloud_config_bundle: CloudConfigBundleLoader::default(),
         thread_config_loader: Arc::new(codex_config::NoopThreadConfigLoader),
-        feedback: MidnightCoderFeedback::new(),
+        feedback: SolaiAgentFeedback::new(),
         log_db: None,
         state_db: None,
         environment_manager: Arc::new(EnvironmentManager::default_for_tests()),

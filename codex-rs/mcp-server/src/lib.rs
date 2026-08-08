@@ -40,8 +40,8 @@ use crate::outgoing_message::OutgoingJsonRpcMessage;
 use crate::outgoing_message::OutgoingMessage;
 use crate::outgoing_message::OutgoingMessageSender;
 
-pub use crate::codex_tool_config::MidnightCoderToolCallParam;
-pub use crate::codex_tool_config::MidnightCoderToolCallReplyParam;
+pub use crate::codex_tool_config::SolaiAgentToolCallParam;
+pub use crate::codex_tool_config::SolaiAgentToolCallReplyParam;
 pub use crate::exec_approval::ExecApprovalElicitRequestParams;
 pub use crate::exec_approval::ExecApprovalResponse;
 pub use crate::patch_approval::PatchApprovalElicitRequestParams;

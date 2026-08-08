@@ -1,4 +1,4 @@
-//! Fixed shortcuts used before users have had a chance to configure MidnightCoder.
+//! Fixed shortcuts used before users have had a chance to configure SolaiAgent.
 
 use crossterm::event::KeyCode;
 use crossterm::event::KeyModifiers;

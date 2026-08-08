@@ -1,10 +1,10 @@
-# Individual Contributor License Agreement (v1.0, Midnight Coder)
+# Individual Contributor License Agreement (v1.0, SOLAI Agent)
 
 _Based on the Apache Software Foundation Individual CLA v 2.2._
 
 By commenting **“I have read the CLA Document and I hereby sign the CLA”**
 on a Pull Request, **you (“Contributor”) agree to the following terms** for any
-past and future “Contributions” submitted to the **Midnight Coder Midnight Coder CLI project
+past and future “Contributions” submitted to the **SOLAI Agent SOLAI Agent CLI project
 (the “Project”)**.
 
 ---
@@ -18,14 +18,14 @@ past and future “Contributions” submitted to the **Midnight Coder Midnight 
 
 ## 2. Copyright License
 
-You grant **Midnight Coder, Inc.** and all recipients of software distributed by the
+You grant **SolaiAgent, Inc.** and all recipients of software distributed by the
 Project a perpetual, worldwide, non‑exclusive, royalty‑free, irrevocable
 license to reproduce, prepare derivative works of, publicly display, publicly
 perform, sublicense, and distribute Your Contributions and derivative works.
 
 ## 3. Patent License
 
-You grant **Midnight Coder, Inc.** and all recipients of the Project a perpetual,
+You grant **SolaiAgent, Inc.** and all recipients of the Project a perpetual,
 worldwide, non‑exclusive, royalty‑free, irrevocable (except as below) patent
 license to make, have made, use, sell, offer to sell, import, and otherwise
 transfer Your Contributions alone or in combination with the Project.

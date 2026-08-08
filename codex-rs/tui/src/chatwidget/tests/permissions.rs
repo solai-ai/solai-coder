@@ -465,7 +465,7 @@ async fn startup_windows_sandbox_prompt_blocks_disallowed_unelevated_fallback() 
 
     let popup = render_bottom_popup(&chat, /*width*/ 120);
     assert!(
-        popup.contains("Your organization requires the default MidnightCoder agent sandbox"),
+        popup.contains("Your organization requires the default SolaiAgent agent sandbox"),
         "expected required sandbox prompt copy: {popup}"
     );
     assert!(
@@ -723,7 +723,7 @@ async fn approvals_popup_navigation_skips_disabled() {
     assert!(
         app_events.iter().any(|ev| matches!(
             ev,
-            AppEvent::MidnightCoderOp(Op::OverrideTurnContext {
+            AppEvent::SolaiAgentOp(Op::OverrideTurnContext {
                 approval_policy: Some(AskForApproval::OnRequest),
                 personality: None,
                 ..
@@ -734,7 +734,7 @@ async fn approvals_popup_navigation_skips_disabled() {
     assert!(
         !app_events.iter().any(|ev| matches!(
             ev,
-            AppEvent::MidnightCoderOp(Op::OverrideTurnContext {
+            AppEvent::SolaiAgentOp(Op::OverrideTurnContext {
                 approval_policy: Some(AskForApproval::Never),
                 personality: None,
                 ..
@@ -1102,7 +1102,7 @@ async fn permissions_selection_sends_approvals_reviewer_in_override_turn_context
 
     let op = std::iter::from_fn(|| rx.try_recv().ok())
         .find_map(|event| match event {
-            AppEvent::MidnightCoderOp(op @ Op::OverrideTurnContext { .. }) => Some(op),
+            AppEvent::SolaiAgentOp(op @ Op::OverrideTurnContext { .. }) => Some(op),
             _ => None,
         })
         .expect("expected OverrideTurnContext op");

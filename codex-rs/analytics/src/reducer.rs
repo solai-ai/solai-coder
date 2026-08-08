@@ -7,43 +7,43 @@ use crate::events::FinalApprovalOutcome;
 use crate::events::GuardianReviewEventParams;
 use crate::events::GuardianReviewEventPayload;
 use crate::events::GuardianReviewEventRequest;
-use crate::events::MidnightCoderAppMentionedEventRequest;
-use crate::events::MidnightCoderAppServerClientMetadata;
-use crate::events::MidnightCoderAppUsedEventRequest;
-use crate::events::MidnightCoderCollabAgentToolCallEventParams;
-use crate::events::MidnightCoderCollabAgentToolCallEventRequest;
-use crate::events::MidnightCoderCommandExecutionEventParams;
-use crate::events::MidnightCoderCommandExecutionEventRequest;
-use crate::events::MidnightCoderCompactionEventRequest;
-use crate::events::MidnightCoderDynamicToolCallEventParams;
-use crate::events::MidnightCoderDynamicToolCallEventRequest;
-use crate::events::MidnightCoderFileChangeEventParams;
-use crate::events::MidnightCoderFileChangeEventRequest;
-use crate::events::MidnightCoderGoalEventRequest;
-use crate::events::MidnightCoderHookRunEventRequest;
-use crate::events::MidnightCoderImageGenerationEventParams;
-use crate::events::MidnightCoderImageGenerationEventRequest;
-use crate::events::MidnightCoderMcpToolCallEventParams;
-use crate::events::MidnightCoderMcpToolCallEventRequest;
-use crate::events::MidnightCoderOnboardingExternalAgentImportCompleteEventRequest;
-use crate::events::MidnightCoderOnboardingExternalAgentImportCompleteMetadata;
-use crate::events::MidnightCoderOnboardingExternalAgentImportFailureEventRequest;
-use crate::events::MidnightCoderOnboardingExternalAgentImportFailureMetadata;
-use crate::events::MidnightCoderPluginEventRequest;
-use crate::events::MidnightCoderPluginInstallFailedEventRequest;
-use crate::events::MidnightCoderPluginInstallFailedMetadata;
-use crate::events::MidnightCoderPluginInstallRequestedEventRequest;
-use crate::events::MidnightCoderPluginUsedEventRequest;
-use crate::events::MidnightCoderReviewEventParams;
-use crate::events::MidnightCoderReviewEventRequest;
-use crate::events::MidnightCoderRuntimeMetadata;
-use crate::events::MidnightCoderToolItemEventBase;
-use crate::events::MidnightCoderTurnEventParams;
-use crate::events::MidnightCoderTurnEventRequest;
-use crate::events::MidnightCoderTurnSteerEventParams;
-use crate::events::MidnightCoderTurnSteerEventRequest;
-use crate::events::MidnightCoderWebSearchEventParams;
-use crate::events::MidnightCoderWebSearchEventRequest;
+use crate::events::SolaiAgentAppMentionedEventRequest;
+use crate::events::SolaiAgentAppServerClientMetadata;
+use crate::events::SolaiAgentAppUsedEventRequest;
+use crate::events::SolaiAgentCollabAgentToolCallEventParams;
+use crate::events::SolaiAgentCollabAgentToolCallEventRequest;
+use crate::events::SolaiAgentCommandExecutionEventParams;
+use crate::events::SolaiAgentCommandExecutionEventRequest;
+use crate::events::SolaiAgentCompactionEventRequest;
+use crate::events::SolaiAgentDynamicToolCallEventParams;
+use crate::events::SolaiAgentDynamicToolCallEventRequest;
+use crate::events::SolaiAgentFileChangeEventParams;
+use crate::events::SolaiAgentFileChangeEventRequest;
+use crate::events::SolaiAgentGoalEventRequest;
+use crate::events::SolaiAgentHookRunEventRequest;
+use crate::events::SolaiAgentImageGenerationEventParams;
+use crate::events::SolaiAgentImageGenerationEventRequest;
+use crate::events::SolaiAgentMcpToolCallEventParams;
+use crate::events::SolaiAgentMcpToolCallEventRequest;
+use crate::events::SolaiAgentOnboardingExternalAgentImportCompleteEventRequest;
+use crate::events::SolaiAgentOnboardingExternalAgentImportCompleteMetadata;
+use crate::events::SolaiAgentOnboardingExternalAgentImportFailureEventRequest;
+use crate::events::SolaiAgentOnboardingExternalAgentImportFailureMetadata;
+use crate::events::SolaiAgentPluginEventRequest;
+use crate::events::SolaiAgentPluginInstallFailedEventRequest;
+use crate::events::SolaiAgentPluginInstallFailedMetadata;
+use crate::events::SolaiAgentPluginInstallRequestedEventRequest;
+use crate::events::SolaiAgentPluginUsedEventRequest;
+use crate::events::SolaiAgentReviewEventParams;
+use crate::events::SolaiAgentReviewEventRequest;
+use crate::events::SolaiAgentRuntimeMetadata;
+use crate::events::SolaiAgentToolItemEventBase;
+use crate::events::SolaiAgentTurnEventParams;
+use crate::events::SolaiAgentTurnEventRequest;
+use crate::events::SolaiAgentTurnSteerEventParams;
+use crate::events::SolaiAgentTurnSteerEventRequest;
+use crate::events::SolaiAgentWebSearchEventParams;
+use crate::events::SolaiAgentWebSearchEventRequest;
 use crate::events::ReviewResolution;
 use crate::events::ReviewStatus;
 use crate::events::ReviewSubjectKind;
@@ -75,8 +75,8 @@ use crate::facts::CustomAnalyticsFact;
 use crate::facts::ExternalAgentConfigImportCompletedInput;
 use crate::facts::ExternalAgentConfigImportFailureInput;
 use crate::facts::HookRunInput;
-use crate::facts::MidnightCoderCompactionEvent;
-use crate::facts::MidnightCoderGoalEvent;
+use crate::facts::SolaiAgentCompactionEvent;
+use crate::facts::SolaiAgentGoalEvent;
 use crate::facts::PluginInstallFailedInput;
 use crate::facts::PluginInstallRequestedInput;
 use crate::facts::PluginState;
@@ -85,8 +85,8 @@ use crate::facts::PluginUsedInput;
 use crate::facts::SkillInvokedInput;
 use crate::facts::SubAgentThreadStartedInput;
 use crate::facts::ThreadInitializationMode;
-use crate::facts::TurnMidnightCoderError;
-use crate::facts::TurnMidnightCoderErrorFact;
+use crate::facts::TurnSolaiAgentError;
+use crate::facts::TurnSolaiAgentErrorFact;
 use crate::facts::TurnProfile;
 use crate::facts::TurnProfileFact;
 use crate::facts::TurnResolvedConfigFact;
@@ -114,7 +114,7 @@ use codex_app_server_protocol::GuardianApprovalReviewAction;
 use codex_app_server_protocol::GuardianApprovalReviewStatus;
 use codex_app_server_protocol::InitializeParams;
 use codex_app_server_protocol::McpToolCallStatus;
-use codex_app_server_protocol::MidnightCoderErrorInfo;
+use codex_app_server_protocol::SolaiAgentErrorInfo;
 use codex_app_server_protocol::NetworkPolicyRuleAction;
 use codex_app_server_protocol::PatchApplyStatus;
 use codex_app_server_protocol::PatchChangeKind;
@@ -157,8 +157,8 @@ pub(crate) struct AnalyticsReducer {
 }
 
 struct ConnectionState {
-    app_server_client: MidnightCoderAppServerClientMetadata,
-    runtime: MidnightCoderRuntimeMetadata,
+    app_server_client: SolaiAgentAppServerClientMetadata,
+    runtime: SolaiAgentRuntimeMetadata,
 }
 
 #[derive(Default)]
@@ -172,7 +172,7 @@ impl ThreadAnalyticsState {
     fn app_server_client(
         &self,
         connection_state: &ConnectionState,
-    ) -> MidnightCoderAppServerClientMetadata {
+    ) -> SolaiAgentAppServerClientMetadata {
         let mut app_server_client = connection_state.app_server_client.clone();
         if let Some(originator) = self.originator.as_ref() {
             app_server_client.product_client_id.clone_from(originator);
@@ -211,7 +211,7 @@ impl<'a> AnalyticsDropSite<'a> {
         }
     }
 
-    fn compaction(input: &'a MidnightCoderCompactionEvent) -> Self {
+    fn compaction(input: &'a SolaiAgentCompactionEvent) -> Self {
         Self {
             event_name: "compaction",
             thread_id: &input.thread_id,
@@ -221,7 +221,7 @@ impl<'a> AnalyticsDropSite<'a> {
         }
     }
 
-    fn goal(input: &'a MidnightCoderGoalEvent) -> Self {
+    fn goal(input: &'a SolaiAgentGoalEvent) -> Self {
         Self {
             event_name: "goal",
             thread_id: &input.thread_id,
@@ -352,7 +352,7 @@ struct PendingTurnSteerState {
 #[derive(Clone)]
 struct CompletedTurnState {
     status: Option<TurnStatus>,
-    turn_error: Option<MidnightCoderErrorInfo>,
+    turn_error: Option<SolaiAgentErrorInfo>,
     completed_at: u64,
     duration_ms: Option<u64>,
 }
@@ -367,7 +367,7 @@ struct TurnState {
     token_usage: Option<TokenUsage>,
     profile: Option<TurnProfile>,
     completed: Option<CompletedTurnState>,
-    codex_error: Option<TurnMidnightCoderError>,
+    codex_error: Option<TurnSolaiAgentError>,
     latest_diff: Option<String>,
     steer_count: usize,
     tool_counts: TurnToolCounts,
@@ -518,7 +518,7 @@ impl AnalyticsReducer {
                 CustomAnalyticsFact::TurnProfile(input) => {
                     self.ingest_turn_profile(*input, out).await;
                 }
-                CustomAnalyticsFact::TurnMidnightCoderError(input) => {
+                CustomAnalyticsFact::TurnSolaiAgentError(input) => {
                     self.ingest_turn_codex_error(*input);
                 }
                 CustomAnalyticsFact::SkillInvoked(input) => {
@@ -560,13 +560,13 @@ impl AnalyticsReducer {
         connection_id: u64,
         params: InitializeParams,
         product_client_id: String,
-        runtime: MidnightCoderRuntimeMetadata,
+        runtime: SolaiAgentRuntimeMetadata,
         rpc_transport: AppServerRpcTransport,
     ) {
         self.connections.insert(
             connection_id,
             ConnectionState {
-                app_server_client: MidnightCoderAppServerClientMetadata {
+                app_server_client: SolaiAgentAppServerClientMetadata {
                     product_client_id,
                     client_name: Some(params.client_info.name),
                     client_version: Some(params.client_info.version),
@@ -703,8 +703,8 @@ impl AnalyticsReducer {
         self.maybe_emit_turn_event(&turn_id, out).await;
     }
 
-    fn ingest_turn_codex_error(&mut self, input: TurnMidnightCoderErrorFact) {
-        let TurnMidnightCoderErrorFact {
+    fn ingest_turn_codex_error(&mut self, input: TurnSolaiAgentErrorFact) {
+        let TurnSolaiAgentErrorFact {
             turn_id,
             thread_id,
             error,
@@ -768,7 +768,7 @@ impl AnalyticsReducer {
         let AppMentionedInput { tracking, mentions } = input;
         out.extend(mentions.into_iter().map(|mention| {
             let event_params = codex_app_metadata(&tracking, mention);
-            TrackEventRequest::AppMentioned(MidnightCoderAppMentionedEventRequest {
+            TrackEventRequest::AppMentioned(SolaiAgentAppMentionedEventRequest {
                 event_type: "codex_app_mentioned",
                 event_params,
             })
@@ -779,7 +779,7 @@ impl AnalyticsReducer {
         let AppUsedInput { tracking, app } = input;
         let event_params = codex_app_metadata(&tracking, app);
         out.push(TrackEventRequest::AppUsed(
-            MidnightCoderAppUsedEventRequest {
+            SolaiAgentAppUsedEventRequest {
                 event_type: "codex_app_used",
                 event_params,
             },
@@ -789,7 +789,7 @@ impl AnalyticsReducer {
     fn ingest_hook_run(&mut self, input: HookRunInput, out: &mut Vec<TrackEventRequest>) {
         let HookRunInput { tracking, hook } = input;
         out.push(TrackEventRequest::HookRun(
-            MidnightCoderHookRunEventRequest {
+            SolaiAgentHookRunEventRequest {
                 event_type: "codex_hook_run",
                 event_params: codex_hook_run_metadata(&tracking, hook),
             },
@@ -799,7 +799,7 @@ impl AnalyticsReducer {
     fn ingest_plugin_used(&mut self, input: PluginUsedInput, out: &mut Vec<TrackEventRequest>) {
         let PluginUsedInput { tracking, plugin } = input;
         out.push(TrackEventRequest::PluginUsed(
-            MidnightCoderPluginUsedEventRequest {
+            SolaiAgentPluginUsedEventRequest {
                 event_type: "codex_plugin_used",
                 event_params: codex_plugin_used_metadata(&tracking, plugin),
             },
@@ -813,7 +813,7 @@ impl AnalyticsReducer {
     ) {
         let PluginInstallRequestedInput { tracking, request } = input;
         out.push(TrackEventRequest::PluginInstallRequested(
-            MidnightCoderPluginInstallRequestedEventRequest {
+            SolaiAgentPluginInstallRequestedEventRequest {
                 event_type: "codex_plugin_install_requested",
                 event_params: codex_plugin_install_requested_metadata(&tracking, request),
             },
@@ -826,7 +826,7 @@ impl AnalyticsReducer {
         out: &mut Vec<TrackEventRequest>,
     ) {
         let PluginStateChangedInput { plugin, state } = input;
-        let event = MidnightCoderPluginEventRequest {
+        let event = SolaiAgentPluginEventRequest {
             event_type: plugin_state_event_type(state),
             event_params: codex_plugin_metadata(plugin),
         };
@@ -845,9 +845,9 @@ impl AnalyticsReducer {
     ) {
         let PluginInstallFailedInput { plugin, error_type } = input;
         out.push(TrackEventRequest::PluginInstallFailed(
-            MidnightCoderPluginInstallFailedEventRequest {
+            SolaiAgentPluginInstallFailedEventRequest {
                 event_type: "codex_plugin_install_failed",
-                event_params: MidnightCoderPluginInstallFailedMetadata {
+                event_params: SolaiAgentPluginInstallFailedMetadata {
                     plugin: codex_plugin_metadata(plugin),
                     error_type,
                 },
@@ -861,9 +861,9 @@ impl AnalyticsReducer {
         out: &mut Vec<TrackEventRequest>,
     ) {
         out.push(TrackEventRequest::ExternalAgentConfigImportCompleted(
-            MidnightCoderOnboardingExternalAgentImportCompleteEventRequest {
+            SolaiAgentOnboardingExternalAgentImportCompleteEventRequest {
                 event_type: "codex_onboarding_external_agent_import_complete",
-                event_params: MidnightCoderOnboardingExternalAgentImportCompleteMetadata {
+                event_params: SolaiAgentOnboardingExternalAgentImportCompleteMetadata {
                     import_id: input.import_id,
                     source: input.source,
                     item_type: input.item_type,
@@ -881,9 +881,9 @@ impl AnalyticsReducer {
         out: &mut Vec<TrackEventRequest>,
     ) {
         out.push(TrackEventRequest::ExternalAgentConfigImportFailure(
-            MidnightCoderOnboardingExternalAgentImportFailureEventRequest {
+            SolaiAgentOnboardingExternalAgentImportFailureEventRequest {
                 event_type: "codex_onboarding_external_agent_import_failure",
-                event_params: MidnightCoderOnboardingExternalAgentImportFailureMetadata {
+                event_params: SolaiAgentOnboardingExternalAgentImportFailureMetadata {
                     import_id: input.import_id,
                     source: input.source,
                     item_type: input.item_type,
@@ -1394,7 +1394,7 @@ impl AnalyticsReducer {
 
     fn ingest_compaction(
         &mut self,
-        input: MidnightCoderCompactionEvent,
+        input: SolaiAgentCompactionEvent,
         out: &mut Vec<TrackEventRequest>,
     ) {
         let Some((connection_state, thread_state, thread_metadata)) =
@@ -1403,7 +1403,7 @@ impl AnalyticsReducer {
             return;
         };
         out.push(TrackEventRequest::Compaction(Box::new(
-            MidnightCoderCompactionEventRequest {
+            SolaiAgentCompactionEventRequest {
                 event_type: "codex_compaction_event",
                 event_params: codex_compaction_event_params(
                     input,
@@ -1418,14 +1418,14 @@ impl AnalyticsReducer {
         )));
     }
 
-    fn ingest_goal(&mut self, input: MidnightCoderGoalEvent, out: &mut Vec<TrackEventRequest>) {
+    fn ingest_goal(&mut self, input: SolaiAgentGoalEvent, out: &mut Vec<TrackEventRequest>) {
         let Some((connection_state, thread_state, thread_metadata)) =
             self.thread_context_or_warn(AnalyticsDropSite::goal(&input))
         else {
             return;
         };
         out.push(TrackEventRequest::Goal(Box::new(
-            MidnightCoderGoalEventRequest {
+            SolaiAgentGoalEventRequest {
                 event_type: "codex_goal_event",
                 event_params: codex_goal_event_params(
                     input,
@@ -1529,9 +1529,9 @@ impl AnalyticsReducer {
             return;
         };
         out.push(TrackEventRequest::TurnSteer(
-            MidnightCoderTurnSteerEventRequest {
+            SolaiAgentTurnSteerEventRequest {
                 event_type: "codex_turn_steer_event",
-                event_params: MidnightCoderTurnSteerEventParams {
+                event_params: SolaiAgentTurnSteerEventParams {
                     thread_id: pending_request.thread_id,
                     session_id: thread_metadata.session_id.clone(),
                     expected_turn_id: Some(pending_request.expected_turn_id),
@@ -1574,9 +1574,9 @@ impl AnalyticsReducer {
             return;
         };
         out.push(TrackEventRequest::ReviewEvent(
-            MidnightCoderReviewEventRequest {
+            SolaiAgentReviewEventRequest {
                 event_type: "codex_review_event",
-                event_params: MidnightCoderReviewEventParams {
+                event_params: SolaiAgentReviewEventParams {
                     thread_id: pending_review.thread_id,
                     turn_id: pending_review.turn_id,
                     item_id: pending_review.item_id,
@@ -1662,7 +1662,7 @@ impl AnalyticsReducer {
             warn_missing_analytics_context(&drop_site, MissingAnalyticsContext::ThreadMetadata);
             return;
         };
-        let turn_event = TrackEventRequest::TurnEvent(Box::new(MidnightCoderTurnEventRequest {
+        let turn_event = TrackEventRequest::TurnEvent(Box::new(SolaiAgentTurnEventRequest {
             event_type: "codex_turn_event",
             event_params: codex_turn_event_params(
                 thread_state.app_server_client(connection_state),
@@ -1837,9 +1837,9 @@ fn tool_item_event(input: ToolItemEventInput<'_>) -> Option<TrackEventRequest> {
                 },
             );
             Some(TrackEventRequest::CommandExecution(
-                MidnightCoderCommandExecutionEventRequest {
+                SolaiAgentCommandExecutionEventRequest {
                     event_type: "codex_command_execution_event",
-                    event_params: MidnightCoderCommandExecutionEventParams {
+                    event_params: SolaiAgentCommandExecutionEventParams {
                         base,
                         command_execution_source: *source,
                         exit_code: *exit_code,
@@ -1879,9 +1879,9 @@ fn tool_item_event(input: ToolItemEventInput<'_>) -> Option<TrackEventRequest> {
                 },
             );
             Some(TrackEventRequest::FileChange(
-                MidnightCoderFileChangeEventRequest {
+                SolaiAgentFileChangeEventRequest {
                     event_type: "codex_file_change_event",
-                    event_params: MidnightCoderFileChangeEventParams {
+                    event_params: SolaiAgentFileChangeEventParams {
                         base,
                         file_change_count: usize_to_u64(changes.len()),
                         file_add_count: counts.add,
@@ -1923,9 +1923,9 @@ fn tool_item_event(input: ToolItemEventInput<'_>) -> Option<TrackEventRequest> {
                 },
             );
             Some(TrackEventRequest::McpToolCall(
-                MidnightCoderMcpToolCallEventRequest {
+                SolaiAgentMcpToolCallEventRequest {
                     event_type: "codex_mcp_tool_call_event",
-                    event_params: MidnightCoderMcpToolCallEventParams {
+                    event_params: SolaiAgentMcpToolCallEventParams {
                         base,
                         mcp_server_name: server.clone(),
                         mcp_tool_name: tool.clone(),
@@ -1968,9 +1968,9 @@ fn tool_item_event(input: ToolItemEventInput<'_>) -> Option<TrackEventRequest> {
                 },
             );
             Some(TrackEventRequest::DynamicToolCall(
-                MidnightCoderDynamicToolCallEventRequest {
+                SolaiAgentDynamicToolCallEventRequest {
                     event_type: "codex_dynamic_tool_call_event",
-                    event_params: MidnightCoderDynamicToolCallEventParams {
+                    event_params: SolaiAgentDynamicToolCallEventParams {
                         base,
                         dynamic_tool_name: tool.clone(),
                         success: *success,
@@ -2013,9 +2013,9 @@ fn tool_item_event(input: ToolItemEventInput<'_>) -> Option<TrackEventRequest> {
                 },
             );
             Some(TrackEventRequest::CollabAgentToolCall(
-                MidnightCoderCollabAgentToolCallEventRequest {
+                SolaiAgentCollabAgentToolCallEventRequest {
                     event_type: "codex_collab_agent_tool_call_event",
-                    event_params: MidnightCoderCollabAgentToolCallEventParams {
+                    event_params: SolaiAgentCollabAgentToolCallEventParams {
                         base,
                         sender_thread_id: sender_thread_id.clone(),
                         receiver_thread_count: usize_to_u64(receiver_thread_ids.len()),
@@ -2069,9 +2069,9 @@ fn tool_item_event(input: ToolItemEventInput<'_>) -> Option<TrackEventRequest> {
                 },
             );
             Some(TrackEventRequest::WebSearch(
-                MidnightCoderWebSearchEventRequest {
+                SolaiAgentWebSearchEventRequest {
                     event_type: "codex_web_search_event",
-                    event_params: MidnightCoderWebSearchEventParams {
+                    event_params: SolaiAgentWebSearchEventParams {
                         base,
                         web_search_action: action.as_ref().map(web_search_action_kind),
                         query_present: !query.trim().is_empty(),
@@ -2108,9 +2108,9 @@ fn tool_item_event(input: ToolItemEventInput<'_>) -> Option<TrackEventRequest> {
                 },
             );
             Some(TrackEventRequest::ImageGeneration(
-                MidnightCoderImageGenerationEventRequest {
+                SolaiAgentImageGenerationEventRequest {
                     event_type: "codex_image_generation_event",
-                    event_params: MidnightCoderImageGenerationEventParams {
+                    event_params: SolaiAgentImageGenerationEventParams {
                         base,
                         revised_prompt_present: revised_prompt.is_some(),
                         saved_path_present: saved_path.is_some(),
@@ -2170,10 +2170,10 @@ fn tool_item_base(
     tool_name: String,
     outcome: ToolItemOutcome,
     context: ToolItemContext<'_>,
-) -> MidnightCoderToolItemEventBase {
+) -> SolaiAgentToolItemEventBase {
     let thread_metadata = context.thread_metadata;
     let review_summary = context.review_summary.cloned().unwrap_or_default();
-    MidnightCoderToolItemEventBase {
+    SolaiAgentToolItemEventBase {
         thread_id: thread_id.to_string(),
         turn_id: turn_id.to_string(),
         item_id,
@@ -2597,12 +2597,12 @@ fn accepted_line_event_input(
 }
 
 fn codex_turn_event_params(
-    app_server_client: MidnightCoderAppServerClientMetadata,
-    runtime: MidnightCoderRuntimeMetadata,
+    app_server_client: SolaiAgentAppServerClientMetadata,
+    runtime: SolaiAgentRuntimeMetadata,
     turn_id: String,
     turn_state: &TurnState,
     thread_metadata: &ThreadMetadataState,
-) -> MidnightCoderTurnEventParams {
+) -> SolaiAgentTurnEventParams {
     let (
         Some(thread_id),
         Some(num_input_images),
@@ -2653,7 +2653,7 @@ fn codex_turn_event_params(
     } = profile;
     let token_usage = turn_state.token_usage.clone();
     let codex_error = turn_state.codex_error.as_ref();
-    MidnightCoderTurnEventParams {
+    SolaiAgentTurnEventParams {
         thread_id,
         session_id: thread_metadata.session_id.clone(),
         turn_id,

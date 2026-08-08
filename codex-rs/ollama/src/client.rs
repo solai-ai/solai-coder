@@ -398,7 +398,7 @@ mod tests {
         let native = OllamaClient::from_host_root(server.uri());
         native.probe_server().await.expect("probe native");
 
-        // MidnightCoder compatibility endpoint
+        // SolaiAgent compatibility endpoint
         wiremock::Mock::given(wiremock::matchers::method("GET"))
             .and(wiremock::matchers::path("/v1/models"))
             .respond_with(wiremock::ResponseTemplate::new(200))
@@ -407,11 +407,11 @@ mod tests {
         let ollama_client =
             OllamaClient::try_from_provider_with_base_url(&format!("{}/v1", server.uri()))
                 .await
-                .expect("probe MidnightCoder compat");
+                .expect("probe SolaiAgent compat");
         ollama_client
             .probe_server()
             .await
-            .expect("probe MidnightCoder compat");
+            .expect("probe SolaiAgent compat");
     }
 
     #[tokio::test]
@@ -426,7 +426,7 @@ mod tests {
 
         let server = wiremock::MockServer::start().await;
 
-        // MidnightCoder‑compat models endpoint responds OK.
+        // SolaiAgent‑compat models endpoint responds OK.
         wiremock::Mock::given(wiremock::matchers::method("GET"))
             .and(wiremock::matchers::path("/v1/models"))
             .respond_with(wiremock::ResponseTemplate::new(200))

@@ -755,7 +755,7 @@ async fn status_model_provider_uses_bedrock_runtime_base_url_and_gates_usage_lin
 
     config.model_provider_id = "openai-proxy".to_string();
     config.model_provider = ModelProviderInfo {
-        name: "MidnightCoder Proxy".to_string(),
+        name: "SolaiAgent Proxy".to_string(),
         base_url: Some("https://openai-proxy.example/v1".to_string()),
         requires_openai_auth: true,
         ..ModelProviderInfo::default()
@@ -783,7 +783,7 @@ async fn status_model_provider_uses_bedrock_runtime_base_url_and_gates_usage_lin
 
     assert!(
         rendered.contains("https://chatgpt.com/codex/settings/usage"),
-        "expected /status to show ChatGPT usage link for MidnightCoder-auth proxy, got: {rendered}"
+        "expected /status to show ChatGPT usage link for SolaiAgent-auth proxy, got: {rendered}"
     );
 
     let wide_destinations: Vec<String> = composite

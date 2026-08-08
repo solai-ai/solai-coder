@@ -1431,7 +1431,7 @@ fn configured_marketplace_plugins(
             })
             .filter(|plugin| {
                 plugin.policy.products.as_deref().is_none_or(|products| {
-                    Product::MidnightCoder.matches_product_restriction(products)
+                    Product::SolaiAgent.matches_product_restriction(products)
                 })
             })
             .map(|plugin| plugin.name)
@@ -1669,7 +1669,7 @@ fn rewrite_external_agent_terms(content: &str) -> String {
         "claudecode",
         "claude",
     ] {
-        rewritten = replace_case_insensitive_with_boundaries(&rewritten, from, "MidnightCoder");
+        rewritten = replace_case_insensitive_with_boundaries(&rewritten, from, "SolaiAgent");
     }
     rewritten
 }

@@ -6,7 +6,7 @@ use serde_json::json;
 pub fn parse_mcp_tool(tool: &rmcp::model::Tool) -> Result<ToolDefinition, serde_json::Error> {
     let mut serialized_input_schema = serde_json::Value::Object(tool.input_schema.as_ref().clone());
 
-    // MidnightCoder models mandate the "properties" field in the schema. Some MCP
+    // SolaiAgent models mandate the "properties" field in the schema. Some MCP
     // servers omit it (or set it to null), so we insert an empty object to
     // match the behavior of the Agents SDK.
     if let serde_json::Value::Object(obj) = &mut serialized_input_schema

@@ -37,7 +37,7 @@ use crate::render::renderable::Renderable;
 #[derive(EnumIter, EnumString, Display, Debug, Clone, Copy, Eq, PartialEq, Hash)]
 #[strum(serialize_all = "kebab-case")]
 pub(crate) enum TerminalTitleItem {
-    /// MidnightCoder app name.
+    /// SolaiAgent app name.
     AppName,
     /// Project root name, or a compact cwd fallback.
     #[strum(to_string = "project-name", serialize = "project")]
@@ -64,13 +64,9 @@ pub(crate) enum TerminalTitleItem {
     FiveHourLimit,
     /// Remaining usage on the secondary rate limit.
     WeeklyLimit,
-    /// MidnightCoder application version.
-    #[strum(
-        to_string = "midnight-coder-version",
-        serialize = "codex-version",
-        serialize = "modnight-coder-version"
-    )]
-    MidnightCoderVersion,
+    /// SolaiAgent application version.
+    #[strum(to_string = "solai-version", serialize = "codex-version")]
+    SolaiAgentVersion,
     /// Total tokens used in the current session.
     UsedTokens,
     /// Total input tokens consumed.
@@ -96,7 +92,7 @@ pub(crate) enum TerminalTitleItem {
 impl TerminalTitleItem {
     pub(crate) fn description(self) -> &'static str {
         match self {
-            TerminalTitleItem::AppName => "MidnightCoder app name",
+            TerminalTitleItem::AppName => "SolaiAgent app name",
             TerminalTitleItem::Project => "Project name (falls back to current directory name)",
             TerminalTitleItem::CurrentDir => "Current working directory",
             TerminalTitleItem::Spinner => {
@@ -119,7 +115,7 @@ impl TerminalTitleItem {
             TerminalTitleItem::WeeklyLimit => {
                 "Remaining usage on the secondary usage limit (omitted when unavailable)"
             }
-            TerminalTitleItem::MidnightCoderVersion => "MidnightCoder application version",
+            TerminalTitleItem::SolaiAgentVersion => "SolaiAgent application version",
             TerminalTitleItem::UsedTokens => "Total tokens used in session (omitted when zero)",
             TerminalTitleItem::TotalInputTokens => "Total input tokens used in session",
             TerminalTitleItem::TotalOutputTokens => "Total output tokens used in session",
@@ -149,8 +145,8 @@ impl TerminalTitleItem {
             TerminalTitleItem::ContextUsed => Some(StatusSurfacePreviewItem::ContextUsed),
             TerminalTitleItem::FiveHourLimit => Some(StatusSurfacePreviewItem::FiveHourLimit),
             TerminalTitleItem::WeeklyLimit => Some(StatusSurfacePreviewItem::WeeklyLimit),
-            TerminalTitleItem::MidnightCoderVersion => {
-                Some(StatusSurfacePreviewItem::MidnightCoderVersion)
+            TerminalTitleItem::SolaiAgentVersion => {
+                Some(StatusSurfacePreviewItem::SolaiAgentVersion)
             }
             TerminalTitleItem::UsedTokens => Some(StatusSurfacePreviewItem::UsedTokens),
             TerminalTitleItem::TotalInputTokens => Some(StatusSurfacePreviewItem::TotalInputTokens),
@@ -576,7 +572,7 @@ mod tests {
                 TerminalTitleItem::ModelWithReasoning,
                 TerminalTitleItem::Reasoning,
                 TerminalTitleItem::WeeklyLimit,
-                TerminalTitleItem::MidnightCoderVersion,
+                TerminalTitleItem::SolaiAgentVersion,
                 TerminalTitleItem::UsedTokens,
                 TerminalTitleItem::TotalInputTokens,
                 TerminalTitleItem::TotalOutputTokens,

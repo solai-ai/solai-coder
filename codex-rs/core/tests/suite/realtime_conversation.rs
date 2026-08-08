@@ -3,7 +3,7 @@ use anyhow::Result;
 use chrono::Utc;
 use codex_config::config_toml::RealtimeWsVersion;
 use codex_core::test_support::auth_manager_from_auth;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_login::OPENAI_API_KEY_ENV_VAR;
 use codex_protocol::ThreadId;
 use codex_protocol::models::ContentItem;
@@ -15,7 +15,7 @@ use codex_protocol::protocol::ConversationTextParams;
 use codex_protocol::protocol::ConversationTextRole;
 use codex_protocol::protocol::EventMsg;
 use codex_protocol::protocol::InitialHistory;
-use codex_protocol::protocol::MidnightCoderErrorInfo;
+use codex_protocol::protocol::SolaiAgentErrorInfo;
 use codex_protocol::protocol::Op;
 use codex_protocol::protocol::RealtimeAudioFrame;
 use codex_protocol::protocol::RealtimeConversationRealtimeEvent;
@@ -35,7 +35,7 @@ use core_test_support::responses::start_websocket_server_with_headers;
 use core_test_support::skip_if_no_network;
 use core_test_support::streaming_sse::StreamingSseChunk;
 use core_test_support::streaming_sse::start_streaming_sse_server;
-use core_test_support::test_codex::TestMidnightCoder;
+use core_test_support::test_codex::TestSolaiAgent;
 use core_test_support::test_codex::test_codex;
 use core_test_support::wait_for_event;
 use core_test_support::wait_for_event_match;
@@ -57,7 +57,7 @@ use wiremock::ResponseTemplate;
 use wiremock::matchers::method;
 use wiremock::matchers::path_regex;
 
-const STARTUP_CONTEXT_HEADER: &str = "Startup context from MidnightCoder.";
+const STARTUP_CONTEXT_HEADER: &str = "Startup context from SolaiAgent.";
 const STARTUP_CONTEXT_OPEN_TAG: &str = "<startup_context>";
 const STARTUP_CONTEXT_CLOSE_TAG: &str = "</startup_context>";
 const REALTIME_BACKEND_PROMPT: &str = codex_prompts::BACKEND_PROMPT;
@@ -66,7 +66,7 @@ const MEMORY_PROMPT_PHRASE: &str =
     "You have access to a memory folder with guidance from prior runs.";
 const REALTIME_CONVERSATION_TEST_SUBPROCESS_ENV_VAR: &str =
     "CODEX_REALTIME_CONVERSATION_TEST_SUBPROCESS";
-const SILENT_CONTEXT_PREFIX: &str = "[BACKEND] Silent MidnightCoder context. Do not speak, acknowledge, or summarize this item. Wait for an explicit speakable handoff or direct user request.";
+const SILENT_CONTEXT_PREFIX: &str = "[BACKEND] Silent SolaiAgent context. Do not speak, acknowledge, or summarize this item. Wait for an explicit speakable handoff or direct user request.";
 
 #[derive(Debug, Clone)]
 struct RealtimeCallRequestCapture {
@@ -210,7 +210,7 @@ fn run_realtime_conversation_test_in_subprocess(
     Ok(())
 }
 async fn seed_recent_thread(
-    test: &TestMidnightCoder,
+    test: &TestSolaiAgent,
     title: &str,
     first_user_message: &str,
     slug: &str,
@@ -1209,7 +1209,7 @@ async fn conversation_start_uses_openai_env_key_fallback_with_chatgpt_auth() -> 
     .await;
 
     let mut builder =
-        test_codex().with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing());
+        test_codex().with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing());
     let test = builder.build_with_websocket_server(&server).await?;
     assert!(
         server
@@ -1367,7 +1367,7 @@ async fn conversation_audio_before_start_emits_error() -> Result<()> {
     .await;
     assert_eq!(
         err.codex_error_info,
-        Some(MidnightCoderErrorInfo::BadRequest)
+        Some(SolaiAgentErrorInfo::BadRequest)
     );
     assert_eq!(err.message, "conversation is not running");
 
@@ -1388,7 +1388,7 @@ async fn conversation_start_preflight_failure_emits_realtime_error_only() -> Res
 
     let server = start_websocket_server(vec![]).await;
     let mut builder =
-        test_codex().with_auth(MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing());
+        test_codex().with_auth(SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing());
     let test = builder.build_with_websocket_server(&server).await?;
 
     test.codex
@@ -1504,7 +1504,7 @@ async fn conversation_text_before_start_emits_error() -> Result<()> {
     .await;
     assert_eq!(
         err.codex_error_info,
-        Some(MidnightCoderErrorInfo::BadRequest)
+        Some(SolaiAgentErrorInfo::BadRequest)
     );
     assert_eq!(err.message, "conversation is not running");
 
@@ -2378,7 +2378,7 @@ async fn conversation_startup_context_current_thread_selects_many_turns_by_budge
         .resume_thread_with_history(
             test.config.clone(),
             InitialHistory::Forked(history),
-            auth_manager_from_auth(MidnightCoderAuth::from_api_key("dummy")),
+            auth_manager_from_auth(SolaiAgentAuth::from_api_key("dummy")),
             /*parent_trace*/ None,
             /*supports_openai_form_elicitation*/ false,
         )

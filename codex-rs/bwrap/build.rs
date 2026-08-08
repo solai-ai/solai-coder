@@ -43,7 +43,7 @@ fn try_build_bwrap() -> Result<(), String> {
     std::fs::write(
         &config_h,
         r#"#pragma once
-#define PACKAGE_STRING "bubblewrap built for MidnightCoder"
+#define PACKAGE_STRING "bubblewrap built for SolaiAgent"
 "#,
     )
     .map_err(|err| format!("failed to write {}: {err}", config_h.display()))?;

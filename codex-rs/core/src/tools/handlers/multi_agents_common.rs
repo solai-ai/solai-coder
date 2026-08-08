@@ -11,7 +11,7 @@ use crate::tools::context::ToolPayload;
 use codex_models_manager::manager::RefreshStrategy;
 use codex_protocol::AgentPath;
 use codex_protocol::ThreadId;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::models::BaseInstructions;
 use codex_protocol::models::ResponseInputItem;
 use codex_protocol::openai_models::ReasoningEffort;
@@ -109,27 +109,27 @@ pub(crate) fn build_wait_agent_statuses(
     entries
 }
 
-pub(crate) fn collab_spawn_error(err: MidnightCoderErr) -> FunctionCallError {
+pub(crate) fn collab_spawn_error(err: SolaiAgentErr) -> FunctionCallError {
     match err {
-        MidnightCoderErr::UnsupportedOperation(message) if message == "thread manager dropped" => {
+        SolaiAgentErr::UnsupportedOperation(message) if message == "thread manager dropped" => {
             FunctionCallError::RespondToModel("collab manager unavailable".to_string())
         }
-        MidnightCoderErr::UnsupportedOperation(message) => {
+        SolaiAgentErr::UnsupportedOperation(message) => {
             FunctionCallError::RespondToModel(message)
         }
         err => FunctionCallError::RespondToModel(format!("collab spawn failed: {err}")),
     }
 }
 
-pub(crate) fn collab_agent_error(agent_id: ThreadId, err: MidnightCoderErr) -> FunctionCallError {
+pub(crate) fn collab_agent_error(agent_id: ThreadId, err: SolaiAgentErr) -> FunctionCallError {
     match err {
-        MidnightCoderErr::ThreadNotFound(id) => {
+        SolaiAgentErr::ThreadNotFound(id) => {
             FunctionCallError::RespondToModel(format!("agent with id {id} not found"))
         }
-        MidnightCoderErr::InternalAgentDied => {
+        SolaiAgentErr::InternalAgentDied => {
             FunctionCallError::RespondToModel(format!("agent with id {agent_id} is closed"))
         }
-        MidnightCoderErr::UnsupportedOperation(_) => {
+        SolaiAgentErr::UnsupportedOperation(_) => {
             FunctionCallError::RespondToModel("collab manager unavailable".to_string())
         }
         err => FunctionCallError::RespondToModel(format!("collab tool failed: {err}")),

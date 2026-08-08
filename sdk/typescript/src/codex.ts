@@ -1,20 +1,20 @@
-import { MidnightCoderOptions } from "./codexOptions";
-import { MidnightCoderExec } from "./exec";
+import { SolaiAgentOptions } from "./codexOptions";
+import { SolaiAgentExec } from "./exec";
 import { Thread } from "./thread";
 import { ThreadOptions } from "./threadOptions";
 
 /**
- * MidnightCoder is the main class for interacting with the MidnightCoder agent.
+ * SolaiAgent is the main class for interacting with the SolaiAgent agent.
  *
  * Use the `startThread()` method to start a new thread or `resumeThread()` to resume a previously started thread.
  */
-export class MidnightCoder {
-  private exec: MidnightCoderExec;
-  private options: MidnightCoderOptions;
+export class SolaiAgent {
+  private exec: SolaiAgentExec;
+  private options: SolaiAgentOptions;
 
-  constructor(options: MidnightCoderOptions = {}) {
+  constructor(options: SolaiAgentOptions = {}) {
     const { codexPathOverride, env, config } = options;
-    this.exec = new MidnightCoderExec(codexPathOverride, env, config);
+    this.exec = new SolaiAgentExec(codexPathOverride, env, config);
     this.options = options;
   }
 

@@ -1,4 +1,4 @@
-use super::MidnightCoderClient;
+use super::SolaiAgentClient;
 use super::loopback_responses_server::LoopbackResponsesServer;
 use anyhow::Context;
 use anyhow::Result;
@@ -64,7 +64,7 @@ pub(super) fn run(
         ),
     ];
     let mut client =
-        MidnightCoderClient::spawn_stdio_with_env(codex_bin, &overrides, &child_environment)?;
+        SolaiAgentClient::spawn_stdio_with_env(codex_bin, &overrides, &child_environment)?;
     wait_until_capture_is_ready(&capture_path)?;
     client.initialize()?;
 
@@ -95,7 +95,7 @@ pub(super) fn run(
     Ok(())
 }
 
-fn run_plugin_turn(client: &mut MidnightCoderClient, expected: &ExpectedPlugin) -> Result<String> {
+fn run_plugin_turn(client: &mut SolaiAgentClient, expected: &ExpectedPlugin) -> Result<String> {
     let thread = client.thread_start(ThreadStartParams {
         model: Some(MOCK_MODEL_SLUG.to_string()),
         model_provider: Some(MOCK_PROVIDER_ID.to_string()),
@@ -125,7 +125,7 @@ fn run_plugin_turn(client: &mut MidnightCoderClient, expected: &ExpectedPlugin) 
 }
 
 fn wait_for_plugin_usage(
-    client: &mut MidnightCoderClient,
+    client: &mut SolaiAgentClient,
     capture_path: &Path,
     expected: &ExpectedPlugin,
 ) -> Result<()> {
@@ -165,7 +165,7 @@ struct ExpectedPlugin {
     marketplace_name: String,
 }
 
-fn plugin_installed(client: &mut MidnightCoderClient) -> Result<PluginInstalledResponse> {
+fn plugin_installed(client: &mut SolaiAgentClient) -> Result<PluginInstalledResponse> {
     let request_id = client.request_id();
     client.send_request(
         ClientRequest::PluginInstalled {
@@ -225,7 +225,7 @@ fn expected_plugin(response: &PluginInstalledResponse, plugin_id: &str) -> Resul
 }
 
 fn write_plugin_enabled(
-    client: &mut MidnightCoderClient,
+    client: &mut SolaiAgentClient,
     config_path: &Path,
     plugin_id: &str,
     enabled: bool,
@@ -320,7 +320,7 @@ pub(super) fn wait_until_capture_is_ready(path: &Path) -> Result<()> {
         }
         if Instant::now() >= deadline {
             bail!(
-                "analytics capture did not become ready at {}; use a debug MidnightCoder binary",
+                "analytics capture did not become ready at {}; use a debug SolaiAgent binary",
                 path.display()
             );
         }

@@ -262,7 +262,7 @@ fn normalize_plugin_mcp_server_value(
             let plugin_display = source.display();
             warn!(
                 plugin = %plugin_display,
-                "plugin MCP server OAuth callbackPort is ignored; MidnightCoder uses global MCP OAuth callback settings"
+                "plugin MCP server OAuth callbackPort is ignored; SolaiAgent uses global MCP OAuth callback settings"
             );
         }
 

@@ -273,7 +273,7 @@ impl MetricsClientInner {
     }
 }
 
-/// OpenTelemetry metrics client used by MidnightCoder.
+/// OpenTelemetry metrics client used by SolaiAgent.
 #[derive(Clone, Debug)]
 pub struct MetricsClient(std::sync::Arc<MetricsClientInner>);
 

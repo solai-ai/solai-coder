@@ -39,7 +39,7 @@ async fn forward_events_cancelled_while_send_blocked_shuts_down_delegate() {
     let (tx_sub, rx_sub) = bounded(SUBMISSION_CHANNEL_CAPACITY);
     let (_agent_status_tx, agent_status) = watch::channel(AgentStatus::PendingInit);
     let (session, ctx, _rx_evt) = crate::session::tests::make_session_and_context_with_rx().await;
-    let codex = Arc::new(MidnightCoder {
+    let codex = Arc::new(SolaiAgent {
         tx_sub,
         rx_event: rx_events,
         agent_status,
@@ -117,7 +117,7 @@ async fn forward_ops_preserves_submission_trace_context() {
     let (_tx_events, rx_events) = bounded(SUBMISSION_CHANNEL_CAPACITY);
     let (_agent_status_tx, agent_status) = watch::channel(AgentStatus::PendingInit);
     let (session, _ctx, _rx_evt) = crate::session::tests::make_session_and_context_with_rx().await;
-    let codex = Arc::new(MidnightCoder {
+    let codex = Arc::new(SolaiAgent {
         tx_sub,
         rx_event: rx_events,
         agent_status,
@@ -179,7 +179,7 @@ async fn run_codex_thread_interactive_respects_pre_cancelled_spawn() {
     .await
     .expect("cancelled delegate spawn should not hang");
 
-    assert!(matches!(result, Err(MidnightCoderErr::TurnAborted)));
+    assert!(matches!(result, Err(SolaiAgentErr::TurnAborted)));
 }
 
 #[tokio::test]
@@ -193,7 +193,7 @@ async fn handle_request_permissions_uses_tool_call_id_for_round_trip() {
     let (tx_sub, rx_sub) = bounded(SUBMISSION_CHANNEL_CAPACITY);
     let (_tx_events, rx_events_child) = bounded(SUBMISSION_CHANNEL_CAPACITY);
     let (_agent_status_tx, agent_status) = watch::channel(AgentStatus::PendingInit);
-    let codex = Arc::new(MidnightCoder {
+    let codex = Arc::new(SolaiAgent {
         tx_sub,
         rx_event: rx_events_child,
         agent_status,
@@ -298,7 +298,7 @@ async fn handle_exec_approval_uses_call_id_for_guardian_review_and_approval_id_f
     let (tx_sub, rx_sub) = bounded(SUBMISSION_CHANNEL_CAPACITY);
     let (_tx_events, rx_events_child) = bounded(SUBMISSION_CHANNEL_CAPACITY);
     let (_agent_status_tx, agent_status) = watch::channel(AgentStatus::PendingInit);
-    let codex = Arc::new(MidnightCoder {
+    let codex = Arc::new(SolaiAgent {
         tx_sub,
         rx_event: rx_events_child,
         agent_status,

@@ -6,11 +6,11 @@ use rand::Rng;
 const IS_MACOS: bool = cfg!(target_os = "macos");
 const IS_WINDOWS: bool = cfg!(target_os = "windows");
 
-const APP_TOOLTIP: &str = "Try the **MidnightCoder App**. Run 'codex app'.";
+const APP_TOOLTIP: &str = "Try the **SolaiAgent App**. Run 'codex app'.";
 const FAST_TOOLTIP: &str =
     "*New* Use **/fast** to enable our fastest inference with increased plan usage.";
-const OTHER_TOOLTIP: &str = "*New* Build faster with the **MidnightCoder App**. Run 'codex app'.";
-const MODELS_TOOLTIP: &str = "Optimize context with **Midnight Coder models** on [Ollama](https://ollama.com/midnightcoderagent) or [Hugging Face](https://huggingface.co/midnightcoderagent).";
+const OTHER_TOOLTIP: &str = "*New* Build faster with the **SolaiAgent App**. Run 'codex app'.";
+const MODELS_TOOLTIP: &str = "Optimize context with **SOLAI Agent models** on [Ollama](https://ollama.com/solaiagent) or [Hugging Face](https://huggingface.co/solaiagent).";
 
 const RAW_TOOLTIPS: &str = include_str!("../tooltips.txt");
 
@@ -43,7 +43,7 @@ fn experimental_tooltips() -> Vec<&'static str> {
         .collect()
 }
 
-/// Pick a random tooltip to show to the user when starting MidnightCoder.
+/// Pick a random tooltip to show to the user when starting SolaiAgent.
 pub(crate) fn get_tooltip(plan: Option<PlanType>, fast_mode_enabled: bool) -> Option<String> {
     let mut rng = rand::rng();
 
@@ -188,7 +188,7 @@ pub(crate) mod announcement {
             } else if cfg!(target_os = "windows") {
                 Self::Windows
             } else {
-                // MidnightCoder currently publishes CLI builds for macOS, Windows, and Linux.
+                // SolaiAgent currently publishes CLI builds for macOS, Windows, and Linux.
                 Self::Linux
             }
         }
@@ -426,7 +426,7 @@ from_date = "2000-01-01"
     #[test]
     fn announcement_tip_toml_parse_comments() {
         let toml = r#"
-# Example announcement tips for MidnightCoder TUI.
+# Example announcement tips for SolaiAgent TUI.
 # Each [[announcements]] entry is evaluated in order; the last matching one is shown.
 # Dates are UTC, formatted as YYYY-MM-DD. The from_date is inclusive and the to_date is exclusive.
 # version_regex matches against the CLI version (env!("CARGO_PKG_VERSION")); omit to apply to all versions.
@@ -435,7 +435,7 @@ from_date = "2000-01-01"
 # target_oses optionally restricts the announcement to operating systems like ["macos", "windows"].
 
 [[announcements]]
-content = "Welcome to MidnightCoder! Check out the new onboarding flow."
+content = "Welcome to SolaiAgent! Check out the new onboarding flow."
 from_date = "2024-10-01"
 to_date = "2024-10-15"
 target_app = "cli"

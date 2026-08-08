@@ -10,8 +10,8 @@ use crate::hook_runtime::PreCompactHookOutcome;
 use crate::hook_runtime::run_post_compact_hooks;
 use crate::hook_runtime::run_pre_compact_hooks;
 use crate::responses_metadata::CompactionTurnMetadata;
-use crate::responses_metadata::MidnightCoderResponsesMetadata;
-use crate::responses_metadata::MidnightCoderResponsesRequestKind;
+use crate::responses_metadata::SolaiAgentResponsesMetadata;
+use crate::responses_metadata::SolaiAgentResponsesRequestKind;
 #[cfg(test)]
 use crate::session::PreviousTurnSettings;
 use crate::session::session::Session;
@@ -24,10 +24,10 @@ use codex_analytics::CompactionReason;
 use codex_analytics::CompactionStatus;
 use codex_analytics::CompactionStrategy;
 use codex_analytics::CompactionTrigger;
-use codex_analytics::MidnightCoderCompactionEvent;
+use codex_analytics::SolaiAgentCompactionEvent;
 use codex_analytics::now_unix_seconds;
-use codex_protocol::error::MidnightCoderErr;
-use codex_protocol::error::Result as MidnightCoderResult;
+use codex_protocol::error::SolaiAgentErr;
+use codex_protocol::error::Result as SolaiAgentResult;
 use codex_protocol::items::ContextCompactionItem;
 use codex_protocol::items::TurnItem;
 use codex_protocol::models::ContentItem;
@@ -95,7 +95,7 @@ pub(crate) async fn run_inline_auto_compact_task(
     initial_context_injection: InitialContextInjection,
     reason: CompactionReason,
     phase: CompactionPhase,
-) -> MidnightCoderResult<()> {
+) -> SolaiAgentResult<()> {
     let prompt = turn_context
         .config
         .compact_prompt
@@ -125,7 +125,7 @@ pub(crate) async fn run_compact_task(
     sess: Arc<Session>,
     turn_context: Arc<TurnContext>,
     input: Vec<UserInput>,
-) -> MidnightCoderResult<()> {
+) -> SolaiAgentResult<()> {
     let start_event = EventMsg::TurnStarted(TurnStartedEvent {
         turn_id: turn_context.sub_id.clone(),
         trace_id: turn_context.trace_id.clone(),
@@ -155,7 +155,7 @@ async fn run_compact_task_inner(
     trigger: CompactionTrigger,
     reason: CompactionReason,
     phase: CompactionPhase,
-) -> MidnightCoderResult<()> {
+) -> SolaiAgentResult<()> {
     let compaction_metadata =
         CompactionTurnMetadata::new(trigger, reason, CompactionImplementation::Responses, phase);
     let attempt = CompactionAnalyticsAttempt::begin(
@@ -171,7 +171,7 @@ async fn run_compact_task_inner(
     match pre_compact_outcome {
         PreCompactHookOutcome::Continue => {}
         PreCompactHookOutcome::Stopped => {
-            let error = MidnightCoderErr::TurnAborted;
+            let error = SolaiAgentErr::TurnAborted;
             attempt
                 .track(
                     sess.as_ref(),
@@ -204,7 +204,7 @@ async fn run_compact_task_inner(
                     CompactionAnalyticsDetails::default(),
                 )
                 .await;
-            return Err(MidnightCoderErr::TurnAborted);
+            return Err(SolaiAgentErr::TurnAborted);
         }
     }
     attempt
@@ -224,7 +224,7 @@ async fn run_compact_task_inner_impl(
     input: Vec<UserInput>,
     initial_context_injection: InitialContextInjection,
     compaction_metadata: CompactionTurnMetadata,
-) -> MidnightCoderResult<String> {
+) -> SolaiAgentResult<String> {
     let compaction_item = TurnItem::ContextCompaction(ContextCompactionItem::new());
     sess.emit_turn_item_started(&turn_context, &compaction_item)
         .await;
@@ -258,7 +258,7 @@ async fn run_compact_task_inner_impl(
     let responses_metadata = turn_context.turn_metadata_state.to_responses_metadata(
         sess.installation_id.clone(),
         window_id,
-        MidnightCoderResponsesRequestKind::Compaction(compaction_metadata),
+        SolaiAgentResponsesRequestKind::Compaction(compaction_metadata),
     );
 
     loop {
@@ -285,16 +285,16 @@ async fn run_compact_task_inner_impl(
             Ok(()) => {
                 break;
             }
-            Err(err @ (MidnightCoderErr::Interrupted | MidnightCoderErr::TurnAborted)) => {
+            Err(err @ (SolaiAgentErr::Interrupted | SolaiAgentErr::TurnAborted)) => {
                 return Err(err);
             }
-            Err(e @ MidnightCoderErr::SessionBudgetExceeded) => {
+            Err(e @ SolaiAgentErr::SessionBudgetExceeded) => {
                 sess.track_turn_codex_error(turn_context.as_ref(), &e);
                 let event = EventMsg::Error(e.to_error_event(/*message_prefix*/ None));
                 sess.send_event(&turn_context, event).await;
                 return Err(e);
             }
-            Err(e @ MidnightCoderErr::ContextWindowExceeded) => {
+            Err(e @ SolaiAgentErr::ContextWindowExceeded) => {
                 if turn_input_len > 1 {
                     // Trim from the beginning to preserve cache (prefix-based) and keep recent messages intact.
                     error!(
@@ -436,7 +436,7 @@ impl CompactionAnalyticsAttempt {
         self,
         sess: &Session,
         status: CompactionStatus,
-        codex_error: Option<&MidnightCoderErr>,
+        codex_error: Option<&SolaiAgentErr>,
         details: CompactionAnalyticsDetails,
     ) {
         let CompactionAnalyticsDetails {
@@ -450,7 +450,7 @@ impl CompactionAnalyticsAttempt {
         let active_context_tokens_after = sess.get_total_token_usage().await;
         sess.services
             .analytics_events_client
-            .track_compaction(MidnightCoderCompactionEvent {
+            .track_compaction(SolaiAgentCompactionEvent {
                 thread_id: self.thread_id,
                 turn_id: self.turn_id,
                 trigger: self.trigger,
@@ -461,7 +461,7 @@ impl CompactionAnalyticsAttempt {
                 status,
                 codex_error_kind: codex_error.map(Into::into),
                 codex_error_http_status_code: codex_error
-                    .and_then(MidnightCoderErr::http_status_code_value),
+                    .and_then(SolaiAgentErr::http_status_code_value),
                 active_context_tokens_before,
                 active_context_tokens_after,
                 retained_image_count,
@@ -477,11 +477,11 @@ impl CompactionAnalyticsAttempt {
 }
 
 pub(crate) fn compaction_status_from_result<T>(
-    result: &MidnightCoderResult<T>,
+    result: &SolaiAgentResult<T>,
 ) -> CompactionStatus {
     match result {
         Ok(_) => CompactionStatus::Completed,
-        Err(MidnightCoderErr::Interrupted | MidnightCoderErr::TurnAborted) => {
+        Err(SolaiAgentErr::Interrupted | SolaiAgentErr::TurnAborted) => {
             CompactionStatus::Interrupted
         }
         Err(_) => CompactionStatus::Failed,
@@ -691,7 +691,7 @@ pub(crate) async fn install_drop_history_compaction(
     history_items: &[ResponseItem],
     initial_context_injection: &InitialContextInjection,
     compaction_item: TurnItem,
-) -> MidnightCoderResult<String> {
+) -> SolaiAgentResult<String> {
     let summary_suffix =
         "Earlier conversation history was removed by context compaction.".to_string();
     let summary_text = format!("{SUMMARY_PREFIX}\n{summary_suffix}");
@@ -740,9 +740,9 @@ async fn drain_to_completed(
     sess: &Session,
     turn_context: &TurnContext,
     client_session: &mut ModelClientSession,
-    responses_metadata: &MidnightCoderResponsesMetadata,
+    responses_metadata: &SolaiAgentResponsesMetadata,
     prompt: &Prompt,
-) -> MidnightCoderResult<()> {
+) -> SolaiAgentResult<()> {
     let compact_model_info = compact_model_info(sess, turn_context).await;
     let mut stream = client_session
         .stream(
@@ -762,7 +762,7 @@ async fn drain_to_completed(
     loop {
         let maybe_event = stream.next().await;
         let Some(event) = maybe_event else {
-            return Err(MidnightCoderErr::Stream(
+            return Err(SolaiAgentErr::Stream(
                 "stream closed before response.completed".into(),
                 None,
             ));

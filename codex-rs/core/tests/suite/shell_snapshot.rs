@@ -13,7 +13,7 @@ use core_test_support::responses::ev_function_call;
 use core_test_support::responses::ev_response_created;
 use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse;
-use core_test_support::test_codex::TestMidnightCoderHarness;
+use core_test_support::test_codex::TestSolaiAgentHarness;
 use core_test_support::test_codex::local_selections;
 use core_test_support::test_codex::test_codex;
 use core_test_support::test_codex::turn_permission_fields;
@@ -129,7 +129,7 @@ async fn run_snapshot_command_with_options(
             .expect("test config should allow feature update");
         config.permissions.shell_environment_policy.r#set = shell_environment_set;
     });
-    let harness = TestMidnightCoderHarness::with_builder(builder).await?;
+    let harness = TestSolaiAgentHarness::with_builder(builder).await?;
     let args = json!({
         "cmd": command,
         "yield_time_ms": 1000,
@@ -227,7 +227,7 @@ async fn run_shell_command_snapshot_with_options(
             .expect("test config should allow feature update");
         config.permissions.shell_environment_policy.r#set = shell_environment_set;
     });
-    let harness = TestMidnightCoderHarness::with_builder(builder).await?;
+    let harness = TestSolaiAgentHarness::with_builder(builder).await?;
     let args = json!({
         "command": command,
         "timeout_ms": 1000,
@@ -308,7 +308,7 @@ async fn run_shell_command_snapshot_with_options(
 }
 
 async fn run_tool_turn_on_harness(
-    harness: &TestMidnightCoderHarness,
+    harness: &TestSolaiAgentHarness,
     prompt: &str,
     call_id: &str,
     tool_name: &str,
@@ -441,7 +441,7 @@ async fn shell_command_snapshot_preserves_shell_environment_policy_set() -> Resu
             .expect("test config should allow feature update");
         config.permissions.shell_environment_policy.r#set = policy_set_path_for_test();
     });
-    let harness = TestMidnightCoderHarness::with_builder(builder).await?;
+    let harness = TestSolaiAgentHarness::with_builder(builder).await?;
     let codex_home = harness.test().home.path().to_path_buf();
     run_tool_turn_on_harness(
         &harness,
@@ -495,7 +495,7 @@ async fn linux_unified_exec_snapshot_preserves_shell_environment_policy_set() ->
             .expect("test config should allow feature update");
         config.permissions.shell_environment_policy.r#set = policy_set_path_for_test();
     });
-    let harness = TestMidnightCoderHarness::with_builder(builder).await?;
+    let harness = TestSolaiAgentHarness::with_builder(builder).await?;
     let codex_home = harness.test().home.path().to_path_buf();
     run_tool_turn_on_harness(
         &harness,
@@ -543,7 +543,7 @@ async fn shell_command_snapshot_still_intercepts_apply_patch() -> Result<()> {
             .enable(Feature::ShellSnapshot)
             .expect("test config should allow feature update");
     });
-    let harness = TestMidnightCoderHarness::with_builder(builder).await?;
+    let harness = TestSolaiAgentHarness::with_builder(builder).await?;
 
     let test = harness.test();
     let codex = test.codex.clone();
@@ -652,7 +652,7 @@ async fn shell_snapshot_deleted_after_shutdown_with_skills() -> Result<()> {
             .enable(Feature::ShellSnapshot)
             .expect("test config should allow feature update");
     });
-    let harness = TestMidnightCoderHarness::with_builder(builder).await?;
+    let harness = TestSolaiAgentHarness::with_builder(builder).await?;
     let home = harness.test().home.clone();
     let codex_home = home.path().to_path_buf();
     let codex = harness.test().codex.clone();

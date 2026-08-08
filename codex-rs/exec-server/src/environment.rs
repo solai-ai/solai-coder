@@ -37,7 +37,7 @@ pub const CODEX_EXEC_SERVER_NOISE_AUTH_TOKEN_ENV_VAR: &str = "CODEX_EXEC_SERVER_
 pub const CODEX_EXEC_SERVER_NOISE_CHATGPT_ACCOUNT_ID_ENV_VAR: &str =
     "CODEX_EXEC_SERVER_NOISE_CHATGPT_ACCOUNT_ID";
 
-/// Owns the execution/filesystem environments available to the MidnightCoder runtime.
+/// Owns the execution/filesystem environments available to the SolaiAgent runtime.
 ///
 /// `EnvironmentManager` is a shared registry for concrete environments. Its
 /// default constructor preserves the legacy `CODEX_EXEC_SERVER_URL` behavior

@@ -15,7 +15,7 @@ chatgptAccountId: string,
 /**
  * Optional plan type supplied by the client.
  *
- * When `null`, MidnightCoder attempts to derive the plan type from access-token
+ * When `null`, SolaiAgent attempts to derive the plan type from access-token
  * claims. If unavailable, the plan defaults to `unknown`.
  */
 chatgptPlanType?: string | null, };

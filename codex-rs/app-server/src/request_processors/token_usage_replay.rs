@@ -18,7 +18,7 @@ use codex_app_server_protocol::ThreadTokenUsage;
 use codex_app_server_protocol::ThreadTokenUsageUpdatedNotification;
 use codex_app_server_protocol::Turn;
 use codex_app_server_protocol::TurnStatus;
-use codex_core::MidnightCoderThread;
+use codex_core::SolaiAgentThread;
 use codex_protocol::ThreadId;
 use codex_protocol::protocol::EventMsg;
 use codex_protocol::protocol::RolloutItem;
@@ -38,7 +38,7 @@ pub(super) async fn send_thread_token_usage_update_to_connection(
     connection_id: ConnectionId,
     thread_id: ThreadId,
     thread: &Thread,
-    conversation: &MidnightCoderThread,
+    conversation: &SolaiAgentThread,
     token_usage_turn_id: Option<String>,
 ) {
     let Some(info) = conversation.token_usage_info().await else {

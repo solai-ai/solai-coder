@@ -1,6 +1,6 @@
 # Configuration docs
 
-The primary configuration guide for Midnight Coder now lives here:
+The primary configuration guide for SOLAI Agent now lives here:
 
 - [CONFIGURATION.md](./CONFIGURATION.md)
 

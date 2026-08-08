@@ -280,7 +280,7 @@ impl AdditionalPermissionProfile {
 )]
 #[serde(rename_all = "snake_case")]
 pub enum SandboxEnforcement {
-    /// MidnightCoder owns sandbox construction for this profile.
+    /// SolaiAgent owns sandbox construction for this profile.
     #[default]
     Managed,
     /// No outer filesystem sandbox should be applied.
@@ -299,7 +299,7 @@ impl SandboxEnforcement {
     }
 }
 
-/// Filesystem permissions for profiles where MidnightCoder owns sandbox construction.
+/// Filesystem permissions for profiles where SolaiAgent owns sandbox construction.
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, JsonSchema, TS)]
 #[serde(tag = "type", rename_all = "snake_case")]
 #[ts(tag = "type")]
@@ -406,7 +406,7 @@ pub const BUILT_IN_PERMISSION_PROFILE_DANGER_FULL_ACCESS: &str = ":danger-full-a
 #[serde(tag = "type", rename_all = "snake_case")]
 #[ts(tag = "type")]
 pub enum PermissionProfile<PathType = AbsolutePathBuf> {
-    /// MidnightCoder owns sandbox construction for this profile.
+    /// SolaiAgent owns sandbox construction for this profile.
     #[serde(rename_all = "snake_case")]
     #[ts(rename_all = "snake_case")]
     Managed {
@@ -1449,7 +1449,7 @@ fn local_image_error_placeholder(
 ) -> ContentItem {
     ContentItem::InputText {
         text: format!(
-            "MidnightCoder could not read the local image at `{}`: {}",
+            "SolaiAgent could not read the local image at `{}`: {}",
             path.display(),
             error
         ),
@@ -1515,7 +1515,7 @@ fn invalid_image_error_placeholder(
 fn unsupported_image_error_placeholder(path: &std::path::Path, mime: &str) -> ContentItem {
     ContentItem::InputText {
         text: format!(
-            "MidnightCoder cannot attach image at `{}`: unsupported image `{}`.",
+            "SolaiAgent cannot attach image at `{}`: unsupported image `{}`.",
             path.display(),
             mime
         ),
@@ -1872,7 +1872,7 @@ impl From<crate::dynamic_tools::DynamicToolCallOutputContentItem>
     }
 }
 
-/// The payload we send back to MidnightCoder when reporting a tool call result.
+/// The payload we send back to SolaiAgent when reporting a tool call result.
 ///
 /// `body` serializes directly as the wire value for `function_call_output.output`.
 /// `success` remains internal metadata for downstream handling.
@@ -3641,7 +3641,7 @@ mod tests {
             ResponseInputItem::Message { content, .. } => {
                 assert_eq!(content.len(), 1);
                 let expected = format!(
-                    "MidnightCoder cannot attach image at `{}`: unsupported image `image/svg+xml`.",
+                    "SolaiAgent cannot attach image at `{}`: unsupported image `image/svg+xml`.",
                     svg_path.display()
                 );
                 match &content[0] {

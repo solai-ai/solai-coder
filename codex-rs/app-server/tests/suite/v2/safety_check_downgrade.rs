@@ -6,7 +6,7 @@ use codex_app_server_protocol::ItemCompletedNotification;
 use codex_app_server_protocol::ItemStartedNotification;
 use codex_app_server_protocol::JSONRPCMessage;
 use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::MidnightCoderErrorInfo;
+use codex_app_server_protocol::SolaiAgentErrorInfo;
 use codex_app_server_protocol::ModelRerouteReason;
 use codex_app_server_protocol::ModelReroutedNotification;
 use codex_app_server_protocol::ModelVerification;
@@ -43,7 +43,7 @@ async fn openai_model_header_mismatch_emits_model_rerouted_notification_v2() -> 
         responses::ev_assistant_message("msg-1", "Done"),
         responses::ev_completed("resp-1"),
     ]);
-    let response = responses::sse_response(body).insert_header("MidnightCoder-Model", SERVER_MODEL);
+    let response = responses::sse_response(body).insert_header("SolaiAgent-Model", SERVER_MODEL);
     let _response_mock = responses::mount_response_once(&server, response).await;
 
     let codex_home = TempDir::new()?;
@@ -156,7 +156,7 @@ async fn cyber_policy_response_emits_typed_error_notification_v2() -> Result<()>
         ErrorNotification {
             error: codex_app_server_protocol::TurnError {
                 message: CYBER_POLICY_MESSAGE.to_string(),
-                codex_error_info: Some(MidnightCoderErrorInfo::CyberPolicy),
+                codex_error_info: Some(SolaiAgentErrorInfo::CyberPolicy),
                 additional_details: None,
             },
             will_retry: false,
@@ -180,7 +180,7 @@ async fn response_model_field_mismatch_emits_model_rerouted_notification_v2_when
             "response": {
                 "id": "resp-1",
                 "headers": {
-                    "MidnightCoder-Model": SERVER_MODEL
+                    "SolaiAgent-Model": SERVER_MODEL
                 }
             }
         }),
@@ -188,7 +188,7 @@ async fn response_model_field_mismatch_emits_model_rerouted_notification_v2_when
         responses::ev_completed("resp-1"),
     ]);
     let response =
-        responses::sse_response(body).insert_header("MidnightCoder-Model", REQUESTED_MODEL);
+        responses::sse_response(body).insert_header("SolaiAgent-Model", REQUESTED_MODEL);
     let _response_mock = responses::mount_response_once(&server, response).await;
 
     let codex_home = TempDir::new()?;
@@ -501,7 +501,7 @@ async fn collect_cyber_policy_error_and_validate_no_reroute(
                     .params
                     .ok_or_else(|| anyhow::anyhow!("error notifications must include params"))?;
                 let payload: ErrorNotification = serde_json::from_value(params)?;
-                if payload.error.codex_error_info == Some(MidnightCoderErrorInfo::CyberPolicy) {
+                if payload.error.codex_error_info == Some(SolaiAgentErrorInfo::CyberPolicy) {
                     error = Some(payload);
                 }
             }

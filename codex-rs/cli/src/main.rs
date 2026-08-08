@@ -77,9 +77,9 @@ use codex_core::config::resolve_profile_v2_config_path;
 use codex_features::FEATURES;
 use codex_features::Stage;
 use codex_features::is_known_feature_key;
-use codex_home::MidnightCoderHomeUserInstructionsProvider;
+use codex_home::SolaiAgentHomeUserInstructionsProvider;
 use codex_login::AuthManager;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_login::read_codex_access_token_from_env;
 use codex_memories_write::clear_memory_roots_contents;
 use codex_models_manager::bundled_models_response;
@@ -123,7 +123,7 @@ struct MultitoolCli {
 
 #[derive(Debug, clap::Subcommand)]
 enum Subcommand {
-    /// Run MidnightCoder non-interactively.
+    /// Run SolaiAgent non-interactively.
     #[clap(visible_alias = "e")]
     Exec(ExecCli),
 
@@ -136,13 +136,13 @@ enum Subcommand {
     /// Remove stored authentication credentials.
     Logout(LogoutCommand),
 
-    /// Manage external MCP servers for MidnightCoder.
+    /// Manage external MCP servers for SolaiAgent.
     Mcp(McpCli),
 
-    /// Manage MidnightCoder plugins.
+    /// Manage SolaiAgent plugins.
     Plugin(PluginCli),
 
-    /// Start MidnightCoder as an MCP server (stdio).
+    /// Start SolaiAgent as an MCP server (stdio).
     McpServer(McpServerCommand),
 
     /// [experimental] Run the app server or related tooling.
@@ -151,20 +151,20 @@ enum Subcommand {
     /// [experimental] Manage the app-server daemon with remote control enabled.
     RemoteControl(RemoteControlCommand),
 
-    /// Launch the MidnightCoder desktop app (opens the app installer if missing).
+    /// Launch the SolaiAgent desktop app (opens the app installer if missing).
     #[cfg(any(target_os = "macos", target_os = "windows"))]
     App(app_cmd::AppCommand),
 
     /// Generate shell completion scripts.
     Completion(CompletionCommand),
 
-    /// Update MidnightCoder to the latest version.
+    /// Update SolaiAgent to the latest version.
     Update,
 
-    /// Diagnose local MidnightCoder installation, config, auth, and runtime health.
+    /// Diagnose local SolaiAgent installation, config, auth, and runtime health.
     Doctor(DoctorCommand),
 
-    /// Run commands within a MidnightCoder-provided sandbox.
+    /// Run commands within a SolaiAgent-provided sandbox.
     Sandbox(HostSandboxArgs),
 
     /// Debugging tools.
@@ -174,7 +174,7 @@ enum Subcommand {
     #[clap(hide = true)]
     Execpolicy(ExecpolicyCommand),
 
-    /// Apply the latest diff produced by MidnightCoder as a `git apply` to your local working tree.
+    /// Apply the latest diff produced by SolaiAgent as a `git apply` to your local working tree.
     #[clap(visible_alias = "a")]
     Apply(ApplyCommand),
 
@@ -193,7 +193,7 @@ enum Subcommand {
     /// Fork a previous interactive session (picker by default; use --last to fork the most recent).
     Fork(ForkCommand),
 
-    /// [EXPERIMENTAL] Browse tasks from MidnightCoder Cloud and apply changes locally.
+    /// [EXPERIMENTAL] Browse tasks from SolaiAgent Cloud and apply changes locally.
     #[clap(name = "cloud", alias = "cloud-tasks")]
     Cloud(CloudTasksCli),
 
@@ -283,7 +283,7 @@ struct DebugModelsCommand {
 
 #[derive(Debug, Parser)]
 struct ReviewCommand {
-    /// Error out when config.toml contains fields that are not recognized by this version of MidnightCoder.
+    /// Error out when config.toml contains fields that are not recognized by this version of SolaiAgent.
     #[arg(long = "strict-config", default_value_t = false)]
     strict_config: bool,
 
@@ -293,7 +293,7 @@ struct ReviewCommand {
 
 #[derive(Debug, Parser)]
 struct McpServerCommand {
-    /// Error out when config.toml contains fields that are not recognized by this version of MidnightCoder.
+    /// Error out when config.toml contains fields that are not recognized by this version of SolaiAgent.
     #[arg(long = "strict-config", default_value_t = false)]
     strict_config: bool,
 }
@@ -353,7 +353,7 @@ struct SessionArchiveConfigOverrides {
     #[clap(flatten)]
     shared: SharedCliOptions,
 
-    /// Error out when config.toml contains fields that are not recognized by this version of MidnightCoder.
+    /// Error out when config.toml contains fields that are not recognized by this version of SolaiAgent.
     #[arg(long = "strict-config", default_value_t = false)]
     strict_config: bool,
 
@@ -518,7 +518,7 @@ struct AppServerCommand {
     #[command(subcommand)]
     subcommand: Option<AppServerSubcommand>,
 
-    /// Error out when config.toml contains fields that are not recognized by this version of MidnightCoder.
+    /// Error out when config.toml contains fields that are not recognized by this version of SolaiAgent.
     #[arg(long = "strict-config", default_value_t = false)]
     strict_config: bool,
 
@@ -563,7 +563,7 @@ struct AppServerCommand {
 
 #[derive(Debug, Parser)]
 struct ExecServerCommand {
-    /// Error out when config.toml contains fields that are not recognized by this version of MidnightCoder.
+    /// Error out when config.toml contains fields that are not recognized by this version of SolaiAgent.
     #[arg(long = "strict-config", default_value_t = false)]
     strict_config: bool,
 
@@ -603,7 +603,7 @@ enum AppServerSubcommand {
     /// [experimental] Generate JSON Schema for the app server protocol.
     GenerateJsonSchema(GenerateJsonSchemaCommand),
 
-    /// [internal] Generate internal JSON Schema artifacts for MidnightCoder tooling.
+    /// [internal] Generate internal JSON Schema artifacts for SolaiAgent tooling.
     #[clap(hide = true)]
     GenerateInternalJsonSchema(GenerateInternalJsonSchemaCommand),
 }
@@ -758,7 +758,7 @@ fn handle_app_exit(exit_info: AppExitInfo) -> anyhow::Result<()> {
 fn run_update_action(action: UpdateAction) -> anyhow::Result<()> {
     println!();
     let cmd_str = action.command_str();
-    println!("Updating MidnightCoder via `{cmd_str}`...");
+    println!("Updating SolaiAgent via `{cmd_str}`...");
 
     let status = {
         #[cfg(windows)]
@@ -793,7 +793,7 @@ fn run_update_action(action: UpdateAction) -> anyhow::Result<()> {
     if !status.success() {
         anyhow::bail!("`{cmd_str}` failed with status {status}");
     }
-    println!("\n🎉 Update ran successfully! Please restart MidnightCoder.");
+    println!("\n🎉 Update ran successfully! Please restart SolaiAgent.");
     Ok(())
 }
 
@@ -801,7 +801,7 @@ fn run_update_command() -> anyhow::Result<()> {
     #[cfg(debug_assertions)]
     {
         anyhow::bail!(
-            "`codex update` is not available in debug builds. Install a release build of MidnightCoder to use this command."
+            "`codex update` is not available in debug builds. Install a release build of SolaiAgent to use this command."
         );
     }
 
@@ -809,7 +809,7 @@ fn run_update_command() -> anyhow::Result<()> {
     {
         let Some(action) = codex_tui::get_update_action() else {
             anyhow::bail!(
-                "Could not detect the MidnightCoder installation method. Please update manually: https://developers.openai.com/codex/cli/"
+                "Could not detect the SolaiAgent installation method. Please update manually: https://developers.openai.com/codex/cli/"
             );
         };
         run_update_action(action)
@@ -1684,7 +1684,7 @@ async fn run_exec_server_command(
     let codex_self_exe = arg0_paths
         .codex_self_exe
         .clone()
-        .ok_or_else(|| anyhow::anyhow!("MidnightCoder executable path is not configured"))?;
+        .ok_or_else(|| anyhow::anyhow!("SolaiAgent executable path is not configured"))?;
     let runtime_paths = codex_exec_server::ExecServerRuntimePaths::new(
         codex_self_exe,
         arg0_paths.codex_linux_sandbox_exe.clone(),
@@ -1741,7 +1741,7 @@ async fn load_exec_server_remote_auth_provider(
             anyhow::anyhow!("CODEX_ACCESS_TOKEN is required when --use-agent-identity-auth is set")
         })?;
         let auth_route_config = config.auth_route_config();
-        let auth = MidnightCoderAuth::from_agent_identity_jwt(
+        let auth = SolaiAgentAuth::from_agent_identity_jwt(
             &agent_identity_jwt,
             Some(&config.chatgpt_base_url),
             auth_route_config.as_ref(),
@@ -1769,7 +1769,7 @@ async fn load_exec_server_remote_auth_provider(
     Ok(codex_model_provider::auth_provider_from_auth(&auth))
 }
 
-fn is_supported_exec_server_remote_auth(auth: &MidnightCoderAuth) -> bool {
+fn is_supported_exec_server_remote_auth(auth: &SolaiAgentAuth) -> bool {
     auth.is_chatgpt_auth() || auth.is_api_key_auth()
 }
 
@@ -1824,7 +1824,7 @@ async fn load_exec_server_config(
 async fn load_exec_server_remote_auth(
     config: &codex_core::config::Config,
     missing_auth_error: &'static str,
-) -> anyhow::Result<codex_login::MidnightCoderAuth> {
+) -> anyhow::Result<codex_login::SolaiAgentAuth> {
     let auth_manager =
         AuthManager::shared_from_config(config, /*enable_codex_api_key_env*/ true).await;
 
@@ -1971,7 +1971,7 @@ async fn run_debug_prompt_input_command(
         });
     }
 
-    let user_instructions_provider = Arc::new(MidnightCoderHomeUserInstructionsProvider::new(
+    let user_instructions_provider = Arc::new(SolaiAgentHomeUserInstructionsProvider::new(
         config.codex_home.clone(),
     ));
     let prompt_input = codex_core::build_prompt_input(
@@ -2251,7 +2251,7 @@ async fn run_interactive_tui(
         }
 
         eprintln!(
-            "WARNING: TERM is set to \"dumb\". MidnightCoder's interactive TUI may not work in this terminal."
+            "WARNING: TERM is set to \"dumb\". SolaiAgent's interactive TUI may not work in this terminal."
         );
         if !confirm("Continue anyway? [y/N]: ")? {
             return Ok(AppExitInfo::fatal(
@@ -2303,7 +2303,7 @@ async fn run_interactive_tui(
             Err(backup_err) => {
                 local_state_db::print_diagnostic_guidance(startup_error);
                 return Ok(AppExitInfo::fatal(format!(
-                    "failed to move damaged MidnightCoder local database files into a backup folder automatically: {backup_err}"
+                    "failed to move damaged SolaiAgent local database files into a backup folder automatically: {backup_err}"
                 )));
             }
         }
@@ -2501,7 +2501,7 @@ mod tests {
 
     #[test]
     fn exec_server_remote_auth_accepts_api_key_auth() {
-        let auth = MidnightCoderAuth::from_api_key("sk-test");
+        let auth = SolaiAgentAuth::from_api_key("sk-test");
 
         assert!(is_supported_exec_server_remote_auth(&auth));
     }
@@ -2536,7 +2536,7 @@ mod tests {
             "http://service.openai.org/api",
         ] {
             let error = validate_api_key_remote_host(base_url)
-                .expect_err("reject plaintext MidnightCoder destination");
+                .expect_err("reject plaintext SolaiAgent destination");
 
             assert_eq!(
                 error.to_string(),

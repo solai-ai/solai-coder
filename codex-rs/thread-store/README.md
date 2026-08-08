@@ -1,6 +1,6 @@
 # Thread Store
 
-`codex-thread-store` is the storage boundary for Midnight Coder threads. It defines the
+`codex-thread-store` is the storage boundary for SOLAI Agent threads. It defines the
 `ThreadStore` trait plus local and in-memory implementations. Other storage
 implementations may live outside this repository.
 

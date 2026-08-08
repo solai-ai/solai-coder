@@ -126,7 +126,7 @@ fn save_session_resolved_fields(sc: &SessionConfiguration, lock_config: &mut Con
 /// normalization, defaulting, or feature materialization.
 ///
 /// Persist the resolved representation so replay compares against the behavior
-/// MidnightCoder actually ran with, not only the user-authored TOML inputs.
+/// SolaiAgent actually ran with, not only the user-authored TOML inputs.
 fn save_config_resolved_fields(
     config: &Config,
     lock_config: &mut ConfigToml,
@@ -451,7 +451,7 @@ mod tests {
                 .expect_err("version drift should fail");
         let message = error.to_string();
         assert!(
-            message.contains("config lock MidnightCoder version mismatch"),
+            message.contains("config lock SolaiAgent version mismatch"),
             "{message}"
         );
         assert!(

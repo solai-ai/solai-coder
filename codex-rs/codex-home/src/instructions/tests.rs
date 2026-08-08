@@ -10,10 +10,10 @@ use tempfile::TempDir;
 
 use super::DEFAULT_AGENTS_MD_FILENAME;
 use super::LOCAL_AGENTS_MD_FILENAME;
-use super::MidnightCoderHomeUserInstructionsProvider;
+use super::SolaiAgentHomeUserInstructionsProvider;
 
-fn provider(home: &TempDir) -> MidnightCoderHomeUserInstructionsProvider {
-    MidnightCoderHomeUserInstructionsProvider::new(
+fn provider(home: &TempDir) -> SolaiAgentHomeUserInstructionsProvider {
+    SolaiAgentHomeUserInstructionsProvider::new(
         AbsolutePathBuf::try_from(home.path().to_path_buf()).expect("absolute temp dir"),
     )
 }

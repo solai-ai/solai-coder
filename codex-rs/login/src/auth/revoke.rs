@@ -7,7 +7,7 @@
 use serde::Serialize;
 use std::time::Duration;
 
-use codex_client::MidnightCoderHttpClient;
+use codex_client::SolaiAgentHttpClient;
 use codex_protocol::auth::AuthMode;
 
 use super::manager::REFRESH_TOKEN_URL_OVERRIDE_ENV_VAR;
@@ -95,7 +95,7 @@ fn resolved_auth_mode(auth_dot_json: &AuthDotJson) -> AuthMode {
 }
 
 async fn revoke_oauth_token(
-    client: &MidnightCoderHttpClient,
+    client: &SolaiAgentHttpClient,
     endpoint: &str,
     token: &str,
     kind: RevokeTokenKind,
@@ -181,7 +181,7 @@ mod tests {
             .mount(&server)
             .await;
 
-        let client = MidnightCoderHttpClient::new(reqwest::Client::new());
+        let client = SolaiAgentHttpClient::new(reqwest::Client::new());
         let endpoint = format!("{}/oauth/revoke", server.uri());
         let error = revoke_oauth_token(
             &client,

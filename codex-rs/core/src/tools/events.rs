@@ -5,7 +5,7 @@ use crate::tools::context::SharedTurnDiffTracker;
 use crate::tools::sandboxing::ToolError;
 use crate::turn_timing::now_unix_timestamp_ms;
 use codex_apply_patch::AppliedPatchDelta;
-use codex_protocol::error::MidnightCoderErr;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::error::SandboxErr;
 use codex_protocol::exec_output::ExecToolCallOutput;
 use codex_protocol::items::FileChangeItem;
@@ -371,7 +371,7 @@ impl ToolEmitter {
                 };
                 (event, result)
             }
-            Err(ToolError::MidnightCoder(MidnightCoderErr::Sandbox(SandboxErr::Timeout {
+            Err(ToolError::SolaiAgent(SolaiAgentErr::Sandbox(SandboxErr::Timeout {
                 output,
             }))) => {
                 let response = self.format_exec_output_for_model(&output, ctx);
@@ -379,7 +379,7 @@ impl ToolEmitter {
                 let result = Err(FunctionCallError::RespondToModel(response));
                 (event, result)
             }
-            Err(ToolError::MidnightCoder(MidnightCoderErr::Sandbox(SandboxErr::Denied {
+            Err(ToolError::SolaiAgent(SolaiAgentErr::Sandbox(SandboxErr::Denied {
                 output,
                 ..
             }))) => {
@@ -397,7 +397,7 @@ impl ToolEmitter {
                 let result = Err(FunctionCallError::RespondToModel(response));
                 (event, result)
             }
-            Err(ToolError::MidnightCoder(err)) => {
+            Err(ToolError::SolaiAgent(err)) => {
                 let message = format!("execution error: {err:?}");
                 let event = ToolEventStage::Failure(ToolEventFailure::Message(message.clone()));
                 let result = Err(FunctionCallError::RespondToModel(message));
@@ -632,7 +632,7 @@ mod tests {
     use crate::session::tests::make_session_and_context_with_dynamic_tools_and_rx;
     use crate::turn_diff_tracker::TurnDiffTracker;
     use codex_exec_server::LOCAL_FS;
-    use codex_protocol::error::MidnightCoderErr;
+    use codex_protocol::error::SolaiAgentErr;
     use codex_protocol::error::SandboxErr;
     use codex_protocol::exec_output::ExecToolCallOutput;
     use codex_protocol::items::TurnItem;
@@ -710,7 +710,7 @@ mod tests {
             ..Default::default()
         };
         assert_failed_apply_patch_tracks_committed_delta(
-            Err(ToolError::MidnightCoder(MidnightCoderErr::Sandbox(
+            Err(ToolError::SolaiAgent(SolaiAgentErr::Sandbox(
                 SandboxErr::Denied {
                     output: Box::new(output),
                     network_policy_decision: None,

@@ -136,7 +136,7 @@
         {
           "description": "Path to a .codex/ folder within a project. There could be multiple of these between `cwd` and the project/repo root.",
           "properties": {
-            "dotMidnightCoderFolder": {
+            "dotSolaiAgentFolder": {
               "$ref": "#/definitions/AbsolutePathBuf"
             },
             "type": {
@@ -148,7 +148,7 @@
             }
           },
           "required": [
-            "dotMidnightCoderFolder",
+            "dotSolaiAgentFolder",
             "type"
           ],
           "title": "ProjectConfigLayerSource",

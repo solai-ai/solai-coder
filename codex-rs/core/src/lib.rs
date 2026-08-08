@@ -15,7 +15,7 @@ mod realtime_prompt;
 mod responses_metadata;
 mod responses_retry;
 pub(crate) mod session;
-pub use responses_metadata::MidnightCoderResponsesMetadata;
+pub use responses_metadata::SolaiAgentResponsesMetadata;
 pub use session::SteerInputError;
 pub use turn_metadata::detached_memory_responses_metadata;
 mod codex_thread;
@@ -24,8 +24,8 @@ mod compact_remote_v2;
 mod compact_token_budget;
 mod config_lock;
 pub use codex_thread::BackgroundTerminalInfo;
-pub use codex_thread::MidnightCoderThread;
-pub use codex_thread::MidnightCoderThreadSettingsOverrides;
+pub use codex_thread::SolaiAgentThread;
+pub use codex_thread::SolaiAgentThreadSettingsOverrides;
 pub use codex_thread::ThreadConfigSnapshot;
 pub use codex_thread::TryStartTurnIfIdleError;
 pub use codex_thread::TryStartTurnIfIdleRejectionReason;
@@ -127,8 +127,8 @@ pub use windows_sandbox_read_grants::grant_read_root_non_elevated;
 pub type ConversationManager = ThreadManager;
 #[deprecated(note = "use NewThread")]
 pub type NewConversation = NewThread;
-#[deprecated(note = "use MidnightCoderThread")]
-pub type MidnightCoderConversation = MidnightCoderThread;
+#[deprecated(note = "use SolaiAgentThread")]
+pub type SolaiAgentConversation = SolaiAgentThread;
 pub(crate) mod agents_md;
 mod agents_md_manager;
 pub use agents_md::DEFAULT_AGENTS_MD_FILENAME;

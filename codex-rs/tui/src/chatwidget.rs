@@ -1,4 +1,4 @@
-//! The main MidnightCoder TUI chat surface.
+//! The main SolaiAgent TUI chat surface.
 //!
 //! `ChatWidget` consumes protocol events, builds and updates history cells, and drives rendering
 //! for both the main viewport and overlay UIs.
@@ -94,7 +94,7 @@ use codex_app_server_protocol::ItemStartedNotification;
 use codex_app_server_protocol::McpServerElicitationRequest;
 use codex_app_server_protocol::McpServerElicitationRequestParams;
 use codex_app_server_protocol::McpServerStatusDetail;
-use codex_app_server_protocol::MidnightCoderErrorInfo as AppServerMidnightCoderErrorInfo;
+use codex_app_server_protocol::SolaiAgentErrorInfo as AppServerSolaiAgentErrorInfo;
 use codex_app_server_protocol::ModelVerification as AppServerModelVerification;
 use codex_app_server_protocol::RateLimitReachedType;
 use codex_app_server_protocol::RateLimitSnapshot;
@@ -493,7 +493,7 @@ pub(crate) struct ChatWidgetInit {
     pub(crate) has_chatgpt_account: bool,
     pub(crate) has_codex_backend_auth: bool,
     pub(crate) model_catalog: Arc<ModelCatalog>,
-    pub(crate) feedback: codex_feedback::MidnightCoderFeedback,
+    pub(crate) feedback: codex_feedback::SolaiAgentFeedback,
     pub(crate) is_first_run: bool,
     pub(crate) status_account_display: Option<StatusAccountDisplay>,
     pub(crate) runtime_model_provider_base_url: Option<String>,
@@ -609,7 +609,7 @@ fn format_token_rate(rate: f64) -> String {
 /// active work, arming the double-press quit shortcut, and requesting shutdown-first exit.
 pub(crate) struct ChatWidget {
     app_event_tx: AppEventSender,
-    codex_op_target: MidnightCoderOpTarget,
+    codex_op_target: SolaiAgentOpTarget,
     bottom_pane: BottomPane,
     transcript: TranscriptState,
     config: Config,
@@ -766,7 +766,7 @@ pub(crate) struct ChatWidget {
     turn_runtime_metrics: RuntimeMetricsSummary,
     last_rendered_width: std::cell::Cell<Option<usize>>,
     // Feedback sink for /feedback
-    feedback: codex_feedback::MidnightCoderFeedback,
+    feedback: codex_feedback::SolaiAgentFeedback,
     // Current session rollout path (if known)
     current_rollout_path: Option<PathBuf>,
     // Current working directory (if known)
@@ -832,7 +832,7 @@ pub(crate) struct ChatWidget {
 }
 
 #[cfg_attr(not(test), allow(dead_code))]
-enum MidnightCoderOpTarget {
+enum SolaiAgentOpTarget {
     Direct(UnboundedSender<AppCommand>),
     AppEvent,
 }
@@ -1897,15 +1897,15 @@ impl ChatWidget {
             self.bottom_pane.set_task_running(/*running*/ true);
         }
         match &self.codex_op_target {
-            MidnightCoderOpTarget::Direct(codex_op_tx) => {
+            SolaiAgentOpTarget::Direct(codex_op_tx) => {
                 crate::session_log::log_outbound_op(&op);
                 if let Err(e) = codex_op_tx.send(op) {
                     tracing::error!("failed to submit op: {e}");
                     return false;
                 }
             }
-            MidnightCoderOpTarget::AppEvent => {
-                self.app_event_tx.send(AppEvent::MidnightCoderOp(op));
+            SolaiAgentOpTarget::AppEvent => {
+                self.app_event_tx.send(AppEvent::SolaiAgentOp(op));
             }
         }
         true

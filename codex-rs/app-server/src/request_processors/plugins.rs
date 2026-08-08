@@ -515,7 +515,7 @@ impl PluginRequestProcessor {
     async fn workspace_codex_plugins_enabled(
         &self,
         config: &Config,
-        auth: Option<&MidnightCoderAuth>,
+        auth: Option<&SolaiAgentAuth>,
     ) -> bool {
         match workspace_settings::codex_plugins_enabled_for_workspace(
             config,
@@ -527,7 +527,7 @@ impl PluginRequestProcessor {
             Ok(enabled) => enabled,
             Err(err) => {
                 warn!(
-                    "failed to fetch workspace MidnightCoder plugins setting; allowing MidnightCoder plugins: {err:#}"
+                    "failed to fetch workspace SolaiAgent plugins setting; allowing SolaiAgent plugins: {err:#}"
                 );
                 true
             }
@@ -566,7 +566,7 @@ impl PluginRequestProcessor {
         {
             return Ok(empty_response());
         }
-        let auth_mode = auth.as_ref().map(MidnightCoderAuth::api_auth_mode);
+        let auth_mode = auth.as_ref().map(SolaiAgentAuth::api_auth_mode);
         plugins_manager.set_auth_mode(auth_mode);
         let plugins_input = config.plugins_config_input();
         let include_shared_with_me =
@@ -672,7 +672,7 @@ impl PluginRequestProcessor {
                 Err(err) if explicit_marketplace_kinds => {
                     return Err(remote_plugin_catalog_error_to_jsonrpc(
                         err,
-                        "list MidnightCoder Curated remote plugin catalog",
+                        "list SolaiAgent Curated remote plugin catalog",
                     ));
                 }
                 Err(RemotePluginCatalogError::AuthRequired) => {}
@@ -816,7 +816,7 @@ impl PluginRequestProcessor {
         {
             return Ok(empty_response());
         }
-        plugins_manager.set_auth_mode(auth.as_ref().map(MidnightCoderAuth::api_auth_mode));
+        plugins_manager.set_auth_mode(auth.as_ref().map(SolaiAgentAuth::api_auth_mode));
 
         let plugins_input = config.plugins_config_input();
         let remote_installed_plugin_visible_marketplaces =
@@ -945,7 +945,7 @@ impl PluginRequestProcessor {
         plugins_manager: Arc<codex_core_plugins::PluginsManager>,
         plugins_input: &codex_core_plugins::PluginsConfigInput,
         visible_marketplaces: &[&str],
-        auth: Option<&MidnightCoderAuth>,
+        auth: Option<&SolaiAgentAuth>,
     ) -> Vec<PluginMarketplaceEntry> {
         let remote_marketplaces = if let Some(remote_marketplaces) = plugins_manager
             .build_remote_installed_plugin_marketplaces_from_cache(visible_marketplaces)
@@ -1007,7 +1007,7 @@ impl PluginRequestProcessor {
         let config = self.load_latest_config(config_cwd).await?;
         let plugins_input = config.plugins_config_input();
         let auth = self.auth_manager.auth().await;
-        plugins_manager.set_auth_mode(auth.as_ref().map(MidnightCoderAuth::api_auth_mode));
+        plugins_manager.set_auth_mode(auth.as_ref().map(SolaiAgentAuth::api_auth_mode));
 
         let plugin = match read_source {
             Ok(marketplace_path) => {
@@ -1406,7 +1406,7 @@ impl PluginRequestProcessor {
 
     async fn load_plugin_share_config_and_auth(
         &self,
-    ) -> Result<(Config, Option<MidnightCoderAuth>), JSONRPCErrorError> {
+    ) -> Result<(Config, Option<SolaiAgentAuth>), JSONRPCErrorError> {
         let config = self.load_latest_config(/*fallback_cwd*/ None).await?;
         if !config.features.enabled(Feature::Plugins) {
             return Err(invalid_request("plugin sharing is not enabled"));
@@ -1446,7 +1446,7 @@ impl PluginRequestProcessor {
             .await
         {
             return Err(invalid_request(
-                "MidnightCoder plugins are disabled for this workspace",
+                "SolaiAgent plugins are disabled for this workspace",
             ));
         }
 
@@ -1486,7 +1486,7 @@ impl PluginRequestProcessor {
 
         let plugin_mcp_servers = load_plugin_mcp_servers(
             result.installed_path.as_path(),
-            auth.as_ref().map(MidnightCoderAuth::auth_mode),
+            auth.as_ref().map(SolaiAgentAuth::auth_mode),
         )
         .await;
         if !plugin_mcp_servers.is_empty() {
@@ -1501,7 +1501,7 @@ impl PluginRequestProcessor {
             .plugin_apps_needing_auth_for_install(
                 &config,
                 auth.as_ref()
-                    .is_some_and(MidnightCoderAuth::is_chatgpt_auth),
+                    .is_some_and(SolaiAgentAuth::is_chatgpt_auth),
                 &result.plugin_id.as_key(),
                 &plugin_apps,
             )
@@ -1658,7 +1658,7 @@ impl PluginRequestProcessor {
 
         let plugin_mcp_servers = load_plugin_mcp_servers(
             result.installed_path.as_path(),
-            auth.as_ref().map(MidnightCoderAuth::auth_mode),
+            auth.as_ref().map(SolaiAgentAuth::auth_mode),
         )
         .await;
         if !plugin_mcp_servers.is_empty() {
@@ -1668,7 +1668,7 @@ impl PluginRequestProcessor {
 
         let is_chatgpt_auth = auth
             .as_ref()
-            .is_some_and(MidnightCoderAuth::is_chatgpt_auth);
+            .is_some_and(SolaiAgentAuth::is_chatgpt_auth);
         let apps_needing_auth = if let Some(app_ids_needing_auth) =
             install_result.app_ids_needing_auth
         {

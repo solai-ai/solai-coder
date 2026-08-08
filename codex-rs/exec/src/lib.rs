@@ -72,7 +72,7 @@ use codex_core::config::resolve_profile_v2_config_path;
 use codex_core::find_thread_meta_by_name_str;
 use codex_core::format_exec_policy_error_with_source;
 use codex_core::path_utils;
-use codex_feedback::MidnightCoderFeedback;
+use codex_feedback::SolaiAgentFeedback;
 use codex_git_utils::get_git_repo_root;
 use codex_login::AuthConfig;
 use codex_login::default_client::set_default_client_residency_requirement;
@@ -104,7 +104,7 @@ use codex_utils_oss::get_default_model_for_oss_provider;
 use event_processor_with_human_output::EventProcessorWithHumanOutput;
 pub use event_processor_with_jsonl_output::CollectedThreadEvents;
 pub use event_processor_with_jsonl_output::EventProcessorWithJsonOutput;
-pub use event_processor_with_jsonl_output::MidnightCoderStatus;
+pub use event_processor_with_jsonl_output::SolaiAgentStatus;
 pub use exec_events::AgentMessageItem;
 pub use exec_events::CollabAgentState;
 pub use exec_events::CollabAgentStatus;
@@ -557,7 +557,7 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
         loader_overrides: run_loader_overrides,
         strict_config,
         cloud_config_bundle: run_cloud_config_bundle,
-        feedback: MidnightCoderFeedback::new(),
+        feedback: SolaiAgentFeedback::new(),
         log_db: None,
         state_db: state_db.clone(),
         environment_manager: std::sync::Arc::new(environment_manager),
@@ -852,7 +852,7 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
 
     exec_span.record("thread.id", primary_thread_id_for_span.as_str());
 
-    // Print the effective configuration and initial request so users can see what MidnightCoder
+    // Print the effective configuration and initial request so users can see what SolaiAgent
     // is using.
     event_processor.print_config_summary(&config, &prompt_summary, &session_configured);
     if !json_mode
@@ -862,7 +862,7 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
         event_processor.process_warning(message);
     }
 
-    info!("MidnightCoder initialized with event: {session_configured:?}");
+    info!("SolaiAgent initialized with event: {session_configured:?}");
 
     let (interrupt_tx, mut interrupt_rx) = mpsc::unbounded_channel::<()>();
     tokio::spawn(async move {
@@ -1015,8 +1015,8 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
                     &task_id,
                 ) {
                     match event_processor.process_server_notification(notification) {
-                        MidnightCoderStatus::Running => {}
-                        MidnightCoderStatus::InitiateShutdown => {
+                        SolaiAgentStatus::Running => {}
+                        SolaiAgentStatus::InitiateShutdown => {
                             if let Err(err) = request_shutdown(
                                 &client,
                                 &mut request_ids,

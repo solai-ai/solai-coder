@@ -14,7 +14,7 @@ use crate::facts::ExternalAgentConfigImportCompletedInput;
 use crate::facts::ExternalAgentConfigImportFailureInput;
 use crate::facts::HookRunFact;
 use crate::facts::HookRunInput;
-use crate::facts::MidnightCoderGoalEvent;
+use crate::facts::SolaiAgentGoalEvent;
 use crate::facts::PluginInstallFailedInput;
 use crate::facts::PluginInstallRequested;
 use crate::facts::PluginInstallRequestedInput;
@@ -24,7 +24,7 @@ use crate::facts::SkillInvocation;
 use crate::facts::SkillInvokedInput;
 use crate::facts::SubAgentThreadStartedInput;
 use crate::facts::TrackEventsContext;
-use crate::facts::TurnMidnightCoderErrorFact;
+use crate::facts::TurnSolaiAgentErrorFact;
 use crate::facts::TurnProfileFact;
 use crate::facts::TurnResolvedConfigFact;
 use crate::facts::TurnTokenUsageFact;
@@ -38,7 +38,7 @@ use codex_app_server_protocol::ServerNotification;
 use codex_app_server_protocol::ServerRequest;
 use codex_app_server_protocol::ServerResponse;
 use codex_login::AuthManager;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_login::default_client::create_client;
 use codex_plugin::PluginId;
 use codex_plugin::PluginTelemetryMetadata;
@@ -325,13 +325,13 @@ impl AnalyticsEventsClient {
         ));
     }
 
-    pub fn track_compaction(&self, event: crate::facts::MidnightCoderCompactionEvent) {
+    pub fn track_compaction(&self, event: crate::facts::SolaiAgentCompactionEvent) {
         self.record_fact(AnalyticsFact::Custom(CustomAnalyticsFact::Compaction(
             Box::new(event),
         )));
     }
 
-    pub fn track_goal_event(&self, event: MidnightCoderGoalEvent) {
+    pub fn track_goal_event(&self, event: SolaiAgentGoalEvent) {
         self.record_fact(AnalyticsFact::Custom(CustomAnalyticsFact::Goal(Box::new(
             event,
         ))));
@@ -355,9 +355,9 @@ impl AnalyticsEventsClient {
         )));
     }
 
-    pub fn track_turn_codex_error(&self, fact: TurnMidnightCoderErrorFact) {
+    pub fn track_turn_codex_error(&self, fact: TurnSolaiAgentErrorFact) {
         self.record_fact(AnalyticsFact::Custom(
-            CustomAnalyticsFact::TurnMidnightCoderError(Box::new(fact)),
+            CustomAnalyticsFact::TurnSolaiAgentError(Box::new(fact)),
         ));
     }
 
@@ -590,7 +590,7 @@ fn track_event_request_batches(events: Vec<TrackEventRequest>) -> Vec<Vec<TrackE
 }
 
 async fn send_track_events_request(
-    auth: &MidnightCoderAuth,
+    auth: &SolaiAgentAuth,
     destination: &AnalyticsEventsDestination,
     events: Vec<TrackEventRequest>,
 ) {

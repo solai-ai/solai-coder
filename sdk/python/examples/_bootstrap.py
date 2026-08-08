@@ -48,11 +48,11 @@ def ensure_local_sdk_src() -> Path:
 
 
 def runtime_config():
-    """Return an example-friendly MidnightCoderConfig for repo-source SDK usage."""
-    from openai_codex import MidnightCoderConfig
+    """Return an example-friendly SolaiAgentConfig for repo-source SDK usage."""
+    from openai_codex import SolaiAgentConfig
 
     ensure_runtime_package_installed(sys.executable, _SDK_PYTHON_DIR)
-    return MidnightCoderConfig()
+    return SolaiAgentConfig()
 
 
 def _png_chunk(chunk_type: bytes, data: bytes) -> bytes:

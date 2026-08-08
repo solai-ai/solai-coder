@@ -13,7 +13,7 @@ use super::remote_plugin_canonical_marketplace_name;
 use crate::store::PLUGINS_CACHE_DIR;
 use crate::store::PluginStore;
 use crate::store::PluginStoreError;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_plugin::PluginId;
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
@@ -82,7 +82,7 @@ pub struct RemotePluginCacheMutationGuard {
 pub(crate) fn maybe_start_remote_installed_plugin_bundle_sync(
     codex_home: PathBuf,
     config: RemotePluginServiceConfig,
-    auth: Option<MidnightCoderAuth>,
+    auth: Option<SolaiAgentAuth>,
     on_local_cache_changed: Option<Arc<dyn Fn() + Send + Sync + 'static>>,
 ) {
     let Some(auth) = auth else {
@@ -126,7 +126,7 @@ pub(crate) fn maybe_start_remote_installed_plugin_bundle_sync(
 pub async fn sync_remote_installed_plugin_bundles_once(
     codex_home: PathBuf,
     config: &RemotePluginServiceConfig,
-    auth: Option<&MidnightCoderAuth>,
+    auth: Option<&SolaiAgentAuth>,
 ) -> Result<RemoteInstalledPluginBundleSyncOutcome, RemoteInstalledPluginBundleSyncError> {
     let auth = ensure_chatgpt_auth(auth)?;
     let global = async {
@@ -545,7 +545,7 @@ mod tests {
         let config = RemotePluginServiceConfig {
             chatgpt_base_url: format!("{}/backend-api", server.uri()),
         };
-        let auth = MidnightCoderAuth::create_dummy_chatgpt_auth_for_testing();
+        let auth = SolaiAgentAuth::create_dummy_chatgpt_auth_for_testing();
 
         let outcome = sync_remote_installed_plugin_bundles_once(
             codex_home.path().to_path_buf(),

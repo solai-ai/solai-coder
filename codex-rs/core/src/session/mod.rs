@@ -52,7 +52,7 @@ use chrono::Local;
 use chrono::Utc;
 use codex_analytics::AnalyticsEventsClient;
 use codex_analytics::SubAgentThreadStartedInput;
-use codex_analytics::TurnMidnightCoderErrorFact;
+use codex_analytics::TurnSolaiAgentErrorFact;
 use codex_config::types::AuthKeyringBackendKind;
 use codex_config::types::OAuthCredentialsStoreMode;
 use codex_exec_server::Environment;
@@ -68,7 +68,7 @@ use codex_features::unstable_features_warning_event;
 use codex_hooks::Hooks;
 use codex_hooks::HooksConfig;
 use codex_login::AuthManager;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_login::auth_env_telemetry::collect_auth_env_telemetry;
 use codex_mcp::McpConnectionManager;
 use codex_mcp::McpResourceClient;
@@ -194,8 +194,8 @@ use codex_config::ConfigLayerSource;
 use codex_config::ConfigLayerStackOrdering;
 use codex_config::types::McpServerConfig;
 use codex_model_provider_info::ModelProviderInfo;
-use codex_protocol::error::MidnightCoderErr;
-use codex_protocol::error::Result as MidnightCoderResult;
+use codex_protocol::error::SolaiAgentErr;
+use codex_protocol::error::Result as SolaiAgentResult;
 #[cfg(test)]
 use codex_protocol::exec_output::StreamOutput;
 
@@ -257,11 +257,11 @@ impl SteerInputError {
         match self {
             Self::NoActiveTurn(_) => ErrorEvent {
                 message: "no active turn to steer".to_string(),
-                codex_error_info: Some(MidnightCoderErrorInfo::BadRequest),
+                codex_error_info: Some(SolaiAgentErrorInfo::BadRequest),
             },
             Self::ExpectedTurnMismatch { expected, actual } => ErrorEvent {
                 message: format!("expected active turn id `{expected}` but found `{actual}`"),
-                codex_error_info: Some(MidnightCoderErrorInfo::BadRequest),
+                codex_error_info: Some(SolaiAgentErrorInfo::BadRequest),
             },
             Self::ActiveTurnNotSteerable { turn_kind } => {
                 let turn_kind_label = match turn_kind {
@@ -270,14 +270,14 @@ impl SteerInputError {
                 };
                 ErrorEvent {
                     message: format!("cannot steer a {turn_kind_label} turn"),
-                    codex_error_info: Some(MidnightCoderErrorInfo::ActiveTurnNotSteerable {
+                    codex_error_info: Some(SolaiAgentErrorInfo::ActiveTurnNotSteerable {
                         turn_kind: *turn_kind,
                     }),
                 }
             }
             Self::EmptyInput => ErrorEvent {
                 message: "input must not be empty".to_string(),
-                codex_error_info: Some(MidnightCoderErrorInfo::BadRequest),
+                codex_error_info: Some(SolaiAgentErrorInfo::BadRequest),
             },
         }
     }
@@ -356,7 +356,7 @@ use codex_protocol::protocol::EventMsg;
 use codex_protocol::protocol::ExecApprovalRequestEvent;
 use codex_protocol::protocol::InitialHistory;
 use codex_protocol::protocol::McpServerRefreshConfig;
-use codex_protocol::protocol::MidnightCoderErrorInfo;
+use codex_protocol::protocol::SolaiAgentErrorInfo;
 use codex_protocol::protocol::ModelRerouteEvent;
 use codex_protocol::protocol::ModelRerouteReason;
 use codex_protocol::protocol::ModelVerification;
@@ -384,9 +384,9 @@ use codex_utils_absolute_path::AbsolutePathBuf;
 #[cfg(test)]
 use codex_utils_stream_parser::ProposedPlanSegment;
 
-/// The high-level interface to the MidnightCoder system.
+/// The high-level interface to the SolaiAgent system.
 /// It operates as a queue pair where you send submissions and receive events.
-pub struct MidnightCoder {
+pub struct SolaiAgent {
     pub(crate) tx_sub: Sender<Submission>,
     pub(crate) rx_event: Receiver<Event>,
     // Last known status of the agent.
@@ -399,14 +399,14 @@ pub struct MidnightCoder {
 
 pub(crate) type SessionLoopTermination = Shared<BoxFuture<'static, ()>>;
 
-/// Wrapper returned by [`MidnightCoder::spawn`] containing the spawned [`MidnightCoder`] and
+/// Wrapper returned by [`SolaiAgent::spawn`] containing the spawned [`SolaiAgent`] and
 /// the unique session id.
-pub struct MidnightCoderSpawnOk {
-    pub codex: MidnightCoder,
+pub struct SolaiAgentSpawnOk {
+    pub codex: SolaiAgent,
     pub thread_id: ThreadId,
 }
 
-pub(crate) struct MidnightCoderSpawnArgs {
+pub(crate) struct SolaiAgentSpawnArgs {
     pub(crate) config: Config,
     pub(crate) allow_provider_model_fallback: bool,
     pub(crate) user_instructions: LoadedUserInstructions,
@@ -471,11 +471,11 @@ pub(crate) const SUBMISSION_CHANNEL_CAPACITY: usize = 512;
 const CYBER_VERIFY_URL: &str = "https://chatgpt.com/cyber";
 const CYBER_SAFETY_URL: &str = "https://developers.openai.com/codex/concepts/cyber-safety";
 
-impl MidnightCoder {
-    /// Spawn a new [`MidnightCoder`] and initialize the session.
+impl SolaiAgent {
+    /// Spawn a new [`SolaiAgent`] and initialize the session.
     pub(crate) async fn spawn(
-        args: MidnightCoderSpawnArgs,
-    ) -> MidnightCoderResult<MidnightCoderSpawnOk> {
+        args: SolaiAgentSpawnArgs,
+    ) -> SolaiAgentResult<SolaiAgentSpawnOk> {
         let parent_trace = match args.parent_trace {
             Some(trace) => {
                 if codex_otel::context_from_w3c_trace_context(&trace).is_some() {
@@ -491,7 +491,7 @@ impl MidnightCoder {
         if let Some(trace) = parent_trace.as_ref() {
             let _ = set_parent_from_w3c_trace_context(&thread_spawn_span, trace);
         }
-        Self::spawn_internal(MidnightCoderSpawnArgs {
+        Self::spawn_internal(SolaiAgentSpawnArgs {
             parent_trace,
             ..args
         })
@@ -500,9 +500,9 @@ impl MidnightCoder {
     }
 
     async fn spawn_internal(
-        args: MidnightCoderSpawnArgs,
-    ) -> MidnightCoderResult<MidnightCoderSpawnOk> {
-        let MidnightCoderSpawnArgs {
+        args: SolaiAgentSpawnArgs,
+    ) -> SolaiAgentResult<SolaiAgentSpawnOk> {
+        let SolaiAgentSpawnArgs {
             mut config,
             allow_provider_model_fallback,
             user_instructions,
@@ -562,7 +562,7 @@ impl MidnightCoder {
                 ExecPolicyManager::load(&config.config_layer_stack)
                     .await
                     .map_err(|err| {
-                        MidnightCoderErr::Fatal(format!("failed to load rules: {err}"))
+                        SolaiAgentErr::Fatal(format!("failed to load rules: {err}"))
                     })?,
             )
         };
@@ -614,7 +614,7 @@ impl MidnightCoder {
         );
         config
             .validate_multi_agent_v2_config()
-            .map_err(|err| MidnightCoderErr::InvalidRequest(err.to_string()))?;
+            .map_err(|err| SolaiAgentErr::InvalidRequest(err.to_string()))?;
         let base_instructions = config
             .base_instructions
             .clone()
@@ -676,7 +676,7 @@ impl MidnightCoder {
             user_shell_override,
         };
 
-        // Generate a unique ID for the lifetime of this MidnightCoder session.
+        // Generate a unique ID for the lifetime of this SolaiAgent session.
         let session_source_clone = session_configuration.session_source.clone();
         let (agent_status_tx, agent_status_rx) = watch::channel(AgentStatus::PendingInit);
 
@@ -723,7 +723,7 @@ impl MidnightCoder {
                 .instrument(info_span!("session_loop", thread_id = %thread_id))
                 .await;
         });
-        let codex = MidnightCoder {
+        let codex = SolaiAgent {
             tx_sub,
             rx_event,
             agent_status: agent_status_rx,
@@ -731,11 +731,11 @@ impl MidnightCoder {
             session_loop_termination: session_loop_termination_from_handle(session_loop_handle),
         };
 
-        Ok(MidnightCoderSpawnOk { codex, thread_id })
+        Ok(SolaiAgentSpawnOk { codex, thread_id })
     }
 
     /// Submit the `op` wrapped in a `Submission` with a unique ID.
-    pub async fn submit(&self, op: Op) -> MidnightCoderResult<String> {
+    pub async fn submit(&self, op: Op) -> SolaiAgentResult<String> {
         self.submit_with_trace(op, /*trace*/ None).await
     }
 
@@ -743,7 +743,7 @@ impl MidnightCoder {
         &self,
         op: Op,
         trace: Option<W3cTraceContext>,
-    ) -> MidnightCoderResult<String> {
+    ) -> SolaiAgentResult<String> {
         let id = new_submission_id();
         let sub = Submission {
             id: id.clone(),
@@ -760,7 +760,7 @@ impl MidnightCoder {
         op: Op,
         trace: Option<W3cTraceContext>,
         client_user_message_id: Option<String>,
-    ) -> MidnightCoderResult<String> {
+    ) -> SolaiAgentResult<String> {
         debug_assert!(matches!(op, Op::UserInput { .. }));
         let id = new_submission_id();
         let sub = Submission {
@@ -773,16 +773,16 @@ impl MidnightCoder {
         Ok(id)
     }
 
-    /// Use sparingly: prefer `submit()` so MidnightCoder is responsible for generating
+    /// Use sparingly: prefer `submit()` so SolaiAgent is responsible for generating
     /// unique IDs for each submission.
-    pub async fn submit_with_id(&self, mut sub: Submission) -> MidnightCoderResult<()> {
+    pub async fn submit_with_id(&self, mut sub: Submission) -> SolaiAgentResult<()> {
         if sub.trace.is_none() {
             sub.trace = current_span_w3c_trace_context();
         }
         self.tx_sub
             .send(sub)
             .await
-            .map_err(|_| MidnightCoderErr::InternalAgentDied)?;
+            .map_err(|_| SolaiAgentErr::InternalAgentDied)?;
         Ok(())
     }
 
@@ -797,23 +797,23 @@ impl MidnightCoder {
         handlers::persist_thread_memory_mode_update(&self.session, mode).await
     }
 
-    pub async fn shutdown_and_wait(&self) -> MidnightCoderResult<()> {
+    pub async fn shutdown_and_wait(&self) -> SolaiAgentResult<()> {
         let session_loop_termination = self.session_loop_termination.clone();
         match self.submit(Op::Shutdown).await {
             Ok(_) => {}
-            Err(MidnightCoderErr::InternalAgentDied) => {}
+            Err(SolaiAgentErr::InternalAgentDied) => {}
             Err(err) => return Err(err),
         }
         session_loop_termination.await;
         Ok(())
     }
 
-    pub async fn next_event(&self) -> MidnightCoderResult<Event> {
+    pub async fn next_event(&self) -> SolaiAgentResult<Event> {
         let event = self
             .rx_event
             .recv()
             .await
-            .map_err(|_| MidnightCoderErr::InternalAgentDied)?;
+            .map_err(|_| SolaiAgentErr::InternalAgentDied)?;
         Ok(event)
     }
 
@@ -918,7 +918,7 @@ fn get_service_tier(
 
 fn session_permission_profile_state_from_config(
     config: &Config,
-) -> MidnightCoderResult<PermissionProfileState> {
+) -> SolaiAgentResult<PermissionProfileState> {
     Ok(config.permissions.permission_profile_state().clone())
 }
 
@@ -1338,7 +1338,7 @@ impl Session {
                         EventMsg::Warning(WarningEvent {
                             message: format!(
                                 "This session was recorded with model `{prev}` but is resuming with `{curr}`. \
-                         Consider switching back to `{prev}` as it may affect MidnightCoder performance."
+                         Consider switching back to `{prev}` as it may affect SolaiAgent performance."
                             ),
                         }),
                     )
@@ -1735,15 +1735,15 @@ impl Session {
         )
     }
 
-    /// Record a terminal MidnightCoderErr before the app-server completion notification is reduced.
+    /// Record a terminal SolaiAgentErr before the app-server completion notification is reduced.
     pub(crate) fn track_turn_codex_error(
         &self,
         turn_context: &TurnContext,
-        error: &MidnightCoderErr,
+        error: &SolaiAgentErr,
     ) {
         self.services
             .analytics_events_client
-            .track_turn_codex_error(TurnMidnightCoderErrorFact::from_codex_err(
+            .track_turn_codex_error(TurnSolaiAgentErrorFact::from_codex_err(
                 self.thread_id.to_string(),
                 turn_context.sub_id.clone(),
                 error,
@@ -1757,7 +1757,7 @@ impl Session {
             && error
                 .codex_error_info
                 .as_ref()
-                .is_some_and(MidnightCoderErrorInfo::affects_turn_status)
+                .is_some_and(SolaiAgentErrorInfo::affects_turn_status)
         {
             turn_context
                 .terminal_error
@@ -2283,7 +2283,7 @@ impl Session {
         let Ok(native_environment_cwd) = environment.cwd.to_abs_path() else {
             warn!(
                 cwd = %environment.cwd,
-                "request_permissions requires a cwd native to the MidnightCoder host"
+                "request_permissions requires a cwd native to the SolaiAgent host"
             );
             return Some(RequestPermissionsResponse {
                 permissions: RequestPermissionProfile::default(),
@@ -2553,7 +2553,7 @@ impl Session {
                         warn!(
                             cwd = %entry.environment.cwd,
                             %err,
-                            "request_permissions requires a cwd native to the MidnightCoder host"
+                            "request_permissions requires a cwd native to the SolaiAgent host"
                         );
                         RequestPermissionsResponse {
                             permissions: RequestPermissionProfile::default(),
@@ -3648,7 +3648,7 @@ impl Session {
         &self,
         turn_context: &TurnContext,
         token_usage: Option<&TokenUsage>,
-    ) -> MidnightCoderResult<()> {
+    ) -> SolaiAgentResult<()> {
         let result = self
             .record_token_usage_info(turn_context, token_usage)
             .await;
@@ -3660,7 +3660,7 @@ impl Session {
         &self,
         turn_context: &TurnContext,
         token_usage: Option<&TokenUsage>,
-    ) -> MidnightCoderResult<()> {
+    ) -> SolaiAgentResult<()> {
         if let Some(token_usage) = token_usage {
             let token_info = {
                 let mut state = self.state.lock().await;
@@ -3821,10 +3821,10 @@ impl Session {
         &self,
         turn_context: &TurnContext,
         message: impl Into<String>,
-        codex_error: MidnightCoderErr,
+        codex_error: SolaiAgentErr,
     ) {
         let additional_details = codex_error.to_string();
-        let codex_error_info = MidnightCoderErrorInfo::ResponseStreamDisconnected {
+        let codex_error_info = SolaiAgentErrorInfo::ResponseStreamDisconnected {
             http_status_code: codex_error.http_status_code_value(),
         };
         let event = EventMsg::StreamError(StreamErrorEvent {
@@ -4034,7 +4034,7 @@ async fn build_hooks_for_config(
     let plugin_hook_load_warnings = plugin_outcome.effective_plugin_hook_warnings();
     Hooks::new(HooksConfig {
         legacy_notify_argv: config.notify.clone(),
-        feature_enabled: config.features.enabled(Feature::MidnightCoderHooks),
+        feature_enabled: config.features.enabled(Feature::SolaiAgentHooks),
         bypass_hook_trust: config.bypass_hook_trust,
         config_layer_stack: Some(config.config_layer_stack.clone()),
         plugin_hook_sources,

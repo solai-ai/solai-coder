@@ -4,7 +4,7 @@
 use anyhow::Result;
 use codex_config::types::McpServerConfig;
 use codex_config::types::McpServerTransportConfig;
-use codex_login::MidnightCoderAuth;
+use codex_login::SolaiAgentAuth;
 use codex_protocol::dynamic_tools::DynamicToolCallOutputContentItem;
 use codex_protocol::dynamic_tools::DynamicToolFunctionSpec;
 use codex_protocol::dynamic_tools::DynamicToolNamespaceSpec;
@@ -320,7 +320,7 @@ async fn app_search_sources_are_hidden_for_api_key_auth() -> Result<()> {
     .await;
 
     let mut builder = test_codex()
-        .with_auth(MidnightCoderAuth::from_api_key("Test API Key"))
+        .with_auth(SolaiAgentAuth::from_api_key("Test API Key"))
         .with_config(move |config| {
             configure_search_capable_apps(config, apps_server.chatgpt_base_url.as_str())
         });

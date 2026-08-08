@@ -5,14 +5,14 @@ import json
 
 from app_server_harness import AppServerHarness
 
-from openai_codex import MidnightCoder, MidnightCoderConfig
+from openai_codex import SolaiAgent, SolaiAgentConfig
 from openai_codex.generated.v2_all import (
     ChatgptAuthTokensLoginAccountParams,
     LoginAccountParams,
 )
 
 
-def _app_server_config(harness: AppServerHarness) -> MidnightCoderConfig:
+def _app_server_config(harness: AppServerHarness) -> SolaiAgentConfig:
     """Build an isolated login config without inheriting ambient API-key auth."""
     config = harness.app_server_config()
     config.env = {**(config.env or {}), "OPENAI_API_KEY": ""}
@@ -24,7 +24,7 @@ def test_api_key_login_authenticates_follow_up_model_requests(tmp_path) -> None:
     with AppServerHarness(tmp_path, requires_openai_auth=True) as harness:
         harness.responses.enqueue_assistant_message("api key auth", response_id="api-key-auth")
 
-        with MidnightCoder(config=_app_server_config(harness)) as codex:
+        with SolaiAgent(config=_app_server_config(harness)) as codex:
             codex.login_api_key("sk-sdk-login-test")
             result = codex.thread_start().run("prove api key auth")
             request = harness.responses.single_request()
@@ -65,7 +65,7 @@ def test_chatgpt_token_login_authenticates_follow_up_model_requests(tmp_path) ->
             response_id="chatgpt-token-auth",
         )
 
-        with MidnightCoder(config=_app_server_config(harness)) as codex:
+        with SolaiAgent(config=_app_server_config(harness)) as codex:
             login = codex._client.account_login_start(
                 LoginAccountParams(
                     root=ChatgptAuthTokensLoginAccountParams(

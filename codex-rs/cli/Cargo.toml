@@ -6,7 +6,7 @@ license.workspace = true
 build = "build.rs"
 
 [[bin]]
-name = "midnight-coder"
+name = "solai"
 path = "src/main.rs"
 
 [lib]

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Unified entry point for Midnight Coder.
+// Unified entry point for SOLAI Agent.
 
 import { spawn } from "node:child_process";
 import { existsSync, realpathSync } from "fs";
@@ -14,20 +14,20 @@ const require = createRequire(import.meta.url);
 
 const PLATFORM_PACKAGE_BY_PLATFORM_AND_ARCH = {
   linux: {
-    x64: "midnight-coder-linux-x64",
-    arm64: "midnight-coder-linux-arm64",
+    x64: "solai-linux-x64",
+    arm64: "solai-linux-arm64",
   },
   android: {
-    x64: "midnight-coder-android-x64",
-    arm64: "midnight-coder-android-arm64",
+    x64: "solai-android-x64",
+    arm64: "solai-android-arm64",
   },
   darwin: {
-    x64: "midnight-coder-darwin-x64",
-    arm64: "midnight-coder-darwin-arm64",
+    x64: "solai-darwin-x64",
+    arm64: "solai-darwin-arm64",
   },
   win32: {
-    x64: "midnight-coder-win32-x64",
-    arm64: "midnight-coder-win32-arm64",
+    x64: "solai-win32-x64",
+    arm64: "solai-win32-arm64",
   },
 };
 
@@ -90,7 +90,7 @@ if (!platformPackage) {
   throw new Error(`Unsupported platform package for: ${platform} (${arch})`);
 }
 
-function findMidnightCoderExecutable() {
+function findSolaiExecutable() {
   let vendorRoot;
   try {
     const packageJsonPath = require.resolve(`${platformPackage}/package.json`);
@@ -112,14 +112,14 @@ function findMidnightCoderExecutable() {
   const packageManager = detectPackageManager();
   const updateCommand =
     packageManager === "bun"
-      ? "bun install -g midnight-coder@latest"
-      : "npm install -g midnight-coder@latest";
+      ? "bun install -g solai@latest"
+      : "npm install -g solai@latest";
   throw new Error(
-    `Missing optional dependency ${platformPackage}. Reinstall Midnight Coder: ${updateCommand}`,
+    `Missing optional dependency ${platformPackage}. Reinstall SOLAI Agent: ${updateCommand}`,
   );
 }
 
-const binaryPath = findMidnightCoderExecutable();
+const binaryPath = findSolaiExecutable();
 
 // Use an asynchronous spawn instead of spawnSync so that Node is able to
 // respond to signals (e.g. Ctrl-C / SIGINT) while the native binary is
@@ -128,7 +128,7 @@ const binaryPath = findMidnightCoderExecutable();
 // receives a fatal signal, both processes exit in a predictable manner.
 
 /**
- * Use heuristics to detect the package manager that was used to install Midnight Coder
+ * Use heuristics to detect the package manager that was used to install SOLAI Agent
  * in order to give the user a hint about how to update it.
  */
 function detectPackageManager() {

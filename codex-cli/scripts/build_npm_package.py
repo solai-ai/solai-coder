@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stage and optionally package the midnight-coder npm module."""
+"""Stage and optionally package the solai npm module."""
 
 import argparse
 import json
@@ -15,49 +15,49 @@ CODEX_CLI_ROOT = SCRIPT_DIR.parent
 REPO_ROOT = CODEX_CLI_ROOT.parent
 RESPONSES_API_PROXY_NPM_ROOT = REPO_ROOT / "codex-rs" / "responses-api-proxy" / "npm"
 CODEX_SDK_ROOT = REPO_ROOT / "sdk" / "typescript"
-CODEX_NPM_NAME = "midnight-coder"
-CODEX_PACKAGE_COMPONENT = "midnight-coder-package"
+CODEX_NPM_NAME = "solai"
+CODEX_PACKAGE_COMPONENT = "solai-package"
 
 # `npm_name` is the local optional-dependency alias consumed by the npm launcher.
-# The underlying package published to npm is always `midnight-coder`.
+# The underlying package published to npm is always `solai`.
 CODEX_PLATFORM_PACKAGES: dict[str, dict[str, str]] = {
-    "midnight-coder-linux-x64": {
-        "npm_name": "midnight-coder-linux-x64",
+    "solai-linux-x64": {
+        "npm_name": "solai-linux-x64",
         "npm_tag": "linux-x64",
         "target_triple": "x86_64-unknown-linux-musl",
         "os": "linux",
         "cpu": "x64",
     },
-    "midnight-coder-linux-arm64": {
-        "npm_name": "midnight-coder-linux-arm64",
+    "solai-linux-arm64": {
+        "npm_name": "solai-linux-arm64",
         "npm_tag": "linux-arm64",
         "target_triple": "aarch64-unknown-linux-musl",
         "os": "linux",
         "cpu": "arm64",
     },
-    "midnight-coder-win32-x64": {
-        "npm_name": "midnight-coder-win32-x64",
+    "solai-win32-x64": {
+        "npm_name": "solai-win32-x64",
         "npm_tag": "win32-x64",
         "target_triple": "x86_64-pc-windows-msvc",
         "os": "win32",
         "cpu": "x64",
     },
-    "midnight-coder-win32-arm64": {
-        "npm_name": "midnight-coder-win32-arm64",
+    "solai-win32-arm64": {
+        "npm_name": "solai-win32-arm64",
         "npm_tag": "win32-arm64",
         "target_triple": "aarch64-pc-windows-msvc",
         "os": "win32",
         "cpu": "arm64",
     },
-    "midnight-coder-android-x64": {
-        "npm_name": "midnight-coder-android-x64",
+    "solai-android-x64": {
+        "npm_name": "solai-android-x64",
         "npm_tag": "android-x64",
         "target_triple": "x86_64-unknown-linux-musl",
         "os": "android",
         "cpu": "x64",
     },
-    "midnight-coder-android-arm64": {
-        "npm_name": "midnight-coder-android-arm64",
+    "solai-android-arm64": {
+        "npm_name": "solai-android-arm64",
         "npm_tag": "android-arm64",
         "target_triple": "aarch64-unknown-linux-musl",
         "os": "android",
@@ -66,17 +66,17 @@ CODEX_PLATFORM_PACKAGES: dict[str, dict[str, str]] = {
 }
 
 PACKAGE_EXPANSIONS: dict[str, list[str]] = {
-    "midnight-coder": ["midnight-coder", *CODEX_PLATFORM_PACKAGES],
+    "solai": ["solai", *CODEX_PLATFORM_PACKAGES],
 }
 
 PACKAGE_NATIVE_COMPONENTS: dict[str, list[str]] = {
-    "midnight-coder": [],
-    "midnight-coder-linux-x64": [CODEX_PACKAGE_COMPONENT],
-    "midnight-coder-linux-arm64": [CODEX_PACKAGE_COMPONENT],
-    "midnight-coder-win32-x64": [CODEX_PACKAGE_COMPONENT],
-    "midnight-coder-win32-arm64": [CODEX_PACKAGE_COMPONENT],
-    "midnight-coder-android-x64": [CODEX_PACKAGE_COMPONENT],
-    "midnight-coder-android-arm64": [CODEX_PACKAGE_COMPONENT],
+    "solai": [],
+    "solai-linux-x64": [CODEX_PACKAGE_COMPONENT],
+    "solai-linux-arm64": [CODEX_PACKAGE_COMPONENT],
+    "solai-win32-x64": [CODEX_PACKAGE_COMPONENT],
+    "solai-win32-arm64": [CODEX_PACKAGE_COMPONENT],
+    "solai-android-x64": [CODEX_PACKAGE_COMPONENT],
+    "solai-android-arm64": [CODEX_PACKAGE_COMPONENT],
     "codex-responses-api-proxy": ["codex-responses-api-proxy"],
     "codex-sdk": [],
 }
@@ -89,12 +89,12 @@ PACKAGE_TARGET_FILTERS: dict[str, str] = {
 PACKAGE_CHOICES = tuple(PACKAGE_NATIVE_COMPONENTS)
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Build or stage the Midnight Coder npm package.")
+    parser = argparse.ArgumentParser(description="Build or stage the SOLAI Agent npm package.")
     parser.add_argument(
         "--package",
         choices=PACKAGE_CHOICES,
-        default="midnight-coder",
-        help="Which npm package to stage (default: midnight-coder).",
+        default="solai",
+        help="Which npm package to stage (default: solai).",
     )
     parser.add_argument(
         "--version",
@@ -174,12 +174,12 @@ def main() -> int:
 
         if release_version:
             staging_dir_str = str(staging_dir)
-            if package == "midnight-coder":
+            if package == "solai":
                 print(
                     f"Staged version {version} for release in {staging_dir_str}\n\n"
                     "Verify the CLI:\n"
-                    f"    node {staging_dir_str}/bin/midnight-coder.js --version\n"
-                    f"    node {staging_dir_str}/bin/midnight-coder.js --help\n\n"
+                    f"    node {staging_dir_str}/bin/solai.js --version\n"
+                    f"    node {staging_dir_str}/bin/solai.js --help\n\n"
                 )
             elif package == "codex-responses-api-proxy":
                 print(
@@ -230,11 +230,11 @@ def stage_sources(staging_dir: Path, version: str, package: str) -> None:
     package_json: dict
     package_json_path: Path | None = None
 
-    if package == "midnight-coder":
+    if package == "solai":
         bin_dir = staging_dir / "bin"
         bin_dir.mkdir(parents=True, exist_ok=True)
         shutil.copy2(
-            CODEX_CLI_ROOT / "bin" / "codex.js", bin_dir / "midnight-coder.js"
+            CODEX_CLI_ROOT / "bin" / "codex.js", bin_dir / "solai.js"
         )
 
         readme_src = REPO_ROOT / "README.md"
@@ -293,15 +293,15 @@ def stage_sources(staging_dir: Path, version: str, package: str) -> None:
             package_json = json.load(fh)
         package_json["version"] = version
 
-    if package == "midnight-coder":
-        package_json["files"] = ["bin/midnight-coder.js"]
+    if package == "solai":
+        package_json["files"] = ["bin/solai.js"]
         package_json["optionalDependencies"] = {
             CODEX_PLATFORM_PACKAGES[platform_package]["npm_name"]: (
                 f"npm:{CODEX_NPM_NAME}@"
                 f"{compute_platform_package_version(version, CODEX_PLATFORM_PACKAGES[platform_package]['npm_tag'])}"
             )
-            for platform_package in PACKAGE_EXPANSIONS["midnight-coder"]
-            if platform_package != "midnight-coder"
+            for platform_package in PACKAGE_EXPANSIONS["solai"]
+            if platform_package != "solai"
         }
 
     elif package == "codex-sdk":

@@ -10,14 +10,14 @@ python := if os_family() == "windows" { "python" } else { "python3" }
 # Display help
 help:
     just -l
-# `midnight-coder`
-alias c := midnight-coder
-midnight-coder *args:
-    cargo run --bin midnight-coder -- {args}
-# `midnight-coder exec`
+# `solai`
+alias c := solai
+solai *args:
+    cargo run --bin solai -- {args}
+# `solai exec`
 exec *args:
-    cargo run --bin midnight-coder -- exec {args}
-# Start `midnight-coder exec-server` and run the TUI.
+    cargo run --bin solai -- exec {args}
+# Start `solai exec-server` and run the TUI.
 [no-cd]
 [positional-arguments]
 [unix]
@@ -32,7 +32,7 @@ code-mode-host *args:
 # Build the CLI and run the app-server test client
 app-server-test-client *args:
     cargo build -p codex-cli
-    cargo run -p codex-app-server-test-client -- --codex-bin ./target/debug/midnight-coder {args}
+    cargo run -p codex-app-server-test-client -- --codex-bin ./target/debug/solai {args}
 # Format the justfile, Rust, Bazel/Starlark, Python SDK code, and Python scripts.
 fmt:
     @{{ python }} ../scripts/format.py
@@ -81,7 +81,7 @@ bench *args:
 # Run benchmark targets once to ensure they start successfully.
 bench-smoke:
     just bench -- --test
-# Build and run Midnight Coder from source using Bazel.
+# Build and run SOLAI Agent from source using Bazel.
 # On Unix, use `[no-cd]` and `--run_under="cd $PWD &&"` to ensure Bazel runs
 # the command in the current working directory.
 [no-cd]

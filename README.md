@@ -1,20 +1,20 @@
-# Midnight Coder
+# SOLAI Agent
 
-Midnight Coder is a local-first coding agent built around the midnight-coder CLI and the Rust workspace in `codex-rs/`.
+SOLAI Agent is a local-first AI agent and coder built around the `solai` CLI and the Rust workspace in `codex-rs/`.
 
 ## Install
 
 ```bash
-npm install -g midnight-coder
+npm install -g solai
 ```
 
 ## Local model setup
 
-Use the built-in provider flow to point Midnight Coder at a local model server.
+Use the built-in provider flow to point SOLAI Agent at a local model server.
 
 1. Open `/provider_conf`
 2. Enter an address such as `127.0.0.1:11434`
-3. Midnight Coder probes the endpoint, checks `/api/tags` and `/v1/models`, and stores the detected provider and model
+3. SOLAI Agent probes the endpoint, checks `/api/tags` and `/v1/models`, and stores the detected provider and model
 4. Use `/model` to pick the model exposed by the server and adjust the reasoning effort for the current run
 
 Useful commands:
@@ -25,7 +25,7 @@ Useful commands:
 /smartcontext true
 ```
 
-For Ollama-backed models, `/smartcontext true` enables native smart context sizing. Midnight Coder
+For Ollama-backed models, `/smartcontext true` enables native smart context sizing. SOLAI Agent
 uses the active model context window to send the right `num_ctx` value to Ollama. Use
 `/smartcontext false` to disable it again, or set it directly in `config.toml`:
 
@@ -35,7 +35,7 @@ ollama_smart_context = true
 
 ## Context control
 
-Midnight Coder keeps session history explicit and bounded.
+SOLAI Agent keeps session history explicit and bounded.
 
 ```text
 /context
@@ -73,10 +73,10 @@ status_line_2 = ["cpu", "ram", "gpu", "vram", "status", "context"]
 status_line_2_use_colors = true
 ```
 
-When a local provider is configured, Midnight Coder reads monitor metrics from the provider host on
+When a local provider is configured, SOLAI Agent reads monitor metrics from the provider host on
 port `9898` at `/metrics`; the line stays hidden until metrics are available.
 
-![Midnight Coder with monitor status line](docs/assets/midnight-coder-monitor.svg)
+![SOLAI Agent with monitor status line](docs/assets/midnight-coder-monitor.svg)
 
 ## What it includes
 
@@ -88,14 +88,11 @@ port `9898` at `/metrics`; the line stays hidden until metrics are available.
 
 ## Support
 
-Your support helps keep Midnight Coder moving forward with new features, bug fixes, documentation, and infrastructure.
-
-- Buy Me a Coffee: https://buymeacoffee.com/midnightcoder
-- Pix: 38e0af8d-9f56-45cf-8bc8-688dbea4405a
+SOLAI Agent is the free local agent and coder layer for the SOLAI ecosystem.
 
 ## More
 
-- [Repository](https://github.com/midnightcoderagent/Midnight-Coder)
+- [Repository](https://github.com/solai-ai/solai-agent)
 - [Configuration guide](codex-rs/CONFIGURATION.md)
 - [App server protocol](codex-rs/app-server/README.md)
 - [Core crate notes](codex-rs/core/README.md)

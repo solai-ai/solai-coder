@@ -1,4 +1,4 @@
-"""Canonical MidnightCoder package directory layout."""
+"""Canonical SOLAI Agent package directory layout."""
 
 import json
 import shutil

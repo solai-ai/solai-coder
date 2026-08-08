@@ -1,7 +1,7 @@
 {
-  "name": "midnight-coder",
+  "name": "solai",
   "private": true,
-  "description": "Midnight Coder - Local Coding Agent",
+  "description": "SOLAI Agent - local-first AI agent and coder",
   "packageManager": "pnpm@10.33.0",
   "scripts": {
     "format": "prettier --check *.json *.md docs/*.md .github/workflows/*.yml **/*.js",

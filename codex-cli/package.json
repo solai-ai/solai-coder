@@ -1,21 +1,21 @@
 {
-  "name": "midnight-coder",
+  "name": "solai",
   "version": "1.0.5",
-  "description": "Midnight Coder is a local coding agent that runs locally on your computer.",
+  "description": "SOLAI Agent is a local-first AI agent and coder that runs locally on your computer.",
   "license": "Apache-2.0",
   "bin": {
-    "midnight-coder": "bin/midnight-coder.js"
+    "solai": "bin/codex.js"
   },
   "type": "module",
   "engines": {
     "node": ">=16"
   },
   "files": [
-    "bin/midnight-coder.js"
+    "bin/codex.js"
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/midnightcoderagent/Midnight-Coder.git"
+    "url": "git+https://github.com/solai-ai/solai-agent.git"
   },
   "packageManager": "pnpm@10.33.0+sha512.10568bb4a6afb58c9eb3630da90cc9516417abebd3fabbe6739f0ae795728da1491e9db5a544c76ad8eb7570f5c4bb3d6c637b2cb41bfdcdb47fa823c8649319"
 }

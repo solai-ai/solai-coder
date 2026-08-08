@@ -1,4 +1,4 @@
-"""Version discovery for MidnightCoder packages."""
+"""Version discovery for SOLAI Agent packages."""
 
 import re
 

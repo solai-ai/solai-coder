@@ -1,1 +1,1 @@
-"""Helpers for building canonical MidnightCoder package archives."""
+"""Helpers for building canonical SOLAI Agent package archives."""

@@ -23,7 +23,7 @@ use super::run_command;
 
 const VERSION_FILE_NAME: &str = "version.json";
 const GITHUB_LATEST_RELEASE_URL: &str =
-    "https://api.github.com/repos/midnightcoderagent/Midnight-Coder/releases/latest";
+    "https://api.github.com/repos/solai-ai/solai-agent/releases/latest";
 const HOMEBREW_CASK_API_URL: &str = "https://formulae.brew.sh/api/cask/codex.json";
 
 /// Builds the update-health row for the current installation.
@@ -132,8 +132,8 @@ fn push_cached_version_details(details: &mut Vec<String>, version_file: &Path) {
 
 fn update_action_label(context: &InstallContext) -> &'static str {
     match &context.method {
-        InstallMethod::Npm => "npm install -g midnight-coder",
-        InstallMethod::Bun => "bun install -g midnight-coder",
+        InstallMethod::Npm => "npm install -g solai",
+        InstallMethod::Bun => "bun install -g solai",
         InstallMethod::Brew => "brew upgrade --cask codex",
         InstallMethod::Standalone { .. } => "standalone installer",
         InstallMethod::Other => "manual or unknown",
@@ -222,7 +222,7 @@ mod tests {
                 method: InstallMethod::Npm,
                 package_layout: None,
             }),
-            "npm install -g midnight-coder"
+            "npm install -g solai"
         );
         assert_eq!(
             update_action_label(&InstallContext {

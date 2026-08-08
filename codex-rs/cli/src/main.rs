@@ -88,21 +88,21 @@ use codex_protocol::protocol::AskForApproval;
 use codex_protocol::user_input::UserInput;
 use codex_terminal_detection::TerminalName;
 
-/// MidnightCoder CLI
+/// SOLAI Agent CLI
 ///
 /// If no subcommand is specified, options will be forwarded to the interactive CLI.
 #[derive(Debug, Parser)]
 #[clap(
-    name = "midnight-coder",
+    name = "solai",
     author,
     version,
     // If a sub‑command is given, ignore requirements of the default args.
     subcommand_negates_reqs = true,
     // The executable is sometimes invoked via a platform‑specific name like
     // `codex-x86_64-unknown-linux-musl`, but the help output should always use
-    // the generic `midnight-coder` command name that users run.
-    bin_name = "midnight-coder",
-    override_usage = "midnight-coder [OPTIONS] [PROMPT]\n       midnight-coder [OPTIONS] <COMMAND> [ARGS]"
+    // the generic `solai` command name that users run.
+    bin_name = "solai",
+    override_usage = "solai [OPTIONS] [PROMPT]\n       solai [OPTIONS] <COMMAND> [ARGS]"
 )]
 struct MultitoolCli {
     #[clap(flatten)]

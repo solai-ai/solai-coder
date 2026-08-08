@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a canonical MidnightCoder package directory and optional archive."""
+"""Build a canonical SOLAI Agent package directory and optional archive."""
 
 from pathlib import Path
 import sys

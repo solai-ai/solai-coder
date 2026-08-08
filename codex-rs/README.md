@@ -1,7 +1,7 @@
-# Midnight Coder
+# SOLAI Agent
 
-Midnight Coder is the product name for the Rust workspace in this repository.
-The runnable CLI is `midnight-coder`, built from `codex-cli`.
+SOLAI Agent is the product name for the Rust workspace in this repository.
+The runnable CLI is `solai`, built from `codex-cli`.
 
 ## What lives where
 
@@ -45,19 +45,19 @@ The important control points are:
 Build the CLI:
 
 ```bash
-cargo build -p codex-cli --bin midnight-coder
+cargo build -p codex-cli --bin solai
 ```
 
 Run the app server:
 
 ```bash
-cargo run -p codex-cli --bin midnight-coder -- app-server --help
+cargo run -p codex-cli --bin solai -- app-server --help
 ```
 
 List the active model provider and model catalog:
 
 ```bash
-cargo run -p codex-cli --bin midnight-coder -- status
+cargo run -p codex-cli --bin solai -- status
 ```
 
 For provider configuration examples, use `CONFIGURATION.md`. For turn and

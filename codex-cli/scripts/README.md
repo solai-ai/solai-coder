@@ -6,15 +6,15 @@ example, to stage the CLI and responses proxy packages for version `0.6.0`:
 ```bash
 ./scripts/stage_npm_packages.py \
   --release-version 0.6.0 \
-  --package midnight-coder \
+  --package solai \
   --package codex-responses-api-proxy
 ```
 
 This downloads the required native package archive artifacts, hydrates `vendor/` for
 each package, and writes tarballs to `dist/npm/`.
 
-When `--package midnight-coder` is provided, the staging helper builds the
-`midnight-coder` root package plus all platform-native `midnight-coder`
+When `--package solai` is provided, the staging helper builds the
+`solai` root package plus all platform-native `solai`
 variants that are later published under platform-specific dist-tags.
 
 Direct `build_npm_package.py` invocations are still useful for package-specific

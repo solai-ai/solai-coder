@@ -3,7 +3,7 @@
 In the codex-rs folder where the rust code lives:
 
 - Crate names are prefixed with `codex-`. For example, the `core` folder's crate is named `codex-core`
-- The runnable product binary is `midnight-coder`, built from the `codex-cli` crate. When the user asks to build the app or recover a failed build without naming a narrower crate, compile the CLI binary directly with `cargo build -p codex-cli --bin midnight-coder` from `codex-rs`, instead of validating only a library crate such as `codex-ollama`.
+- The runnable product binary is `solai`, built from the `codex-cli` crate. When the user asks to build the app or recover a failed build without naming a narrower crate, compile the CLI binary directly with `cargo build -p codex-cli --bin solai` from `codex-rs`, instead of validating only a library crate such as `codex-ollama`.
 - When using format! and you can inline variables into {}, always do that.
 - Install any commands the repo relies on (for example `just`, `rg`, or `cargo-insta`) if they aren't already available before running instructions here.
 - Never add or modify any code related to `CODEX_SANDBOX_NETWORK_DISABLED_ENV_VAR` or `CODEX_SANDBOX_ENV_VAR`.

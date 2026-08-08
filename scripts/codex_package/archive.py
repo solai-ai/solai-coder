@@ -1,4 +1,4 @@
-"""Archive writers for canonical MidnightCoder package directories."""
+"""Archive writers for canonical SOLAI Agent package directories."""
 
 import shutil
 import subprocess

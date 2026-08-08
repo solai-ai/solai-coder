@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stage one or more MidnightCoder npm packages for release."""
+"""Stage one or more SOLAI Agent npm packages for release."""
 
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -20,7 +20,7 @@ from typing import Sequence
 REPO_ROOT = Path(__file__).resolve().parent.parent
 BUILD_SCRIPT = REPO_ROOT / "codex-cli" / "scripts" / "build_npm_package.py"
 WORKFLOW_NAME = ".github/workflows/rust-release.yml"
-GITHUB_REPO = "midnightcoderagent/Midnight-Coder"
+GITHUB_REPO = "solai-ai/solai-agent"
 
 _SPEC = importlib.util.spec_from_file_location("codex_build_npm_package", BUILD_SCRIPT)
 if _SPEC is None or _SPEC.loader is None:
@@ -351,7 +351,7 @@ def install_codex_package_archives(
         return
 
     print(
-        "Installing MidnightCoder package archives for targets: " + ", ".join(targets),
+        "Installing SOLAI Agent package archives for targets: " + ", ".join(targets),
         flush=True,
     )
     max_workers = min(len(targets), max(1, (os.cpu_count() or 1)))
@@ -506,10 +506,10 @@ def run_command(cmd: list[str]) -> None:
 
 def tarball_name_for_package(package: str, version: str) -> str:
     if package in CODEX_PLATFORM_PACKAGES:
-        platform = package.removeprefix("midnight-coder-")
-        return f"midnight-coder-{platform}-{version}.tgz"
-    if package == "midnight-coder":
-        return f"midnight-coder-{version}.tgz"
+        platform = package.removeprefix("solai-")
+        return f"solai-{platform}-{version}.tgz"
+    if package == "solai":
+        return f"solai-{version}.tgz"
     return f"{package}-npm-{version}.tgz"
 
 

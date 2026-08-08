@@ -1,4 +1,4 @@
-"""Cargo builds for source-built MidnightCoder package artifacts."""
+"""Cargo builds for source-built SOLAI Agent package artifacts."""
 
 import os
 import subprocess

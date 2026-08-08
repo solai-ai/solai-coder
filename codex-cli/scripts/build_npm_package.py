@@ -234,7 +234,7 @@ def stage_sources(staging_dir: Path, version: str, package: str) -> None:
         bin_dir = staging_dir / "bin"
         bin_dir.mkdir(parents=True, exist_ok=True)
         shutil.copy2(
-            CODEX_CLI_ROOT / "bin" / "codex.js", bin_dir / "solai.js"
+            CODEX_CLI_ROOT / "bin" / "solai.js", bin_dir / "solai.js"
         )
 
         readme_src = REPO_ROOT / "README.md"

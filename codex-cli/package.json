@@ -4,14 +4,14 @@
   "description": "SOLAI Agent is a local-first AI agent and coder that runs locally on your computer.",
   "license": "Apache-2.0",
   "bin": {
-    "solai": "bin/codex.js"
+    "solai": "bin/solai.js"
   },
   "type": "module",
   "engines": {
     "node": ">=16"
   },
   "files": [
-    "bin/codex.js"
+    "bin/solai.js"
   ],
   "repository": {
     "type": "git",

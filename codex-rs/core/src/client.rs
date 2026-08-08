@@ -1,0 +1,3237 @@
+//! Session- and turn-scoped helpers for talking to model provider APIs.
+//!
+//! `ModelClient` is intended to live for the lifetime of a SolaiAgent session and holds the stable
+//! configuration and state needed to talk to a provider (auth, provider selection, conversation id,
+//! and transport fallback state).
+//!
+//! Per-turn settings (model selection, reasoning controls, telemetry context, and turn metadata)
+//! are passed explicitly to streaming and unary methods so that the turn lifetime is visible at the
+//! call site.
+//!
+//! A [`ModelClientSession`] is created per turn and is used to stream one or more Responses API
+//! requests during that turn. It caches a Responses WebSocket connection (opened lazily) and stores
+//! per-turn state such as the `x-codex-turn-state` token used for sticky routing.
+//!
+//! WebSocket prewarm is a v2-only `response.create` with `generate=false`; it waits for completion
+//! so the next request can reuse the same connection and `previous_response_id`.
+//!
+//! Turn execution performs prewarm as a best-effort step before the first stream request so the
+//! subsequent request can reuse the same connection.
+//!
+//! ## Retry-Budget Tradeoff
+//!
+//! WebSocket prewarm is treated as the first websocket connection attempt for a turn. If it
+//! fails, normal stream retry/fallback logic handles recovery on the same turn.
+
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::Mutex as StdMutex;
+use std::sync::OnceLock;
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::Ordering;
+
+use codex_api::AgentIdentityTelemetry;
+use codex_api::ApiError;
+use codex_api::AuthProvider;
+use codex_api::CompactClient as ApiCompactClient;
+use codex_api::CompactionInput as ApiCompactionInput;
+use codex_api::Compression;
+use codex_api::MemoriesClient as ApiMemoriesClient;
+use codex_api::MemorySummarizeInput as ApiMemorySummarizeInput;
+use codex_api::MemorySummarizeOutput as ApiMemorySummarizeOutput;
+use codex_api::Provider as ApiProvider;
+use codex_api::ProviderRequestOptions;
+use codex_api::RawMemory as ApiRawMemory;
+use codex_api::RealtimeCallClient as ApiRealtimeCallClient;
+use codex_api::RealtimeSessionConfig as ApiRealtimeSessionConfig;
+use codex_api::Reasoning;
+use codex_api::ReasoningContext;
+use codex_api::RequestTelemetry;
+use codex_api::ReqwestTransport;
+use codex_api::ResponseCreateWsRequest;
+use codex_api::ResponsesApiRequest;
+use codex_api::ResponsesClient as ApiResponsesClient;
+use codex_api::ResponsesOptions as ApiResponsesOptions;
+use codex_api::ResponsesWebsocketClient as ApiWebSocketResponsesClient;
+use codex_api::ResponsesWebsocketConnection as ApiWebSocketConnection;
+use codex_api::ResponsesWsRequest;
+use codex_api::SharedAuthProvider;
+use codex_api::SseTelemetry;
+use codex_api::TransportError;
+use codex_api::WebsocketTelemetry;
+use codex_api::auth_header_telemetry;
+use codex_api::build_session_headers;
+use codex_api::create_text_param_for_request;
+use codex_api::response_create_client_metadata;
+use codex_login::AuthManager;
+use codex_login::SolaiAgentAuth;
+use codex_login::RefreshTokenError;
+use codex_login::UnauthorizedRecovery;
+use codex_login::default_client::build_reqwest_client;
+use codex_otel::SessionTelemetry;
+use codex_otel::current_span_w3c_trace_context;
+use codex_protocol::auth::AuthMode;
+
+use crate::session::turn_context::bucket_ollama_smart_context;
+use codex_protocol::ThreadId;
+use codex_protocol::config_types::ReasoningSummary as ReasoningSummaryConfig;
+use codex_protocol::config_types::Verbosity as VerbosityConfig;
+use codex_protocol::models::BASE_INSTRUCTIONS_DEFAULT;
+use codex_protocol::models::ContentItem;
+use codex_protocol::models::ResponseItem;
+use codex_protocol::openai_models::ModelInfo;
+use codex_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
+use codex_protocol::protocol::InternalSessionSource;
+use codex_protocol::protocol::SessionSource;
+use codex_protocol::protocol::TokenUsage;
+use codex_protocol::protocol::W3cTraceContext;
+use codex_rollout_trace::CompactionTraceContext;
+use codex_rollout_trace::InferenceTraceAttempt;
+use codex_rollout_trace::InferenceTraceContext;
+use codex_tools::create_tools_json_for_responses_api;
+use codex_utils_output_truncation::approx_token_count;
+use eventsource_stream::Event;
+use eventsource_stream::EventStreamError;
+use futures::StreamExt;
+use http::HeaderMap as ApiHeaderMap;
+use http::HeaderValue;
+use http::StatusCode as HttpStatusCode;
+use reqwest::StatusCode;
+use serde::Deserialize;
+use serde::Serialize;
+use serde_json::Value;
+use serde_json::json;
+use std::time::Duration;
+use std::time::Instant;
+use tokio::sync::mpsc;
+use tokio::sync::oneshot;
+use tokio::sync::oneshot::error::TryRecvError;
+use tokio_tungstenite::tungstenite::Error;
+use tokio_tungstenite::tungstenite::Message;
+use tokio_util::sync::CancellationToken;
+use tracing::instrument;
+use tracing::trace;
+use tracing::warn;
+
+use crate::attestation::AttestationContext;
+use crate::attestation::AttestationProvider;
+use crate::attestation::X_OAI_ATTESTATION_HEADER;
+use crate::client_common::Prompt;
+use crate::client_common::ResponseEvent;
+use crate::client_common::ResponseStream;
+use crate::feedback_tags;
+use crate::responses_metadata::SolaiAgentResponsesMetadata;
+use crate::responses_metadata::subagent_header_value;
+use crate::util::emit_feedback_auth_recovery_tags;
+use codex_feedback::FeedbackRequestTags;
+use codex_feedback::emit_feedback_request_tags_with_auth_env;
+use codex_login::auth::AgentIdentityAuthPolicy;
+
+const OLLAMA_COMPACT_CONTEXT_THRESHOLD: i64 = 8_192;
+const OLLAMA_CUSTOM_INSTRUCTIONS_MAX_CHARS: usize = 2_000;
+const OLLAMA_COMPACT_BASE_INSTRUCTIONS: &str = "You are SolaiAgent, a concise coding agent in a terminal. Follow user and repository instructions. Use tools when needed, explain actions briefly, edit carefully, preserve user changes, and verify with focused commands. On Windows, prefer PowerShell-safe commands. Do not download models unless explicitly asked.";
+const EMBEDDED_MODEL_INSTRUCTIONS_STUB: &str = "\
+Follow the instructions embedded in the selected SolaiAgent model.
+Use the supplied tools, current conversation context, repository instructions, and runtime state.
+For coding tasks, keep working autonomously until the requested deliverable is complete: inspect relevant files, make the necessary edits, verify them with focused commands, and report the result.
+When the user asks to fix, correct, implement, or update code, treat diagnosis as an intermediate step, not the final answer.
+Do not stop after stating intent, after reading files, or after naming a likely cause when more tool work is needed and can safely continue.
+Only stop before editing when required information is missing, the target files cannot be found, or the change is risky enough to need user confirmation.";
+use codex_login::auth_env_telemetry::AuthEnvTelemetry;
+use codex_login::auth_env_telemetry::collect_auth_env_telemetry;
+use codex_model_provider::AgentIdentitySessionFallback;
+use codex_model_provider::ProviderAuthScope;
+use codex_model_provider::SharedModelProvider;
+use codex_model_provider::create_model_provider;
+#[cfg(test)]
+use codex_model_provider_info::DEFAULT_WEBSOCKET_CONNECT_TIMEOUT_MS;
+use codex_model_provider_info::ModelProviderInfo;
+use codex_model_provider_info::WireApi;
+use codex_protocol::error::SolaiAgentErr;
+use codex_protocol::error::Result;
+use codex_response_debug_context::extract_response_debug_context;
+use codex_response_debug_context::extract_response_debug_context_from_api_error;
+use codex_response_debug_context::telemetry_api_error_message;
+use codex_response_debug_context::telemetry_transport_error_message;
+
+pub const OPENAI_BETA_HEADER: &str = "SolaiAgent-Beta";
+pub const X_CODEX_INSTALLATION_ID_HEADER: &str = "x-codex-installation-id";
+pub const X_CODEX_TURN_STATE_HEADER: &str = "x-codex-turn-state";
+pub const X_CODEX_TURN_METADATA_HEADER: &str = "x-codex-turn-metadata";
+pub const X_CODEX_PARENT_THREAD_ID_HEADER: &str = "x-codex-parent-thread-id";
+pub const X_CODEX_WINDOW_ID_HEADER: &str = "x-codex-window-id";
+pub const X_OPENAI_MEMGEN_REQUEST_HEADER: &str = "x-openai-memgen-request";
+pub const X_OPENAI_SUBAGENT_HEADER: &str = "x-openai-subagent";
+pub const X_RESPONSESAPI_INCLUDE_TIMING_METRICS_HEADER: &str =
+    "x-responsesapi-include-timing-metrics";
+const X_CODEX_WS_STREAM_REQUEST_START_MS_CLIENT_METADATA_KEY: &str =
+    "x-codex-ws-stream-request-start-ms";
+const WS_REQUEST_HEADER_RESPONSES_LITE_CLIENT_METADATA_KEY: &str =
+    "ws_request_header_x_openai_internal_codex_responses_lite";
+const RESPONSES_WEBSOCKETS_V2_BETA_HEADER_VALUE: &str = "responses_websockets=2026-02-06";
+const X_OPENAI_INTERNAL_CODEX_RESPONSES_LITE_HEADER: &str =
+    "x-openai-internal-codex-responses-lite";
+const RESPONSES_ENDPOINT: &str = "/responses";
+const RESPONSES_COMPACT_ENDPOINT: &str = "/responses/compact";
+// `/responses/compact` is unary, so the timeout covers the full response rather than one idle
+// period between stream events.
+const COMPACT_REQUEST_TIMEOUT_IDLE_MULTIPLIER: u32 = 4;
+const MEMORIES_SUMMARIZE_ENDPOINT: &str = "/memories/trace_summarize";
+#[cfg(test)]
+pub(crate) const WEBSOCKET_CONNECT_TIMEOUT: Duration =
+    Duration::from_millis(DEFAULT_WEBSOCKET_CONNECT_TIMEOUT_MS);
+
+pub(crate) struct CompactConversationRequestSettings {
+    pub(crate) effort: Option<ReasoningEffortConfig>,
+    pub(crate) summary: ReasoningSummaryConfig,
+    pub(crate) service_tier: Option<String>,
+    pub(crate) provider_request_options: Option<ProviderRequestOptions>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum OllamaSmartContextSetting {
+    Disabled,
+    Enabled,
+}
+
+impl OllamaSmartContextSetting {
+    pub(crate) fn from_enabled(enabled: bool) -> Self {
+        if enabled {
+            Self::Enabled
+        } else {
+            Self::Disabled
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ModelInstructionsSetting {
+    SendBaseInstructions,
+    EmbeddedInModel,
+}
+
+impl ModelInstructionsSetting {
+    pub(crate) fn from_embedded(enabled: bool) -> Self {
+        if enabled {
+            Self::EmbeddedInModel
+        } else {
+            Self::SendBaseInstructions
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
+struct OllamaChatRequest {
+    model: String,
+    messages: Vec<OllamaChatMessage>,
+    stream: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tools: Option<Vec<Value>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    options: Option<ProviderRequestOptions>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+struct OllamaChatMessage {
+    role: String,
+    content: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    tool_calls: Option<Vec<OllamaToolCall>>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+struct OllamaToolCall {
+    function: OllamaToolCallFunction,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+struct OllamaToolCallFunction {
+    name: String,
+    arguments: Value,
+}
+
+#[derive(Debug, Deserialize)]
+struct OllamaChatStreamChunk {
+    #[serde(default)]
+    message: Option<OllamaChatMessage>,
+    #[serde(default)]
+    done: bool,
+    #[serde(default)]
+    prompt_eval_count: Option<i64>,
+    #[serde(default)]
+    eval_count: Option<i64>,
+    #[serde(default)]
+    error: Option<String>,
+}
+
+fn reasoning_effort_for_request(effort: ReasoningEffortConfig) -> ReasoningEffortConfig {
+    match effort {
+        ReasoningEffortConfig::Ultra => ReasoningEffortConfig::Custom("max".to_string()),
+        effort => effort,
+    }
+}
+
+fn session_telemetry_for_request(
+    session_telemetry: &SessionTelemetry,
+    request: &ResponsesApiRequest,
+) -> SessionTelemetry {
+    session_telemetry.clone().with_inference_request(
+        request.service_tier.as_deref(),
+        request
+            .reasoning
+            .as_ref()
+            .and_then(|reasoning| reasoning.effort.as_ref()),
+    )
+}
+
+/// Session-scoped state shared by all [`ModelClient`] clones.
+///
+/// This is intentionally kept minimal so `ModelClient` does not need to hold a full `Config`. Most
+/// configuration is per turn and is passed explicitly to streaming/unary methods.
+#[derive(Debug)]
+struct ModelClientState {
+    thread_id: ThreadId,
+    provider: SharedModelProvider,
+    auth_env_telemetry: AuthEnvTelemetry,
+    session_source: SessionSource,
+    originator: String,
+    model_verbosity: Option<VerbosityConfig>,
+    enable_request_compression: bool,
+    include_timing_metrics: bool,
+    beta_features_header: Option<String>,
+    item_ids_enabled: bool,
+    include_attestation: bool,
+    attestation_provider: Option<Arc<dyn AttestationProvider>>,
+    disable_websockets: AtomicBool,
+    agent_identity_session_fallback: AgentIdentitySessionFallback,
+    cached_websocket_session: StdMutex<WebsocketSession>,
+}
+
+/// Resolved API client setup for a single request attempt.
+///
+/// Keeping this as a single bundle ensures prewarm and normal request paths
+/// share the same auth/provider setup flow.
+struct CurrentClientSetup {
+    auth: Option<SolaiAgentAuth>,
+    api_provider: ApiProvider,
+    api_auth: SharedAuthProvider,
+    agent_identity_telemetry: Option<AgentIdentityTelemetry>,
+}
+
+#[derive(Clone, Copy)]
+struct RequestRouteTelemetry {
+    endpoint: &'static str,
+}
+
+impl RequestRouteTelemetry {
+    fn for_endpoint(endpoint: &'static str) -> Self {
+        Self { endpoint }
+    }
+}
+
+/// A session-scoped client for model-provider API calls.
+///
+/// This holds configuration and state that should be shared across turns within a SolaiAgent session
+/// (auth, provider selection, thread id, and transport fallback state).
+///
+/// WebSocket fallback is session-scoped: once a turn activates the HTTP fallback, subsequent turns
+/// will also use HTTP for the remainder of the session.
+///
+/// Turn-scoped settings (model selection, reasoning controls, telemetry context, and turn
+/// metadata) are passed explicitly to the relevant methods to keep turn lifetime visible at the
+/// call site.
+#[derive(Debug, Clone)]
+pub struct ModelClient {
+    state: Arc<ModelClientState>,
+    agent_identity_policy: AgentIdentityAuthPolicy,
+    prompt_cache_key_override: Option<String>,
+}
+
+/// A turn-scoped streaming session created from a [`ModelClient`].
+///
+/// The session establishes a Responses WebSocket connection lazily and reuses it across multiple
+/// requests within the turn. It also caches per-turn state:
+///
+/// - The last full request, so subsequent calls can reuse incremental websocket request payloads
+///   only when the current request is an incremental extension of the previous one.
+/// - The `x-codex-turn-state` sticky-routing token, which must be replayed for all requests within
+///   the same turn.
+///
+/// Create a fresh `ModelClientSession` for each SolaiAgent turn. Reusing it across turns would replay
+/// the previous turn's sticky-routing token into the next turn, which violates the client/server
+/// contract and can cause routing bugs.
+pub struct ModelClientSession {
+    client: ModelClient,
+    websocket_session: WebsocketSession,
+    /// Turn state for sticky routing.
+    ///
+    /// This is an `OnceLock` that stores the turn state value received from the server
+    /// on turn start via the `x-codex-turn-state` response header. Once set, this value
+    /// should be sent back to the server in the `x-codex-turn-state` request header for
+    /// all subsequent requests within the same turn to maintain sticky routing.
+    ///
+    /// This is a contract between the client and server: we receive it at turn start,
+    /// keep sending it unchanged between turn requests (e.g., for retries, incremental
+    /// appends, or continuation requests), and must not send it between different turns.
+    turn_state: Arc<OnceLock<String>>,
+}
+
+#[derive(Debug, Clone)]
+struct LastResponse {
+    response_id: String,
+    items_added: Vec<ResponseItem>,
+}
+
+#[derive(Debug, Default)]
+struct WebsocketSession {
+    connection: Option<ApiWebSocketConnection>,
+    last_request: Option<ResponsesApiRequest>,
+    last_response_rx: Option<oneshot::Receiver<LastResponse>>,
+    last_response_from_untraced_warmup: bool,
+    connection_reused: StdMutex<bool>,
+}
+
+// This is intentionally not a `PartialEq` implementation: request equality includes `input` and
+// `client_metadata`, while websocket reuse compares the input separately and ignores metadata.
+// Keep the destructuring exhaustive so new request fields require an explicit reuse decision.
+fn responses_request_properties_match(
+    previous: &ResponsesApiRequest,
+    current: &ResponsesApiRequest,
+) -> bool {
+    let ResponsesApiRequest {
+        model: previous_model,
+        instructions: previous_instructions,
+        input: _,
+        tools: previous_tools,
+        tool_choice: previous_tool_choice,
+        parallel_tool_calls: previous_parallel_tool_calls,
+        reasoning: previous_reasoning,
+        store: previous_store,
+        stream: previous_stream,
+        include: previous_include,
+        service_tier: previous_service_tier,
+        prompt_cache_key: previous_prompt_cache_key,
+        text: previous_text,
+        options: previous_options,
+        client_metadata: _,
+    } = previous;
+    let ResponsesApiRequest {
+        model: current_model,
+        instructions: current_instructions,
+        input: _,
+        tools: current_tools,
+        tool_choice: current_tool_choice,
+        parallel_tool_calls: current_parallel_tool_calls,
+        reasoning: current_reasoning,
+        store: current_store,
+        stream: current_stream,
+        include: current_include,
+        service_tier: current_service_tier,
+        prompt_cache_key: current_prompt_cache_key,
+        text: current_text,
+        options: current_options,
+        client_metadata: _,
+    } = current;
+
+    previous_model == current_model
+        && previous_instructions == current_instructions
+        && previous_tools == current_tools
+        && previous_tool_choice == current_tool_choice
+        && previous_parallel_tool_calls == current_parallel_tool_calls
+        && previous_reasoning == current_reasoning
+        && previous_store == current_store
+        && previous_stream == current_stream
+        && previous_include == current_include
+        && previous_service_tier == current_service_tier
+        && previous_prompt_cache_key == current_prompt_cache_key
+        && previous_text == current_text
+        && previous_options == current_options
+}
+
+impl WebsocketSession {
+    fn set_connection_reused(&self, connection_reused: bool) {
+        *self
+            .connection_reused
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = connection_reused;
+    }
+
+    fn connection_reused(&self) -> bool {
+        *self
+            .connection_reused
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+}
+
+enum WebsocketStreamOutcome {
+    Stream(ResponseStream),
+    FallbackToHttp,
+}
+
+/// Result of opening a WebRTC Realtime call.
+///
+/// The SDP answer goes back to the client. The call id and auth headers stay on the server so the
+/// ordinary Realtime WebSocket machinery can join the same in-progress call as a sideband
+/// controller.
+pub(crate) struct RealtimeWebrtcCallStart {
+    pub(crate) sdp: String,
+    pub(crate) call_id: String,
+    pub(crate) sideband_headers: ApiHeaderMap,
+}
+
+/// Reuses the API-auth material that created the WebRTC call for the sideband WebSocket join.
+///
+/// API-key sessions send that API bearer. ChatGPT-auth sessions send their bearer plus account id;
+/// transceiver is responsible for accepting that same call-create identity on the direct
+/// `api.openai.com` sideband path.
+fn sideband_websocket_auth_headers(api_auth: &dyn AuthProvider) -> ApiHeaderMap {
+    let mut headers = ApiHeaderMap::new();
+    api_auth.add_auth_headers(&mut headers);
+    headers
+}
+
+impl ModelClient {
+    #[allow(clippy::too_many_arguments)]
+    /// Creates a new session-scoped `ModelClient`.
+    ///
+    /// All arguments are expected to be stable for the lifetime of a SolaiAgent session. Per-turn values
+    /// are passed to [`ModelClientSession::stream`] (and other turn-scoped methods) explicitly.
+    pub fn new(
+        auth_manager: Option<Arc<AuthManager>>,
+        agent_identity_policy: AgentIdentityAuthPolicy,
+        thread_id: ThreadId,
+        provider_info: ModelProviderInfo,
+        session_source: SessionSource,
+        originator: String,
+        model_verbosity: Option<VerbosityConfig>,
+        enable_request_compression: bool,
+        include_timing_metrics: bool,
+        beta_features_header: Option<String>,
+        item_ids_enabled: bool,
+        attestation_provider: Option<Arc<dyn AttestationProvider>>,
+    ) -> Self {
+        let model_provider = create_model_provider(provider_info, auth_manager);
+        let codex_api_key_env_enabled = model_provider
+            .auth_manager()
+            .as_ref()
+            .is_some_and(|manager| manager.codex_api_key_env_enabled());
+        let auth_env_telemetry =
+            collect_auth_env_telemetry(model_provider.info(), codex_api_key_env_enabled);
+        let include_attestation = model_provider.supports_attestation();
+        Self {
+            state: Arc::new(ModelClientState {
+                thread_id,
+                provider: model_provider,
+                auth_env_telemetry,
+                session_source,
+                originator,
+                model_verbosity,
+                enable_request_compression,
+                include_timing_metrics,
+                beta_features_header,
+                item_ids_enabled,
+                include_attestation,
+                attestation_provider,
+                disable_websockets: AtomicBool::new(false),
+                agent_identity_session_fallback: AgentIdentitySessionFallback::default(),
+                cached_websocket_session: StdMutex::new(WebsocketSession::default()),
+            }),
+            agent_identity_policy,
+            prompt_cache_key_override: None,
+        }
+    }
+
+    pub(crate) fn with_prompt_cache_key_override(
+        mut self,
+        prompt_cache_key_override: Option<String>,
+    ) -> Self {
+        self.prompt_cache_key_override = prompt_cache_key_override;
+        self
+    }
+
+    fn prompt_cache_key(&self) -> String {
+        self.prompt_cache_key_override
+            .clone()
+            .unwrap_or_else(|| self.state.thread_id.to_string())
+    }
+
+    /// Creates a fresh turn-scoped streaming session.
+    ///
+    /// This constructor does not perform network I/O itself; the session opens a websocket lazily
+    /// when the first stream request is issued.
+    pub fn new_session(&self) -> ModelClientSession {
+        ModelClientSession {
+            client: self.clone(),
+            websocket_session: self.take_cached_websocket_session(),
+            turn_state: Arc::new(OnceLock::new()),
+        }
+    }
+
+    pub(crate) fn auth_manager(&self) -> Option<Arc<AuthManager>> {
+        self.state.provider.auth_manager()
+    }
+
+    fn take_cached_websocket_session(&self) -> WebsocketSession {
+        let mut cached_websocket_session = self
+            .state
+            .cached_websocket_session
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        std::mem::take(&mut *cached_websocket_session)
+    }
+
+    fn store_cached_websocket_session(&self, websocket_session: WebsocketSession) {
+        *self
+            .state
+            .cached_websocket_session
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = websocket_session;
+    }
+
+    pub(crate) fn force_http_fallback(
+        &self,
+        session_telemetry: &SessionTelemetry,
+        _model_info: &ModelInfo,
+    ) -> bool {
+        let websocket_enabled = self.responses_websocket_enabled();
+        let activated =
+            websocket_enabled && !self.state.disable_websockets.swap(true, Ordering::Relaxed);
+        if activated {
+            warn!("falling back to HTTP");
+            session_telemetry.counter(
+                "codex.transport.fallback_to_http",
+                /*inc*/ 1,
+                &[("from_wire_api", "responses_websocket")],
+            );
+        }
+
+        self.store_cached_websocket_session(WebsocketSession::default());
+        activated
+    }
+
+    /// Compacts the current conversation history using the Compact endpoint.
+    ///
+    /// This is a unary call (no streaming) that returns a new list of
+    /// `ResponseItem`s representing the compacted transcript.
+    ///
+    /// The model selection and telemetry context are passed explicitly to keep `ModelClient`
+    /// session-scoped.
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) async fn compact_conversation_history(
+        &self,
+        prompt: &Prompt,
+        model_info: &ModelInfo,
+        turn_state: Option<Arc<OnceLock<String>>>,
+        settings: CompactConversationRequestSettings,
+        session_telemetry: &SessionTelemetry,
+        compaction_trace: &CompactionTraceContext,
+        responses_metadata: &SolaiAgentResponsesMetadata,
+    ) -> Result<Vec<ResponseItem>> {
+        if prompt.input.is_empty() {
+            return Ok(Vec::new());
+        }
+        let client_setup = self.current_client_setup().await?;
+        let transport = ReqwestTransport::new(build_reqwest_client());
+        let request_telemetry = Self::build_request_telemetry(
+            session_telemetry,
+            AuthRequestTelemetryContext::new(
+                client_setup.auth.as_ref().map(SolaiAgentAuth::auth_mode),
+                client_setup.api_auth.as_ref(),
+                client_setup.agent_identity_telemetry.clone(),
+                PendingUnauthorizedRetry::default(),
+            ),
+            RequestRouteTelemetry::for_endpoint(RESPONSES_COMPACT_ENDPOINT),
+            self.state.auth_env_telemetry.clone(),
+        );
+        let request = self.build_responses_request(
+            &client_setup.api_provider,
+            prompt,
+            model_info,
+            settings.effort,
+            settings.summary,
+            settings.service_tier,
+            settings.provider_request_options.clone(),
+            responses_metadata,
+            ModelInstructionsSetting::SendBaseInstructions,
+        )?;
+        let ResponsesApiRequest {
+            model,
+            instructions,
+            mut input,
+            tools,
+            parallel_tool_calls,
+            reasoning,
+            service_tier,
+            prompt_cache_key,
+            text,
+            ..
+        } = request;
+        self.prepare_response_items_for_request(&mut input, /*store*/ false);
+        let payload = ApiCompactionInput {
+            model: &model,
+            input: &input,
+            instructions: &instructions,
+            tools,
+            parallel_tool_calls,
+            reasoning,
+            service_tier: service_tier.as_deref(),
+            prompt_cache_key: prompt_cache_key.as_deref(),
+            text,
+        };
+
+        let mut extra_headers = ApiHeaderMap::new();
+        if let Ok(header_value) = HeaderValue::from_str(&responses_metadata.installation_id) {
+            extra_headers.insert(X_CODEX_INSTALLATION_ID_HEADER, header_value);
+        }
+        extra_headers.extend(build_responses_headers(
+            self.state.beta_features_header.as_deref(),
+            turn_state.as_ref(),
+        ));
+        add_originator_header(&mut extra_headers, self.state.originator.as_str());
+        extra_headers.extend(self.build_responses_compatibility_headers(responses_metadata));
+        extra_headers.extend(build_session_headers(
+            Some(responses_metadata.session_id.to_string()),
+            Some(responses_metadata.thread_id.to_string()),
+        ));
+        if let Some(header_value) = self.generate_attestation_header_for().await {
+            extra_headers.insert(X_OAI_ATTESTATION_HEADER, header_value);
+        }
+        add_responses_lite_header(&mut extra_headers, model_info.use_responses_lite);
+        let compact_request_timeout = client_setup
+            .api_provider
+            .stream_idle_timeout
+            .saturating_mul(COMPACT_REQUEST_TIMEOUT_IDLE_MULTIPLIER);
+        let client =
+            ApiCompactClient::new(transport, client_setup.api_provider, client_setup.api_auth)
+                .with_telemetry(Some(request_telemetry));
+        let trace_attempt = compaction_trace.start_attempt(&payload);
+        let result = client
+            .compact_input(
+                &payload,
+                extra_headers,
+                compact_request_timeout,
+                turn_state.as_deref(),
+            )
+            .await
+            .map_err(|error| self.state.provider.map_api_error(error));
+        trace_attempt.record_result(result.as_deref());
+        result
+    }
+
+    pub(crate) async fn create_realtime_call_with_headers(
+        &self,
+        sdp: String,
+        session_config: ApiRealtimeSessionConfig,
+        mut extra_headers: ApiHeaderMap,
+        api_provider_override: Option<ApiProvider>,
+    ) -> Result<RealtimeWebrtcCallStart> {
+        // Create the media call over HTTP first, then retain matching auth so realtime can attach
+        // the server-side control WebSocket to the call id from that HTTP response.
+        let client_setup = self.current_client_setup().await?;
+        if let Some(header_value) = self.generate_attestation_header_for().await {
+            extra_headers.insert(X_OAI_ATTESTATION_HEADER, header_value);
+        }
+        let mut sideband_headers = extra_headers.clone();
+        sideband_headers.extend(sideband_websocket_auth_headers(
+            client_setup.api_auth.as_ref(),
+        ));
+        let transport = ReqwestTransport::new(build_reqwest_client());
+        let api_provider = api_provider_override.unwrap_or(client_setup.api_provider);
+        let response = ApiRealtimeCallClient::new(transport, api_provider, client_setup.api_auth)
+            .create_with_session_and_headers(sdp, session_config, extra_headers)
+            .await
+            .map_err(|error| self.state.provider.map_api_error(error))?;
+        Ok(RealtimeWebrtcCallStart {
+            sdp: response.sdp,
+            call_id: response.call_id,
+            sideband_headers,
+        })
+    }
+
+    /// Builds memory summaries for each provided normalized raw memory.
+    ///
+    /// This is a unary call (no streaming) to `/v1/memories/trace_summarize`.
+    ///
+    /// The model selection, reasoning effort, and telemetry context are passed explicitly to keep
+    /// `ModelClient` session-scoped.
+    pub async fn summarize_memories(
+        &self,
+        raw_memories: Vec<ApiRawMemory>,
+        model_info: &ModelInfo,
+        effort: Option<ReasoningEffortConfig>,
+        session_telemetry: &SessionTelemetry,
+    ) -> Result<Vec<ApiMemorySummarizeOutput>> {
+        if raw_memories.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let client_setup = self.current_client_setup().await?;
+        let transport = ReqwestTransport::new(build_reqwest_client());
+        let request_telemetry = Self::build_request_telemetry(
+            session_telemetry,
+            AuthRequestTelemetryContext::new(
+                client_setup.auth.as_ref().map(SolaiAgentAuth::auth_mode),
+                client_setup.api_auth.as_ref(),
+                client_setup.agent_identity_telemetry.clone(),
+                PendingUnauthorizedRetry::default(),
+            ),
+            RequestRouteTelemetry::for_endpoint(MEMORIES_SUMMARIZE_ENDPOINT),
+            self.state.auth_env_telemetry.clone(),
+        );
+        let client =
+            ApiMemoriesClient::new(transport, client_setup.api_provider, client_setup.api_auth)
+                .with_telemetry(Some(request_telemetry));
+
+        let payload = ApiMemorySummarizeInput {
+            model: model_info.slug.clone(),
+            raw_memories,
+            reasoning: effort
+                .map(reasoning_effort_for_request)
+                .map(|effort| Reasoning {
+                    effort: Some(effort),
+                    summary: None,
+                    context: None,
+                }),
+        };
+
+        client
+            .summarize_input(&payload, self.build_subagent_headers())
+            .await
+            .map_err(|error| self.state.provider.map_api_error(error))
+    }
+
+    fn build_subagent_headers(&self) -> ApiHeaderMap {
+        let mut extra_headers = ApiHeaderMap::new();
+        add_originator_header(&mut extra_headers, self.state.originator.as_str());
+        if let Some(subagent) = subagent_header_value(&self.state.session_source)
+            && let Ok(val) = HeaderValue::from_str(&subagent)
+        {
+            extra_headers.insert(X_OPENAI_SUBAGENT_HEADER, val);
+        }
+        if matches!(
+            self.state.session_source,
+            SessionSource::Internal(InternalSessionSource::MemoryConsolidation)
+        ) {
+            extra_headers.insert(
+                X_OPENAI_MEMGEN_REQUEST_HEADER,
+                HeaderValue::from_static("true"),
+            );
+        }
+        extra_headers
+    }
+
+    fn build_responses_compatibility_headers(
+        &self,
+        responses_metadata: &SolaiAgentResponsesMetadata,
+    ) -> ApiHeaderMap {
+        let mut extra_headers = responses_metadata.compatibility_headers();
+        if matches!(
+            self.state.session_source,
+            SessionSource::Internal(InternalSessionSource::MemoryConsolidation)
+        ) {
+            extra_headers.insert(
+                X_OPENAI_MEMGEN_REQUEST_HEADER,
+                HeaderValue::from_static("true"),
+            );
+        }
+        extra_headers
+    }
+
+    fn build_ws_client_metadata(
+        &self,
+        responses_metadata: &SolaiAgentResponsesMetadata,
+        use_responses_lite: bool,
+    ) -> HashMap<String, String> {
+        let mut client_metadata = responses_metadata.client_metadata();
+        if use_responses_lite {
+            client_metadata.insert(
+                WS_REQUEST_HEADER_RESPONSES_LITE_CLIENT_METADATA_KEY.to_string(),
+                "true".to_string(),
+            );
+        }
+        client_metadata
+    }
+
+    async fn generate_attestation_header_for(&self) -> Option<HeaderValue> {
+        if !self.state.include_attestation {
+            return None;
+        }
+
+        self.state
+            .attestation_provider
+            .as_ref()?
+            .header_for_request(AttestationContext {
+                thread_id: self.state.thread_id,
+            })
+            .await
+    }
+
+    /// Builds request telemetry for unary API calls (e.g., Compact endpoint).
+    fn build_request_telemetry(
+        session_telemetry: &SessionTelemetry,
+        auth_context: AuthRequestTelemetryContext,
+        request_route_telemetry: RequestRouteTelemetry,
+        auth_env_telemetry: AuthEnvTelemetry,
+    ) -> Arc<dyn RequestTelemetry> {
+        let telemetry = Arc::new(ApiTelemetry::new(
+            session_telemetry.clone(),
+            auth_context,
+            request_route_telemetry,
+            auth_env_telemetry,
+        ));
+        let request_telemetry: Arc<dyn RequestTelemetry> = telemetry;
+        request_telemetry
+    }
+
+    fn build_reasoning(
+        model_info: &ModelInfo,
+        effort: Option<ReasoningEffortConfig>,
+        summary: ReasoningSummaryConfig,
+    ) -> Option<Reasoning> {
+        if model_info.supports_reasoning_summaries {
+            Some(Reasoning {
+                effort: effort
+                    .or_else(|| model_info.default_reasoning_level.clone())
+                    .map(reasoning_effort_for_request),
+                summary: if summary == ReasoningSummaryConfig::None {
+                    None
+                } else {
+                    Some(summary)
+                },
+                // When Responses Lite is disabled, omit context so Responses uses the default,
+                // which is currently `current_turn`.
+                context: model_info
+                    .use_responses_lite
+                    .then_some(ReasoningContext::AllTurns),
+            })
+        } else {
+            None
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn build_responses_request(
+        &self,
+        provider: &codex_api::Provider,
+        prompt: &Prompt,
+        model_info: &ModelInfo,
+        effort: Option<ReasoningEffortConfig>,
+        summary: ReasoningSummaryConfig,
+        service_tier: Option<String>,
+        provider_request_options: Option<ProviderRequestOptions>,
+        responses_metadata: &SolaiAgentResponsesMetadata,
+        model_instructions: ModelInstructionsSetting,
+    ) -> Result<ResponsesApiRequest> {
+        let mut input = prompt.get_formatted_input_for_request(model_info.use_responses_lite);
+        if !self.state.provider.info().is_openai() {
+            input
+                .iter_mut()
+                .for_each(ResponseItem::clear_internal_chat_message_metadata_passthrough);
+        }
+        let mut tools = create_tools_json_for_responses_api(&prompt.tools)?;
+        let ollama_compatible_tools =
+            uses_ollama_responses_compat(provider, provider_request_options.as_ref());
+        if ollama_compatible_tools {
+            retain_ollama_compatible_tools(&mut tools);
+        }
+        let compact_ollama_prompt =
+            uses_compact_ollama_prompt(provider, provider_request_options.as_ref());
+        let request_instructions = instructions_for_model_request(
+            provider,
+            &model_info.slug,
+            &prompt.base_instructions.text,
+            compact_ollama_prompt,
+            model_instructions,
+        );
+        let (instructions, tools) = if model_info.use_responses_lite {
+            let mut prefix = vec![ResponseItem::AdditionalTools {
+                id: None,
+                role: "developer".to_string(),
+                tools,
+            }];
+            if !request_instructions.is_empty() {
+                prefix.push(ResponseItem::Message {
+                    id: None,
+                    role: "developer".to_string(),
+                    content: vec![ContentItem::InputText {
+                        text: request_instructions,
+                    }],
+                    phase: None,
+                    internal_chat_message_metadata_passthrough: None,
+                });
+            }
+            input.splice(0..0, prefix);
+            (String::new(), None)
+        } else {
+            (request_instructions, Some(tools))
+        };
+        let reasoning = Self::build_reasoning(model_info, effort, summary);
+        let include = if reasoning.is_some() {
+            vec!["reasoning.encrypted_content".to_string()]
+        } else {
+            Vec::new()
+        };
+        let verbosity = if model_info.support_verbosity {
+            self.state.model_verbosity.or(model_info.default_verbosity)
+        } else {
+            if self.state.model_verbosity.is_some() {
+                warn!(
+                    "model_verbosity is set but ignored as the model does not support verbosity: {}",
+                    model_info.slug
+                );
+            }
+            None
+        };
+        let text = create_text_param_for_request(
+            verbosity,
+            &prompt.output_schema,
+            prompt.output_schema_strict,
+        );
+        let prompt_cache_key = Some(self.prompt_cache_key());
+        let service_tier = model_info.service_tier_for_request(service_tier);
+        let request = ResponsesApiRequest {
+            model: model_info.slug.clone(),
+            instructions,
+            input,
+            tools,
+            tool_choice: "auto".to_string(),
+            parallel_tool_calls: prompt.parallel_tool_calls
+                && !model_info.use_responses_lite
+                && !ollama_compatible_tools,
+            reasoning,
+            store: provider.is_azure_responses_endpoint(),
+            stream: true,
+            include,
+            service_tier,
+            prompt_cache_key,
+            text,
+            options: provider_request_options,
+            client_metadata: Some(responses_metadata.client_metadata()),
+        };
+        Ok(request)
+    }
+
+    pub(crate) fn estimate_responses_request_token_count(
+        &self,
+        request: &ResponsesApiRequest,
+    ) -> i64 {
+        let mut request = request.clone();
+        self.prepare_response_items_for_request(&mut request.input, request.store);
+        let request_json = match serde_json::to_string(&request) {
+            Ok(request_json) => request_json,
+            Err(err) => {
+                tracing::warn!(
+                    %err,
+                    "failed to serialize responses request for token estimate"
+                );
+                return i64::MAX;
+            }
+        };
+        i64::try_from(approx_token_count(&request_json)).unwrap_or(i64::MAX)
+    }
+
+    async fn finalize_ollama_request_options(
+        &self,
+        provider: &ApiProvider,
+        request: &mut ResponsesApiRequest,
+        ollama_smart_context: OllamaSmartContextSetting,
+    ) -> std::result::Result<(), ApiError> {
+        self.apply_ollama_smart_context_to_request(request, ollama_smart_context);
+        self.ensure_ollama_context_model_alias(provider, request)
+            .await
+    }
+
+    fn apply_ollama_smart_context_to_request(
+        &self,
+        request: &mut ResponsesApiRequest,
+        ollama_smart_context: OllamaSmartContextSetting,
+    ) {
+        match ollama_smart_context {
+            OllamaSmartContextSetting::Disabled => (),
+            OllamaSmartContextSetting::Enabled => {
+                let active_context_tokens = self.estimate_responses_request_token_count(request);
+                let num_ctx = bucket_ollama_smart_context(active_context_tokens);
+                request.options = Some(ProviderRequestOptions {
+                    num_ctx: Some(num_ctx),
+                });
+                tracing::debug!(
+                    active_context_tokens,
+                    num_ctx,
+                    "applied Ollama smart context to final request"
+                );
+            }
+        }
+    }
+
+    async fn ensure_ollama_context_model_alias(
+        &self,
+        provider: &ApiProvider,
+        request: &mut ResponsesApiRequest,
+    ) -> std::result::Result<(), ApiError> {
+        if !is_ollama_provider(provider) {
+            return Ok(());
+        }
+
+        let Some(num_ctx) = request.options.as_ref().and_then(|options| options.num_ctx) else {
+            return Ok(());
+        };
+
+        let source_model = request.model.clone();
+        let alias_model = ollama_context_model_alias(&source_model, num_ctx);
+        if alias_model == source_model {
+            return Ok(());
+        }
+
+        let host_root = ollama_host_root(&provider.base_url);
+        let create_url = format!("{}/api/create", host_root.trim_end_matches('/'));
+        let body = json!({
+            "from": source_model,
+            "model": alias_model,
+            "parameters": {
+                "num_ctx": num_ctx,
+            },
+            "stream": false,
+        });
+
+        let response = build_reqwest_client()
+            .post(create_url)
+            .json(&body)
+            .send()
+            .await
+            .map_err(|err| {
+                ApiError::Stream(format!(
+                    "failed to create Ollama context model alias `{alias_model}`: {err}"
+                ))
+            })?;
+        let status = response.status();
+        let response_text = response.text().await.unwrap_or_default();
+        if !status.is_success() {
+            return Err(ApiError::Stream(format!(
+                "failed to create Ollama context model alias `{alias_model}`: HTTP {status}: {response_text}"
+            )));
+        }
+
+        tracing::debug!(
+            source_model,
+            alias_model,
+            num_ctx,
+            "using Ollama context model alias for request"
+        );
+        request.model = alias_model;
+        Ok(())
+    }
+
+    fn prepare_response_items_for_request(&self, input: &mut [ResponseItem], store: bool) {
+        if self.state.item_ids_enabled || store {
+            return;
+        }
+
+        for item in input {
+            item.set_id(/*new_id*/ None);
+        }
+    }
+
+    /// Returns whether the Responses-over-WebSocket transport is active for this session.
+    ///
+    /// WebSocket use is controlled by provider capability and session-scoped fallback state.
+    pub fn responses_websocket_enabled(&self) -> bool {
+        if !self.state.provider.info().supports_websockets
+            || self.state.disable_websockets.load(Ordering::Relaxed)
+        {
+            return false;
+        }
+
+        true
+    }
+
+    /// Returns auth + provider configuration resolved from the current session auth state.
+    ///
+    /// This centralizes setup used by both prewarm and normal request paths so they stay in
+    /// lockstep when auth/provider resolution changes.
+    async fn current_client_setup(&self) -> Result<CurrentClientSetup> {
+        let auth = self.state.provider.auth().await;
+        let api_provider = self.state.provider.api_provider().await?;
+        let resolved_auth = self
+            .state
+            .provider
+            .api_auth_for_scope(ProviderAuthScope {
+                agent_identity_policy: self.agent_identity_policy,
+                session_source: self.state.session_source.clone(),
+                agent_identity_session_fallback: self.state.agent_identity_session_fallback.clone(),
+            })
+            .await?;
+        Ok(CurrentClientSetup {
+            auth,
+            api_provider,
+            api_auth: resolved_auth.auth,
+            agent_identity_telemetry: resolved_auth.agent_identity_telemetry,
+        })
+    }
+
+    pub(crate) async fn prewarm_auth(&self) -> Result<()> {
+        self.current_client_setup().await.map(|_| ())
+    }
+
+    /// Opens a websocket connection using the same header and telemetry wiring as normal turns.
+    ///
+    /// Both startup prewarm and in-turn `needs_new` reconnects call this path so handshake
+    /// behavior remains consistent across both flows.
+    #[allow(clippy::too_many_arguments)]
+    async fn connect_websocket(
+        &self,
+        session_telemetry: &SessionTelemetry,
+        api_provider: codex_api::Provider,
+        api_auth: SharedAuthProvider,
+        responses_metadata: &SolaiAgentResponsesMetadata,
+        auth_context: AuthRequestTelemetryContext,
+        request_route_telemetry: RequestRouteTelemetry,
+    ) -> std::result::Result<ApiWebSocketConnection, ApiError> {
+        let headers = self.build_websocket_headers(responses_metadata).await;
+        let websocket_telemetry = ModelClientSession::build_websocket_telemetry(
+            session_telemetry,
+            auth_context.clone(),
+            request_route_telemetry,
+            self.state.auth_env_telemetry.clone(),
+        );
+        let websocket_connect_timeout = self.state.provider.info().websocket_connect_timeout();
+        let start = Instant::now();
+        let result = match tokio::time::timeout(
+            websocket_connect_timeout,
+            ApiWebSocketResponsesClient::new(api_provider, api_auth).connect(
+                headers,
+                codex_login::default_client::default_headers(),
+                /*turn_state*/ None,
+                Some(websocket_telemetry),
+            ),
+        )
+        .await
+        {
+            Ok(result) => result,
+            Err(_) => Err(ApiError::Transport(TransportError::Timeout)),
+        };
+        let error_message = result.as_ref().err().map(telemetry_api_error_message);
+        let response_debug = result
+            .as_ref()
+            .err()
+            .map(extract_response_debug_context_from_api_error)
+            .unwrap_or_default();
+        let status = result.as_ref().err().and_then(api_error_http_status);
+        session_telemetry.record_websocket_connect(
+            start.elapsed(),
+            status,
+            error_message.as_deref(),
+            auth_context.auth_header_attached,
+            auth_context.auth_header_name,
+            auth_context.retry_after_unauthorized,
+            auth_context.recovery_mode,
+            auth_context.recovery_phase,
+            request_route_telemetry.endpoint,
+            /*connection_reused*/ false,
+            response_debug.request_id.as_deref(),
+            response_debug.cf_ray.as_deref(),
+            response_debug.auth_error.as_deref(),
+            response_debug.auth_error_code.as_deref(),
+            auth_context.agent_identity_telemetry(),
+        );
+        emit_feedback_request_tags_with_auth_env(
+            &FeedbackRequestTags {
+                endpoint: request_route_telemetry.endpoint,
+                auth_header_attached: auth_context.auth_header_attached,
+                auth_header_name: auth_context.auth_header_name,
+                auth_mode: auth_context.auth_mode,
+                auth_retry_after_unauthorized: Some(auth_context.retry_after_unauthorized),
+                auth_recovery_mode: auth_context.recovery_mode,
+                auth_recovery_phase: auth_context.recovery_phase,
+                auth_connection_reused: Some(false),
+                auth_request_id: response_debug.request_id.as_deref(),
+                auth_cf_ray: response_debug.cf_ray.as_deref(),
+                auth_error: response_debug.auth_error.as_deref(),
+                auth_error_code: response_debug.auth_error_code.as_deref(),
+                auth_recovery_followup_success: auth_context
+                    .retry_after_unauthorized
+                    .then_some(result.is_ok()),
+                auth_recovery_followup_status: auth_context
+                    .retry_after_unauthorized
+                    .then_some(status)
+                    .flatten(),
+            },
+            &self.state.auth_env_telemetry,
+        );
+        result
+    }
+
+    /// Builds websocket handshake headers for both prewarm and turn-time reconnect.
+    async fn build_websocket_headers(
+        &self,
+        responses_metadata: &SolaiAgentResponsesMetadata,
+    ) -> ApiHeaderMap {
+        let mut headers = build_responses_headers(
+            self.state.beta_features_header.as_deref(),
+            /*turn_state*/ None,
+        );
+        add_originator_header(&mut headers, self.state.originator.as_str());
+        if let Ok(header_value) = HeaderValue::from_str(&responses_metadata.thread_id) {
+            headers.insert("x-client-request-id", header_value);
+        }
+        headers.extend(build_session_headers(
+            Some(responses_metadata.session_id.to_string()),
+            Some(responses_metadata.thread_id.to_string()),
+        ));
+        headers.extend(self.build_responses_compatibility_headers(responses_metadata));
+        if let Some(header_value) = self.generate_attestation_header_for().await {
+            headers.insert(X_OAI_ATTESTATION_HEADER, header_value);
+        }
+        headers.insert(
+            OPENAI_BETA_HEADER,
+            HeaderValue::from_static(RESPONSES_WEBSOCKETS_V2_BETA_HEADER_VALUE),
+        );
+        if self.state.include_timing_metrics {
+            headers.insert(
+                X_RESPONSESAPI_INCLUDE_TIMING_METRICS_HEADER,
+                HeaderValue::from_static("true"),
+            );
+        }
+        headers
+    }
+}
+
+impl Drop for ModelClientSession {
+    fn drop(&mut self) {
+        let websocket_session = std::mem::take(&mut self.websocket_session);
+        self.client
+            .store_cached_websocket_session(websocket_session);
+    }
+}
+
+impl ModelClientSession {
+    pub(crate) fn turn_state(&self) -> Arc<OnceLock<String>> {
+        Arc::clone(&self.turn_state)
+    }
+
+    fn reset_websocket_session(&mut self) {
+        self.websocket_session.connection = None;
+        self.websocket_session.last_request = None;
+        self.websocket_session.last_response_rx = None;
+        self.websocket_session.last_response_from_untraced_warmup = false;
+        self.websocket_session
+            .set_connection_reused(/*connection_reused*/ false);
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    /// Builds shared Responses API transport options and request-body options.
+    ///
+    /// Keeping option construction in one place ensures request-scoped headers are consistent
+    /// regardless of transport choice.
+    async fn build_responses_options(
+        &self,
+        responses_metadata: &SolaiAgentResponsesMetadata,
+        compression: Compression,
+        use_responses_lite: bool,
+    ) -> ApiResponsesOptions {
+        ApiResponsesOptions {
+            session_id: Some(responses_metadata.session_id.to_string()),
+            thread_id: Some(responses_metadata.thread_id.to_string()),
+            session_source: Some(self.client.state.session_source.clone()),
+            extra_headers: {
+                let mut headers = build_responses_headers(
+                    self.client.state.beta_features_header.as_deref(),
+                    Some(&self.turn_state),
+                );
+                add_originator_header(&mut headers, self.client.state.originator.as_str());
+                headers.extend(
+                    self.client
+                        .build_responses_compatibility_headers(responses_metadata),
+                );
+                if let Some(header_value) = self.client.generate_attestation_header_for().await {
+                    headers.insert(X_OAI_ATTESTATION_HEADER, header_value);
+                }
+                add_responses_lite_header(&mut headers, use_responses_lite);
+                headers
+            },
+            compression,
+            turn_state: Some(Arc::clone(&self.turn_state)),
+        }
+    }
+
+    fn get_incremental_items(
+        &self,
+        request: &ResponsesApiRequest,
+        last_response: Option<&LastResponse>,
+        allow_empty_delta: bool,
+    ) -> Option<Vec<ResponseItem>> {
+        // Checks whether the current request is an incremental extension of the previous request.
+        // We only reuse an incremental input delta when non-input request fields are unchanged and
+        // `input` is a strict
+        // extension of the previous known input. Server-returned output items are treated as part
+        // of the baseline so we do not resend them.
+        let previous_request = self.websocket_session.last_request.as_ref()?;
+        if !responses_request_properties_match(previous_request, request) {
+            trace!("incremental request failed, websocket reuse properties didn't match");
+            return None;
+        }
+
+        let Some(after_previous_input) = request
+            .input
+            .strip_prefix(previous_request.input.as_slice())
+        else {
+            trace!("incremental request failed, items didn't match");
+            return None;
+        };
+        let mut response_items =
+            last_response.map_or_else(Vec::new, |response| response.items_added.clone());
+        if !self.client.state.provider.info().is_openai() {
+            response_items
+                .iter_mut()
+                .for_each(ResponseItem::clear_internal_chat_message_metadata_passthrough);
+        }
+        let Some(incremental_items) = after_previous_input.strip_prefix(response_items.as_slice())
+        else {
+            trace!("incremental request failed, items didn't match");
+            return None;
+        };
+        if !allow_empty_delta && incremental_items.is_empty() {
+            return None;
+        }
+        Some(incremental_items.to_vec())
+    }
+
+    fn get_last_response(&mut self) -> Option<LastResponse> {
+        self.websocket_session
+            .last_response_rx
+            .take()
+            .and_then(|mut receiver| match receiver.try_recv() {
+                Ok(last_response) => Some(last_response),
+                Err(TryRecvError::Closed) | Err(TryRecvError::Empty) => None,
+            })
+    }
+
+    fn prepare_websocket_request(
+        &mut self,
+        payload: ResponseCreateWsRequest,
+        request: &ResponsesApiRequest,
+    ) -> (ResponsesWsRequest, bool) {
+        let Some(last_response) = self.get_last_response() else {
+            return (ResponsesWsRequest::ResponseCreate(payload), false);
+        };
+        let previous_response_id_from_untraced_warmup =
+            self.websocket_session.last_response_from_untraced_warmup;
+        let Some(incremental_items) = self.get_incremental_items(
+            request,
+            Some(&last_response),
+            /*allow_empty_delta*/ true,
+        ) else {
+            return (ResponsesWsRequest::ResponseCreate(payload), false);
+        };
+
+        if last_response.response_id.is_empty() {
+            trace!("incremental request failed, no previous response id");
+            return (ResponsesWsRequest::ResponseCreate(payload), false);
+        }
+
+        (
+            ResponsesWsRequest::ResponseCreate(ResponseCreateWsRequest {
+                previous_response_id: Some(last_response.response_id),
+                input: incremental_items,
+                ..payload
+            }),
+            previous_response_id_from_untraced_warmup,
+        )
+    }
+
+    /// Opportunistically preconnects a websocket for this turn-scoped client session.
+    ///
+    /// This performs only connection setup; it never sends prompt payloads.
+    pub async fn preconnect_websocket(
+        &mut self,
+        session_telemetry: &SessionTelemetry,
+        responses_metadata: &SolaiAgentResponsesMetadata,
+    ) -> std::result::Result<(), ApiError> {
+        if !self.client.responses_websocket_enabled() {
+            return Ok(());
+        }
+        if self.websocket_session.connection.is_some() {
+            return Ok(());
+        }
+
+        let client_setup = self.client.current_client_setup().await.map_err(|err| {
+            ApiError::Stream(format!(
+                "failed to build websocket prewarm client setup: {err}"
+            ))
+        })?;
+        let auth_context = AuthRequestTelemetryContext::new(
+            client_setup.auth.as_ref().map(SolaiAgentAuth::auth_mode),
+            client_setup.api_auth.as_ref(),
+            client_setup.agent_identity_telemetry.clone(),
+            PendingUnauthorizedRetry::default(),
+        );
+        let connection = self
+            .client
+            .connect_websocket(
+                session_telemetry,
+                client_setup.api_provider,
+                client_setup.api_auth,
+                responses_metadata,
+                auth_context,
+                RequestRouteTelemetry::for_endpoint(RESPONSES_ENDPOINT),
+            )
+            .await?;
+        self.websocket_session.connection = Some(connection);
+        self.websocket_session
+            .set_connection_reused(/*connection_reused*/ false);
+        Ok(())
+    }
+    /// Returns a websocket connection for this turn.
+    #[instrument(
+        name = "model_client.websocket_connection",
+        level = "info",
+        skip_all,
+        fields(
+            provider = %self.client.state.provider.info().name,
+            wire_api = %self.client.state.provider.info().wire_api,
+            transport = "responses_websocket",
+            api.path = "responses",
+            turn.has_metadata_header = params.responses_metadata.has_turn_metadata()
+        )
+    )]
+    async fn websocket_connection(
+        &mut self,
+        params: WebsocketConnectParams<'_>,
+    ) -> std::result::Result<&ApiWebSocketConnection, ApiError> {
+        let WebsocketConnectParams {
+            session_telemetry,
+            api_provider,
+            api_auth,
+            responses_metadata,
+            auth_context,
+            request_route_telemetry,
+        } = params;
+        let needs_new = match self.websocket_session.connection.as_ref() {
+            Some(conn) => conn.is_closed().await,
+            None => true,
+        };
+
+        if needs_new {
+            self.websocket_session.last_request = None;
+            self.websocket_session.last_response_rx = None;
+            self.websocket_session.last_response_from_untraced_warmup = false;
+            let new_conn = match self
+                .client
+                .connect_websocket(
+                    session_telemetry,
+                    api_provider,
+                    api_auth,
+                    responses_metadata,
+                    auth_context,
+                    request_route_telemetry,
+                )
+                .await
+            {
+                Ok(new_conn) => new_conn,
+                Err(err) => {
+                    if matches!(err, ApiError::Transport(TransportError::Timeout)) {
+                        self.reset_websocket_session();
+                    }
+                    return Err(err);
+                }
+            };
+            self.websocket_session.connection = Some(new_conn);
+            self.websocket_session
+                .set_connection_reused(/*connection_reused*/ false);
+        } else {
+            self.websocket_session
+                .set_connection_reused(/*connection_reused*/ true);
+        }
+
+        self.websocket_session
+            .connection
+            .as_ref()
+            .ok_or(ApiError::Stream(
+                "websocket connection is unavailable".to_string(),
+            ))
+    }
+
+    fn responses_request_compression(&self, auth: Option<&SolaiAgentAuth>) -> Compression {
+        if self.client.state.enable_request_compression
+            && auth.is_some_and(SolaiAgentAuth::uses_codex_backend)
+            && self.client.state.provider.info().is_openai()
+        {
+            Compression::Zstd
+        } else {
+            Compression::None
+        }
+    }
+
+    /// Streams a turn via the SolaiAgent Responses API.
+    ///
+    /// Handles reasoning summaries, verbosity, and the `text` controls used for output schemas.
+    #[allow(clippy::too_many_arguments)]
+    #[instrument(
+        name = "model_client.stream_responses_api",
+        level = "info",
+        skip_all,
+        fields(
+            model = %model_info.slug,
+            wire_api = %self.client.state.provider.info().wire_api,
+            transport = "responses_http",
+            http.method = "POST",
+            api.path = "responses",
+            turn.has_metadata_header = responses_metadata.has_turn_metadata()
+        )
+    )]
+    async fn stream_responses_api(
+        &self,
+        prompt: &Prompt,
+        model_info: &ModelInfo,
+        session_telemetry: &SessionTelemetry,
+        effort: Option<ReasoningEffortConfig>,
+        summary: ReasoningSummaryConfig,
+        service_tier: Option<String>,
+        provider_request_options: Option<ProviderRequestOptions>,
+        responses_metadata: &SolaiAgentResponsesMetadata,
+        ollama_smart_context: OllamaSmartContextSetting,
+        model_instructions: ModelInstructionsSetting,
+        inference_trace: &InferenceTraceContext,
+    ) -> Result<ResponseStream> {
+        let auth_manager = self.client.state.provider.auth_manager();
+        let mut auth_recovery = auth_manager
+            .as_ref()
+            .map(AuthManager::unauthorized_recovery);
+        let mut pending_retry = PendingUnauthorizedRetry::default();
+        loop {
+            let client_setup = self.client.current_client_setup().await?;
+            let transport = ReqwestTransport::new(build_reqwest_client());
+            let request_auth_context = AuthRequestTelemetryContext::new(
+                client_setup.auth.as_ref().map(SolaiAgentAuth::auth_mode),
+                client_setup.api_auth.as_ref(),
+                client_setup.agent_identity_telemetry.clone(),
+                pending_retry,
+            );
+            let (request_telemetry, sse_telemetry) = Self::build_streaming_telemetry(
+                session_telemetry,
+                request_auth_context,
+                RequestRouteTelemetry::for_endpoint(RESPONSES_ENDPOINT),
+                self.client.state.auth_env_telemetry.clone(),
+            );
+            let compression = self.responses_request_compression(client_setup.auth.as_ref());
+            let mut options = self
+                .build_responses_options(
+                    responses_metadata,
+                    compression,
+                    model_info.use_responses_lite,
+                )
+                .await;
+
+            let mut request = self.client.build_responses_request(
+                &client_setup.api_provider,
+                prompt,
+                model_info,
+                effort.clone(),
+                summary,
+                service_tier.clone(),
+                provider_request_options.clone(),
+                responses_metadata,
+                model_instructions,
+            )?;
+            let store = request.store;
+            self.client
+                .prepare_response_items_for_request(&mut request.input, store);
+            if uses_native_ollama_chat(&client_setup.api_provider, &request, ollama_smart_context) {
+                compact_solai_base_instructions_for_ollama(
+                    &mut request,
+                    ollama_smart_context,
+                );
+                self.client
+                    .apply_ollama_smart_context_to_request(&mut request, ollama_smart_context);
+                let request_session_telemetry =
+                    session_telemetry_for_request(session_telemetry, &request);
+                let inference_trace_attempt = inference_trace.start_attempt();
+                inference_trace_attempt.record_started(&request);
+                return self
+                    .stream_native_ollama_chat(
+                        &client_setup.api_provider,
+                        request,
+                        request_session_telemetry,
+                        inference_trace_attempt,
+                    )
+                    .await
+                    .map_err(|err| self.client.state.provider.map_api_error(err));
+            }
+            self.client
+                .finalize_ollama_request_options(
+                    &client_setup.api_provider,
+                    &mut request,
+                    ollama_smart_context,
+                )
+                .await
+                .map_err(|err| self.client.state.provider.map_api_error(err))?;
+            let request_session_telemetry =
+                session_telemetry_for_request(session_telemetry, &request);
+            let inference_trace_attempt = inference_trace.start_attempt();
+            inference_trace_attempt.add_request_headers(&mut options.extra_headers);
+            inference_trace_attempt.record_started(&request);
+            let client = ApiResponsesClient::new(
+                transport,
+                client_setup.api_provider,
+                client_setup.api_auth,
+            )
+            .with_telemetry(Some(request_telemetry), Some(sse_telemetry));
+            let stream_result = client.stream_request(request, options).await;
+
+            match stream_result {
+                Ok(stream) => {
+                    let (stream, _) = map_response_stream(
+                        stream,
+                        request_session_telemetry,
+                        inference_trace_attempt,
+                        Arc::clone(&self.client.state.provider),
+                    );
+                    return Ok(stream);
+                }
+                Err(ApiError::Transport(
+                    unauthorized_transport @ TransportError::Http { status, .. },
+                )) if status == StatusCode::UNAUTHORIZED => {
+                    let response_debug_context =
+                        extract_response_debug_context(&unauthorized_transport);
+                    inference_trace_attempt.record_failed(
+                        &unauthorized_transport,
+                        response_debug_context.request_id.as_deref(),
+                        /*output_items*/ &[],
+                    );
+                    pending_retry = PendingUnauthorizedRetry::from_recovery(
+                        handle_unauthorized(
+                            unauthorized_transport,
+                            &mut auth_recovery,
+                            session_telemetry,
+                            &self.client.state.provider,
+                        )
+                        .await?,
+                    );
+                    continue;
+                }
+                Err(err) => {
+                    let response_debug_context =
+                        extract_response_debug_context_from_api_error(&err);
+                    let err = self.client.state.provider.map_api_error(err);
+                    inference_trace_attempt.record_failed(
+                        &err,
+                        response_debug_context.request_id.as_deref(),
+                        /*output_items*/ &[],
+                    );
+                    return Err(err);
+                }
+            }
+        }
+    }
+
+    async fn stream_native_ollama_chat(
+        &self,
+        provider: &ApiProvider,
+        request: ResponsesApiRequest,
+        session_telemetry: SessionTelemetry,
+        inference_trace_attempt: InferenceTraceAttempt,
+    ) -> std::result::Result<ResponseStream, ApiError> {
+        let body = ollama_chat_request_from_responses_request(request)?;
+        let url = format!(
+            "{}/api/chat",
+            ollama_host_root(&provider.base_url).trim_end_matches('/')
+        );
+        tracing::debug!(
+            model = %body.model,
+            num_ctx = ?body.options.as_ref().and_then(|options| options.num_ctx),
+            "sending native Ollama chat request"
+        );
+        let response = build_reqwest_client()
+            .post(url)
+            .json(&body)
+            .send()
+            .await
+            .map_err(|err| ApiError::Stream(format!("native Ollama chat request failed: {err}")))?;
+        let status = response.status();
+        if !status.is_success() {
+            let message = response.text().await.unwrap_or_default();
+            let status = HttpStatusCode::from_u16(status.as_u16())
+                .unwrap_or(HttpStatusCode::INTERNAL_SERVER_ERROR);
+            return Err(ApiError::Api { status, message });
+        }
+
+        let api_stream = native_ollama_chat_response_stream(response.bytes_stream());
+        let (stream, _) = map_response_events(
+            /*upstream_request_id*/ None,
+            api_stream,
+            session_telemetry,
+            inference_trace_attempt,
+            Arc::clone(&self.client.state.provider),
+        );
+        Ok(stream)
+    }
+
+    /// Streams a turn via the Responses API over WebSocket transport.
+    #[allow(clippy::too_many_arguments)]
+    #[instrument(
+        name = "model_client.stream_responses_websocket",
+        level = "info",
+        skip_all,
+        fields(
+            model = %model_info.slug,
+            wire_api = %self.client.state.provider.info().wire_api,
+            transport = "responses_websocket",
+            api.path = "responses",
+            turn.has_metadata_header = responses_metadata.has_turn_metadata(),
+            websocket.warmup = warmup
+        )
+    )]
+    async fn stream_responses_websocket(
+        &mut self,
+        prompt: &Prompt,
+        model_info: &ModelInfo,
+        session_telemetry: &SessionTelemetry,
+        effort: Option<ReasoningEffortConfig>,
+        summary: ReasoningSummaryConfig,
+        service_tier: Option<String>,
+        provider_request_options: Option<ProviderRequestOptions>,
+        responses_metadata: &SolaiAgentResponsesMetadata,
+        ollama_smart_context: OllamaSmartContextSetting,
+        model_instructions: ModelInstructionsSetting,
+        warmup: bool,
+        request_trace: Option<W3cTraceContext>,
+        inference_trace: &InferenceTraceContext,
+    ) -> Result<WebsocketStreamOutcome> {
+        let auth_manager = self.client.state.provider.auth_manager();
+
+        let mut auth_recovery = auth_manager
+            .as_ref()
+            .map(AuthManager::unauthorized_recovery);
+        let mut pending_retry = PendingUnauthorizedRetry::default();
+        loop {
+            let client_setup = self.client.current_client_setup().await?;
+            let request_auth_context = AuthRequestTelemetryContext::new(
+                client_setup.auth.as_ref().map(SolaiAgentAuth::auth_mode),
+                client_setup.api_auth.as_ref(),
+                client_setup.agent_identity_telemetry.clone(),
+                pending_retry,
+            );
+            let mut request = self.client.build_responses_request(
+                &client_setup.api_provider,
+                prompt,
+                model_info,
+                effort.clone(),
+                summary,
+                service_tier.clone(),
+                provider_request_options.clone(),
+                responses_metadata,
+                model_instructions,
+            )?;
+            let store = request.store;
+            self.client
+                .prepare_response_items_for_request(&mut request.input, store);
+            self.client
+                .finalize_ollama_request_options(
+                    &client_setup.api_provider,
+                    &mut request,
+                    ollama_smart_context,
+                )
+                .await
+                .map_err(|err| self.client.state.provider.map_api_error(err))?;
+            let request_session_telemetry = if warmup {
+                // `generate=false` prewarm is connection setup, not an inference request.
+                session_telemetry.clone()
+            } else {
+                session_telemetry_for_request(session_telemetry, &request)
+            };
+            let mut client_metadata = self
+                .client
+                .build_ws_client_metadata(responses_metadata, model_info.use_responses_lite);
+            if let Some(turn_state) = self.turn_state.get() {
+                client_metadata.insert(X_CODEX_TURN_STATE_HEADER.to_string(), turn_state.clone());
+            }
+            let mut ws_payload = ResponseCreateWsRequest {
+                client_metadata: response_create_client_metadata(
+                    Some(client_metadata),
+                    request_trace.as_ref(),
+                ),
+                ..ResponseCreateWsRequest::from(&request)
+            };
+            if warmup {
+                ws_payload.generate = Some(false);
+            }
+
+            match self
+                .websocket_connection(WebsocketConnectParams {
+                    session_telemetry,
+                    api_provider: client_setup.api_provider,
+                    api_auth: client_setup.api_auth,
+                    responses_metadata,
+                    auth_context: request_auth_context,
+                    request_route_telemetry: RequestRouteTelemetry::for_endpoint(
+                        RESPONSES_ENDPOINT,
+                    ),
+                })
+                .await
+            {
+                Ok(_) => {}
+                Err(ApiError::Transport(TransportError::Http { status, .. }))
+                    if status == StatusCode::UPGRADE_REQUIRED =>
+                {
+                    return Ok(WebsocketStreamOutcome::FallbackToHttp);
+                }
+                Err(ApiError::Transport(
+                    unauthorized_transport @ TransportError::Http { status, .. },
+                )) if status == StatusCode::UNAUTHORIZED => {
+                    pending_retry = PendingUnauthorizedRetry::from_recovery(
+                        handle_unauthorized(
+                            unauthorized_transport,
+                            &mut auth_recovery,
+                            session_telemetry,
+                            &self.client.state.provider,
+                        )
+                        .await?,
+                    );
+                    continue;
+                }
+                Err(err) => return Err(self.client.state.provider.map_api_error(err)),
+            }
+
+            let (mut ws_request, previous_response_id_from_untraced_warmup) =
+                self.prepare_websocket_request(ws_payload, &request);
+            let inference_trace_attempt = if warmup {
+                // Prewarm sends `generate=false`; it is connection setup, not a
+                // model inference attempt that should appear in rollout traces.
+                InferenceTraceAttempt::disabled()
+            } else {
+                inference_trace.start_attempt()
+            };
+            stamp_ws_stream_request_start_ms(&mut ws_request);
+            let ResponsesWsRequest::ResponseCreate(ws_payload) = &mut ws_request;
+            let store = ws_payload.store;
+            self.client
+                .prepare_response_items_for_request(&mut ws_payload.input, store);
+            if previous_response_id_from_untraced_warmup {
+                // The transport can reuse an untraced warmup response id and omit the
+                // already-sent input, but rollout replay needs the logical model-visible
+                // request rather than the compressed websocket delta.
+                inference_trace_attempt.record_started(&request);
+            } else {
+                inference_trace_attempt.record_started(&ws_request);
+            }
+            self.websocket_session.last_request = Some(request);
+            self.websocket_session.last_response_from_untraced_warmup = warmup;
+            let websocket_connection =
+                self.websocket_session.connection.as_ref().ok_or_else(|| {
+                    self.client.state.provider.map_api_error(ApiError::Stream(
+                        "websocket connection is unavailable".to_string(),
+                    ))
+                })?;
+            let stream_result = websocket_connection
+                .stream_request(
+                    ws_request,
+                    self.websocket_session.connection_reused(),
+                    Some(Arc::clone(&self.turn_state)),
+                )
+                .await
+                .map_err(|err| {
+                    let response_debug_context =
+                        extract_response_debug_context_from_api_error(&err);
+                    let err = self.client.state.provider.map_api_error(err);
+                    inference_trace_attempt.record_failed(
+                        &err,
+                        response_debug_context.request_id.as_deref(),
+                        /*output_items*/ &[],
+                    );
+                    err
+                })?;
+            let (stream, last_request_rx) = map_response_stream(
+                stream_result,
+                request_session_telemetry,
+                inference_trace_attempt,
+                Arc::clone(&self.client.state.provider),
+            );
+            self.websocket_session.last_response_rx = Some(last_request_rx);
+            return Ok(WebsocketStreamOutcome::Stream(stream));
+        }
+    }
+
+    /// Builds request and SSE telemetry for streaming API calls.
+    fn build_streaming_telemetry(
+        session_telemetry: &SessionTelemetry,
+        auth_context: AuthRequestTelemetryContext,
+        request_route_telemetry: RequestRouteTelemetry,
+        auth_env_telemetry: AuthEnvTelemetry,
+    ) -> (Arc<dyn RequestTelemetry>, Arc<dyn SseTelemetry>) {
+        let telemetry = Arc::new(ApiTelemetry::new(
+            session_telemetry.clone(),
+            auth_context,
+            request_route_telemetry,
+            auth_env_telemetry,
+        ));
+        let request_telemetry: Arc<dyn RequestTelemetry> = telemetry.clone();
+        let sse_telemetry: Arc<dyn SseTelemetry> = telemetry;
+        (request_telemetry, sse_telemetry)
+    }
+
+    /// Builds telemetry for the Responses API WebSocket transport.
+    fn build_websocket_telemetry(
+        session_telemetry: &SessionTelemetry,
+        auth_context: AuthRequestTelemetryContext,
+        request_route_telemetry: RequestRouteTelemetry,
+        auth_env_telemetry: AuthEnvTelemetry,
+    ) -> Arc<dyn WebsocketTelemetry> {
+        let telemetry = Arc::new(ApiTelemetry::new(
+            session_telemetry.clone(),
+            auth_context,
+            request_route_telemetry,
+            auth_env_telemetry,
+        ));
+        let websocket_telemetry: Arc<dyn WebsocketTelemetry> = telemetry;
+        websocket_telemetry
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub async fn prewarm_websocket(
+        &mut self,
+        prompt: &Prompt,
+        model_info: &ModelInfo,
+        session_telemetry: &SessionTelemetry,
+        effort: Option<ReasoningEffortConfig>,
+        summary: ReasoningSummaryConfig,
+        service_tier: Option<String>,
+        responses_metadata: &SolaiAgentResponsesMetadata,
+    ) -> Result<()> {
+        if !self.client.responses_websocket_enabled() {
+            return Ok(());
+        }
+        if self.websocket_session.last_request.is_some() {
+            return Ok(());
+        }
+
+        let disabled_trace = InferenceTraceContext::disabled();
+        match self
+            .stream_responses_websocket(
+                prompt,
+                model_info,
+                session_telemetry,
+                effort,
+                summary,
+                service_tier,
+                /*provider_request_options*/ None,
+                responses_metadata,
+                OllamaSmartContextSetting::Disabled,
+                ModelInstructionsSetting::SendBaseInstructions,
+                /*warmup*/ true,
+                current_span_w3c_trace_context(),
+                &disabled_trace,
+            )
+            .await
+        {
+            Ok(WebsocketStreamOutcome::Stream(mut stream)) => {
+                // Wait for the v2 warmup request to complete before sending the first turn request.
+                while let Some(event) = stream.next().await {
+                    match event {
+                        Ok(ResponseEvent::Completed { .. }) => break,
+                        Err(err) => return Err(err),
+                        _ => {}
+                    }
+                }
+                Ok(())
+            }
+            Ok(WebsocketStreamOutcome::FallbackToHttp) => {
+                self.try_switch_fallback_transport(session_telemetry, model_info);
+                Ok(())
+            }
+            Err(err) => Err(err),
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    /// Streams a single model request within the current turn.
+    ///
+    /// The caller is responsible for passing per-turn settings explicitly (model selection,
+    /// reasoning settings, telemetry context, and turn metadata). This method will prefer the
+    /// Responses WebSocket transport when the provider supports it and it remains healthy, and will
+    /// fall back to the HTTP Responses API transport otherwise. The trace context may be enabled or
+    /// disabled, but is always explicit so transport paths do not need separate trace/no-trace
+    /// branches.
+    pub async fn stream(
+        &mut self,
+        prompt: &Prompt,
+        model_info: &ModelInfo,
+        session_telemetry: &SessionTelemetry,
+        effort: Option<ReasoningEffortConfig>,
+        summary: ReasoningSummaryConfig,
+        service_tier: Option<String>,
+        provider_request_options: Option<ProviderRequestOptions>,
+        responses_metadata: &SolaiAgentResponsesMetadata,
+        inference_trace: &InferenceTraceContext,
+    ) -> Result<ResponseStream> {
+        self.stream_with_smart_context(
+            prompt,
+            model_info,
+            session_telemetry,
+            effort,
+            summary,
+            service_tier,
+            provider_request_options,
+            responses_metadata,
+            OllamaSmartContextSetting::Disabled,
+            ModelInstructionsSetting::SendBaseInstructions,
+            inference_trace,
+        )
+        .await
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) async fn stream_with_smart_context(
+        &mut self,
+        prompt: &Prompt,
+        model_info: &ModelInfo,
+        session_telemetry: &SessionTelemetry,
+        effort: Option<ReasoningEffortConfig>,
+        summary: ReasoningSummaryConfig,
+        service_tier: Option<String>,
+        provider_request_options: Option<ProviderRequestOptions>,
+        responses_metadata: &SolaiAgentResponsesMetadata,
+        ollama_smart_context: OllamaSmartContextSetting,
+        model_instructions: ModelInstructionsSetting,
+        inference_trace: &InferenceTraceContext,
+    ) -> Result<ResponseStream> {
+        tracing::debug!(
+            ?ollama_smart_context,
+            ?model_instructions,
+            "stream request smartcontext setting"
+        );
+        let wire_api = self.client.state.provider.info().wire_api;
+        match wire_api {
+            WireApi::Responses => {
+                if self.client.responses_websocket_enabled() {
+                    let request_trace = current_span_w3c_trace_context();
+                    match self
+                        .stream_responses_websocket(
+                            prompt,
+                            model_info,
+                            session_telemetry,
+                            effort.clone(),
+                            summary,
+                            service_tier.clone(),
+                            provider_request_options.clone(),
+                            responses_metadata,
+                            ollama_smart_context,
+                            model_instructions,
+                            /*warmup*/ false,
+                            request_trace,
+                            inference_trace,
+                        )
+                        .await?
+                    {
+                        WebsocketStreamOutcome::Stream(stream) => return Ok(stream),
+                        WebsocketStreamOutcome::FallbackToHttp => {
+                            self.try_switch_fallback_transport(session_telemetry, model_info);
+                        }
+                    }
+                }
+
+                self.stream_responses_api(
+                    prompt,
+                    model_info,
+                    session_telemetry,
+                    effort,
+                    summary,
+                    service_tier,
+                    provider_request_options,
+                    responses_metadata,
+                    ollama_smart_context,
+                    model_instructions,
+                    inference_trace,
+                )
+                .await
+            }
+        }
+    }
+
+    /// Permanently disables WebSockets for this SolaiAgent session and resets WebSocket state.
+    ///
+    /// This is used after exhausting the provider retry budget, to force subsequent requests onto
+    /// the HTTP transport.
+    ///
+    /// Returns `true` if this call activated fallback, or `false` if fallback was already active.
+    pub(crate) fn try_switch_fallback_transport(
+        &mut self,
+        session_telemetry: &SessionTelemetry,
+        model_info: &ModelInfo,
+    ) -> bool {
+        let activated = self
+            .client
+            .force_http_fallback(session_telemetry, model_info);
+        self.websocket_session = WebsocketSession::default();
+        activated
+    }
+}
+
+/// Stamp a ResponsesWsRequest with the current time.
+///
+/// Meant to be called just before sending the request over the socket, to capture realistic
+/// transport timing.
+fn stamp_ws_stream_request_start_ms(request: &mut ResponsesWsRequest) {
+    let ResponsesWsRequest::ResponseCreate(payload) = request;
+    payload
+        .client_metadata
+        .get_or_insert_with(HashMap::new)
+        .insert(
+            X_CODEX_WS_STREAM_REQUEST_START_MS_CLIENT_METADATA_KEY.to_string(),
+            crate::turn_timing::now_unix_timestamp_ms().to_string(),
+        );
+}
+
+/// Builds the extra headers attached to Responses API requests.
+///
+/// These headers implement SolaiAgent-specific conventions:
+///
+/// - `x-codex-beta-features`: comma-separated beta feature keys enabled for the session.
+/// - `x-codex-turn-state`: sticky routing token captured earlier in the turn.
+fn build_responses_headers(
+    beta_features_header: Option<&str>,
+    turn_state: Option<&Arc<OnceLock<String>>>,
+) -> ApiHeaderMap {
+    let mut headers = ApiHeaderMap::new();
+    if let Some(value) = beta_features_header
+        && !value.is_empty()
+        && let Ok(header_value) = HeaderValue::from_str(value)
+    {
+        headers.insert("x-codex-beta-features", header_value);
+    }
+    if let Some(turn_state) = turn_state
+        && let Some(state) = turn_state.get()
+        && let Ok(header_value) = HeaderValue::from_str(state)
+    {
+        headers.insert(X_CODEX_TURN_STATE_HEADER, header_value);
+    }
+    headers
+}
+
+pub(crate) fn add_originator_header(headers: &mut ApiHeaderMap, originator: &str) {
+    let default_originator = codex_login::default_client::originator();
+    if originator == default_originator.value.as_str() {
+        return;
+    }
+
+    match HeaderValue::from_str(originator) {
+        Ok(header_value) => {
+            headers.insert("originator", header_value);
+        }
+        Err(err) => {
+            warn!("ignoring invalid thread originator header value: {err}");
+        }
+    }
+}
+
+fn add_responses_lite_header(headers: &mut ApiHeaderMap, use_responses_lite: bool) {
+    if use_responses_lite {
+        headers.insert(
+            X_OPENAI_INTERNAL_CODEX_RESPONSES_LITE_HEADER,
+            HeaderValue::from_static("true"),
+        );
+    }
+}
+
+const RESPONSE_STREAM_CHANNEL_CAPACITY: usize = 1600;
+const STREAM_DROPPED_REASON: &str = "response stream dropped before provider terminal event";
+
+fn map_response_stream(
+    api_stream: codex_api::ResponseStream,
+    session_telemetry: SessionTelemetry,
+    inference_trace_attempt: InferenceTraceAttempt,
+    provider: SharedModelProvider,
+) -> (ResponseStream, oneshot::Receiver<LastResponse>) {
+    let codex_api::ResponseStream {
+        rx_event,
+        upstream_request_id,
+    } = api_stream;
+    let api_stream = codex_api::ResponseStream {
+        rx_event,
+        upstream_request_id: None,
+    };
+    map_response_events(
+        upstream_request_id,
+        api_stream,
+        session_telemetry,
+        inference_trace_attempt,
+        provider,
+    )
+}
+
+fn map_response_events<S>(
+    upstream_request_id: Option<String>,
+    api_stream: S,
+    session_telemetry: SessionTelemetry,
+    inference_trace_attempt: InferenceTraceAttempt,
+    provider: SharedModelProvider,
+) -> (ResponseStream, oneshot::Receiver<LastResponse>)
+where
+    S: futures::Stream<Item = std::result::Result<ResponseEvent, ApiError>>
+        + Unpin
+        + Send
+        + 'static,
+{
+    let (tx_event, rx_event) =
+        mpsc::channel::<Result<ResponseEvent>>(RESPONSE_STREAM_CHANNEL_CAPACITY);
+    let (tx_last_response, rx_last_response) = oneshot::channel::<LastResponse>();
+    let consumer_dropped = CancellationToken::new();
+    let consumer_dropped_for_stream = consumer_dropped.clone();
+
+    tokio::spawn(async move {
+        let mut logged_error = false;
+        let mut tx_last_response = Some(tx_last_response);
+        let mut items_added: Vec<ResponseItem> = Vec::new();
+        let mut api_stream = api_stream;
+        let upstream_request_id = upstream_request_id.as_deref();
+        if let Some(upstream_request_id) = upstream_request_id {
+            feedback_tags!(last_model_request_id = upstream_request_id);
+        }
+        loop {
+            let event = tokio::select! {
+                _ = consumer_dropped.cancelled() => {
+                    inference_trace_attempt.record_cancelled(
+                        STREAM_DROPPED_REASON,
+                        upstream_request_id,
+                        &items_added,
+                    );
+                    return;
+                }
+                event = api_stream.next() => event,
+            };
+            let Some(event) = event else {
+                break;
+            };
+            match event {
+                Ok(ResponseEvent::OutputItemDone(item)) => {
+                    items_added.push(item.clone());
+                    if tx_event
+                        .send(Ok(ResponseEvent::OutputItemDone(item)))
+                        .await
+                        .is_err()
+                    {
+                        inference_trace_attempt.record_cancelled(
+                            STREAM_DROPPED_REASON,
+                            upstream_request_id,
+                            &items_added,
+                        );
+                        return;
+                    }
+                }
+                Ok(ResponseEvent::Completed {
+                    response_id,
+                    token_usage,
+                    end_turn,
+                }) => {
+                    feedback_tags!(last_model_response_id = &response_id);
+                    if let Some(usage) = &token_usage {
+                        session_telemetry.sse_event_completed(
+                            usage.input_tokens,
+                            usage.output_tokens,
+                            Some(usage.cached_input_tokens),
+                            Some(usage.reasoning_output_tokens),
+                            usage.total_tokens,
+                        );
+                    }
+                    inference_trace_attempt.record_completed(
+                        &response_id,
+                        upstream_request_id,
+                        &token_usage,
+                        &items_added,
+                    );
+                    if let Some(sender) = tx_last_response.take() {
+                        let _ = sender.send(LastResponse {
+                            response_id: response_id.clone(),
+                            items_added: std::mem::take(&mut items_added),
+                        });
+                    }
+                    if tx_event
+                        .send(Ok(ResponseEvent::Completed {
+                            response_id,
+                            token_usage,
+                            end_turn,
+                        }))
+                        .await
+                        .is_err()
+                    {
+                        return;
+                    }
+                }
+                Ok(event) => {
+                    if tx_event.send(Ok(event)).await.is_err() {
+                        inference_trace_attempt.record_cancelled(
+                            STREAM_DROPPED_REASON,
+                            upstream_request_id,
+                            &items_added,
+                        );
+                        return;
+                    }
+                }
+                Err(err) => {
+                    let response_debug_context =
+                        extract_response_debug_context_from_api_error(&err);
+                    let upstream_request_id =
+                        upstream_request_id.or(response_debug_context.request_id.as_deref());
+                    if let Some(upstream_request_id) = upstream_request_id {
+                        feedback_tags!(last_model_request_id = upstream_request_id);
+                    }
+                    let mapped = provider.map_api_error(err);
+                    inference_trace_attempt.record_failed(
+                        &mapped,
+                        upstream_request_id,
+                        &items_added,
+                    );
+                    if !logged_error {
+                        session_telemetry.see_event_completed_failed(&mapped);
+                        logged_error = true;
+                    }
+                    if tx_event.send(Err(mapped)).await.is_err() {
+                        return;
+                    }
+                }
+            }
+        }
+        inference_trace_attempt.record_failed(
+            "stream closed before response.completed",
+            upstream_request_id,
+            &items_added,
+        );
+    });
+
+    (
+        ResponseStream {
+            rx_event,
+            consumer_dropped: consumer_dropped_for_stream,
+        },
+        rx_last_response,
+    )
+}
+
+/// Handles a 401 response by optionally refreshing ChatGPT tokens once.
+///
+/// When refresh succeeds, the caller should retry the API call; otherwise
+/// the mapped `SolaiAgentErr` is returned to the caller.
+#[derive(Clone, Copy, Debug)]
+struct UnauthorizedRecoveryExecution {
+    mode: &'static str,
+    phase: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+struct PendingUnauthorizedRetry {
+    retry_after_unauthorized: bool,
+    recovery_mode: Option<&'static str>,
+    recovery_phase: Option<&'static str>,
+}
+
+impl PendingUnauthorizedRetry {
+    fn from_recovery(recovery: UnauthorizedRecoveryExecution) -> Self {
+        Self {
+            retry_after_unauthorized: true,
+            recovery_mode: Some(recovery.mode),
+            recovery_phase: Some(recovery.phase),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default)]
+struct AuthRequestTelemetryContext {
+    auth_mode: Option<&'static str>,
+    auth_header_attached: bool,
+    auth_header_name: Option<&'static str>,
+    agent_identity_telemetry: Option<AgentIdentityTelemetry>,
+    retry_after_unauthorized: bool,
+    recovery_mode: Option<&'static str>,
+    recovery_phase: Option<&'static str>,
+}
+
+impl AuthRequestTelemetryContext {
+    fn new(
+        auth_mode: Option<AuthMode>,
+        api_auth: &dyn AuthProvider,
+        agent_identity_telemetry: Option<AgentIdentityTelemetry>,
+        retry: PendingUnauthorizedRetry,
+    ) -> Self {
+        let auth_telemetry = auth_header_telemetry(api_auth);
+        Self {
+            auth_mode: auth_mode.map(|mode| match mode {
+                AuthMode::ApiKey | AuthMode::BedrockApiKey => "ApiKey",
+                AuthMode::Chatgpt
+                | AuthMode::ChatgptAuthTokens
+                | AuthMode::AgentIdentity
+                | AuthMode::PersonalAccessToken => "Chatgpt",
+            }),
+            auth_header_attached: auth_telemetry.attached,
+            auth_header_name: auth_telemetry.name,
+            agent_identity_telemetry,
+            retry_after_unauthorized: retry.retry_after_unauthorized,
+            recovery_mode: retry.recovery_mode,
+            recovery_phase: retry.recovery_phase,
+        }
+    }
+
+    fn agent_identity_telemetry(&self) -> Option<&AgentIdentityTelemetry> {
+        self.agent_identity_telemetry.as_ref()
+    }
+}
+
+struct WebsocketConnectParams<'a> {
+    session_telemetry: &'a SessionTelemetry,
+    api_provider: codex_api::Provider,
+    api_auth: SharedAuthProvider,
+    responses_metadata: &'a SolaiAgentResponsesMetadata,
+    auth_context: AuthRequestTelemetryContext,
+    request_route_telemetry: RequestRouteTelemetry,
+}
+
+async fn handle_unauthorized(
+    transport: TransportError,
+    auth_recovery: &mut Option<UnauthorizedRecovery>,
+    session_telemetry: &SessionTelemetry,
+    provider: &SharedModelProvider,
+) -> Result<UnauthorizedRecoveryExecution> {
+    let debug = extract_response_debug_context(&transport);
+    if let Some(recovery) = auth_recovery
+        && recovery.has_next()
+    {
+        let mode = recovery.mode_name();
+        let phase = recovery.step_name();
+        return match recovery.next().await {
+            Ok(step_result) => {
+                session_telemetry.record_auth_recovery(
+                    mode,
+                    phase,
+                    "recovery_succeeded",
+                    debug.request_id.as_deref(),
+                    debug.cf_ray.as_deref(),
+                    debug.auth_error.as_deref(),
+                    debug.auth_error_code.as_deref(),
+                    /*recovery_reason*/ None,
+                    step_result.auth_state_changed(),
+                );
+                emit_feedback_auth_recovery_tags(
+                    mode,
+                    phase,
+                    "recovery_succeeded",
+                    debug.request_id.as_deref(),
+                    debug.cf_ray.as_deref(),
+                    debug.auth_error.as_deref(),
+                    debug.auth_error_code.as_deref(),
+                );
+                Ok(UnauthorizedRecoveryExecution { mode, phase })
+            }
+            Err(RefreshTokenError::Permanent(failed)) => {
+                session_telemetry.record_auth_recovery(
+                    mode,
+                    phase,
+                    "recovery_failed_permanent",
+                    debug.request_id.as_deref(),
+                    debug.cf_ray.as_deref(),
+                    debug.auth_error.as_deref(),
+                    debug.auth_error_code.as_deref(),
+                    /*recovery_reason*/ None,
+                    /*auth_state_changed*/ None,
+                );
+                emit_feedback_auth_recovery_tags(
+                    mode,
+                    phase,
+                    "recovery_failed_permanent",
+                    debug.request_id.as_deref(),
+                    debug.cf_ray.as_deref(),
+                    debug.auth_error.as_deref(),
+                    debug.auth_error_code.as_deref(),
+                );
+                Err(SolaiAgentErr::RefreshTokenFailed(failed))
+            }
+            Err(RefreshTokenError::Transient(other)) => {
+                session_telemetry.record_auth_recovery(
+                    mode,
+                    phase,
+                    "recovery_failed_transient",
+                    debug.request_id.as_deref(),
+                    debug.cf_ray.as_deref(),
+                    debug.auth_error.as_deref(),
+                    debug.auth_error_code.as_deref(),
+                    /*recovery_reason*/ None,
+                    /*auth_state_changed*/ None,
+                );
+                emit_feedback_auth_recovery_tags(
+                    mode,
+                    phase,
+                    "recovery_failed_transient",
+                    debug.request_id.as_deref(),
+                    debug.cf_ray.as_deref(),
+                    debug.auth_error.as_deref(),
+                    debug.auth_error_code.as_deref(),
+                );
+                Err(SolaiAgentErr::Io(other))
+            }
+        };
+    }
+
+    let (mode, phase, recovery_reason) = match auth_recovery.as_ref() {
+        Some(recovery) => (
+            recovery.mode_name(),
+            recovery.step_name(),
+            Some(recovery.unavailable_reason()),
+        ),
+        None => ("none", "none", Some("auth_manager_missing")),
+    };
+    session_telemetry.record_auth_recovery(
+        mode,
+        phase,
+        "recovery_not_run",
+        debug.request_id.as_deref(),
+        debug.cf_ray.as_deref(),
+        debug.auth_error.as_deref(),
+        debug.auth_error_code.as_deref(),
+        recovery_reason,
+        /*auth_state_changed*/ None,
+    );
+    emit_feedback_auth_recovery_tags(
+        mode,
+        phase,
+        "recovery_not_run",
+        debug.request_id.as_deref(),
+        debug.cf_ray.as_deref(),
+        debug.auth_error.as_deref(),
+        debug.auth_error_code.as_deref(),
+    );
+
+    Err(provider.map_api_error(ApiError::Transport(transport)))
+}
+
+fn api_error_http_status(error: &ApiError) -> Option<u16> {
+    match error {
+        ApiError::Transport(TransportError::Http { status, .. }) => Some(status.as_u16()),
+        _ => None,
+    }
+}
+
+struct ApiTelemetry {
+    session_telemetry: SessionTelemetry,
+    auth_context: AuthRequestTelemetryContext,
+    request_route_telemetry: RequestRouteTelemetry,
+    auth_env_telemetry: AuthEnvTelemetry,
+}
+
+impl ApiTelemetry {
+    fn new(
+        session_telemetry: SessionTelemetry,
+        auth_context: AuthRequestTelemetryContext,
+        request_route_telemetry: RequestRouteTelemetry,
+        auth_env_telemetry: AuthEnvTelemetry,
+    ) -> Self {
+        Self {
+            session_telemetry,
+            auth_context,
+            request_route_telemetry,
+            auth_env_telemetry,
+        }
+    }
+}
+
+impl RequestTelemetry for ApiTelemetry {
+    fn on_request(
+        &self,
+        attempt: u64,
+        status: Option<HttpStatusCode>,
+        error: Option<&TransportError>,
+        duration: Duration,
+    ) {
+        let error_message = error.map(telemetry_transport_error_message);
+        let status = status.map(|s| s.as_u16());
+        let debug = error
+            .map(extract_response_debug_context)
+            .unwrap_or_default();
+        self.session_telemetry.record_api_request(
+            attempt,
+            status,
+            error_message.as_deref(),
+            duration,
+            self.auth_context.auth_header_attached,
+            self.auth_context.auth_header_name,
+            self.auth_context.retry_after_unauthorized,
+            self.auth_context.recovery_mode,
+            self.auth_context.recovery_phase,
+            self.request_route_telemetry.endpoint,
+            debug.request_id.as_deref(),
+            debug.cf_ray.as_deref(),
+            debug.auth_error.as_deref(),
+            debug.auth_error_code.as_deref(),
+            self.auth_context.agent_identity_telemetry(),
+        );
+        emit_feedback_request_tags_with_auth_env(
+            &FeedbackRequestTags {
+                endpoint: self.request_route_telemetry.endpoint,
+                auth_header_attached: self.auth_context.auth_header_attached,
+                auth_header_name: self.auth_context.auth_header_name,
+                auth_mode: self.auth_context.auth_mode,
+                auth_retry_after_unauthorized: Some(self.auth_context.retry_after_unauthorized),
+                auth_recovery_mode: self.auth_context.recovery_mode,
+                auth_recovery_phase: self.auth_context.recovery_phase,
+                auth_connection_reused: None,
+                auth_request_id: debug.request_id.as_deref(),
+                auth_cf_ray: debug.cf_ray.as_deref(),
+                auth_error: debug.auth_error.as_deref(),
+                auth_error_code: debug.auth_error_code.as_deref(),
+                auth_recovery_followup_success: self
+                    .auth_context
+                    .retry_after_unauthorized
+                    .then_some(error.is_none()),
+                auth_recovery_followup_status: self
+                    .auth_context
+                    .retry_after_unauthorized
+                    .then_some(status)
+                    .flatten(),
+            },
+            &self.auth_env_telemetry,
+        );
+    }
+}
+
+impl SseTelemetry for ApiTelemetry {
+    fn on_sse_poll(
+        &self,
+        result: &std::result::Result<
+            Option<std::result::Result<Event, EventStreamError<TransportError>>>,
+            tokio::time::error::Elapsed,
+        >,
+        duration: Duration,
+    ) {
+        self.session_telemetry.log_sse_event(result, duration);
+    }
+}
+
+impl WebsocketTelemetry for ApiTelemetry {
+    fn on_ws_request(&self, duration: Duration, error: Option<&ApiError>, connection_reused: bool) {
+        let error_message = error.map(telemetry_api_error_message);
+        let status = error.and_then(api_error_http_status);
+        let debug = error
+            .map(extract_response_debug_context_from_api_error)
+            .unwrap_or_default();
+        self.session_telemetry.record_websocket_request(
+            duration,
+            error_message.as_deref(),
+            connection_reused,
+            self.auth_context.agent_identity_telemetry(),
+        );
+        emit_feedback_request_tags_with_auth_env(
+            &FeedbackRequestTags {
+                endpoint: self.request_route_telemetry.endpoint,
+                auth_header_attached: self.auth_context.auth_header_attached,
+                auth_header_name: self.auth_context.auth_header_name,
+                auth_mode: self.auth_context.auth_mode,
+                auth_retry_after_unauthorized: Some(self.auth_context.retry_after_unauthorized),
+                auth_recovery_mode: self.auth_context.recovery_mode,
+                auth_recovery_phase: self.auth_context.recovery_phase,
+                auth_connection_reused: Some(connection_reused),
+                auth_request_id: debug.request_id.as_deref(),
+                auth_cf_ray: debug.cf_ray.as_deref(),
+                auth_error: debug.auth_error.as_deref(),
+                auth_error_code: debug.auth_error_code.as_deref(),
+                auth_recovery_followup_success: self
+                    .auth_context
+                    .retry_after_unauthorized
+                    .then_some(error.is_none()),
+                auth_recovery_followup_status: self
+                    .auth_context
+                    .retry_after_unauthorized
+                    .then_some(status)
+                    .flatten(),
+            },
+            &self.auth_env_telemetry,
+        );
+    }
+
+    fn on_ws_event(
+        &self,
+        result: &std::result::Result<Option<std::result::Result<Message, Error>>, ApiError>,
+        duration: Duration,
+    ) {
+        self.session_telemetry
+            .record_websocket_event(result, duration);
+    }
+}
+
+fn uses_ollama_responses_compat(
+    provider: &ApiProvider,
+    provider_request_options: Option<&ProviderRequestOptions>,
+) -> bool {
+    if provider_request_options.is_some() {
+        return true;
+    }
+
+    is_ollama_provider(provider)
+}
+
+fn uses_native_ollama_chat(
+    provider: &ApiProvider,
+    request: &ResponsesApiRequest,
+    ollama_smart_context: OllamaSmartContextSetting,
+) -> bool {
+    if !is_ollama_provider(provider) {
+        return false;
+    }
+
+    matches!(ollama_smart_context, OllamaSmartContextSetting::Enabled)
+        || request
+            .tools
+            .as_ref()
+            .is_some_and(|tools| !tools.is_empty())
+}
+
+fn compact_solai_base_instructions_for_ollama(
+    request: &mut ResponsesApiRequest,
+    ollama_smart_context: OllamaSmartContextSetting,
+) {
+    if !matches!(ollama_smart_context, OllamaSmartContextSetting::Enabled)
+        || !is_solai_model(&request.model)
+        || request.instructions.trim().is_empty()
+        || request.instructions == EMBEDDED_MODEL_INSTRUCTIONS_STUB
+    {
+        return;
+    }
+
+    request.instructions = compact_ollama_base_instructions(&request.instructions);
+    tracing::debug!(
+        model = %request.model,
+        "using compact SolaiAgent base instructions for Ollama request"
+    );
+}
+
+fn is_solai_model(model: &str) -> bool {
+    let model = model.to_ascii_lowercase();
+    model.starts_with("solai") || model.starts_with("solai")
+}
+
+fn instructions_for_model_request(
+    provider: &ApiProvider,
+    model: &str,
+    base_instructions: &str,
+    compact_ollama_prompt: bool,
+    model_instructions: ModelInstructionsSetting,
+) -> String {
+    if model_instructions == ModelInstructionsSetting::EmbeddedInModel
+        && is_ollama_provider(provider)
+        && is_solai_model(model)
+    {
+        return EMBEDDED_MODEL_INSTRUCTIONS_STUB.to_string();
+    }
+
+    if compact_ollama_prompt {
+        compact_ollama_base_instructions(base_instructions)
+    } else {
+        base_instructions.to_string()
+    }
+}
+
+fn ollama_chat_request_from_responses_request(
+    request: ResponsesApiRequest,
+) -> std::result::Result<OllamaChatRequest, ApiError> {
+    let ResponsesApiRequest {
+        model,
+        instructions,
+        input,
+        tools,
+        options,
+        ..
+    } = request;
+    let mut messages = Vec::new();
+    if !instructions.trim().is_empty() {
+        messages.push(OllamaChatMessage {
+            role: "system".to_string(),
+            content: instructions,
+            tool_calls: None,
+        });
+    }
+
+    for item in input {
+        append_ollama_message_from_response_item(item, &mut messages)?;
+    }
+
+    Ok(OllamaChatRequest {
+        model,
+        messages,
+        stream: true,
+        tools: convert_responses_tools_to_ollama_tools(tools),
+        options,
+    })
+}
+
+fn convert_responses_tools_to_ollama_tools(tools: Option<Vec<Value>>) -> Option<Vec<Value>> {
+    let converted_tools: Vec<Value> = tools?
+        .into_iter()
+        .filter_map(|tool| {
+            if tool.get("type").and_then(Value::as_str) != Some("function") {
+                return None;
+            }
+            if tool.get("function").is_some() {
+                return Some(tool);
+            }
+
+            let name = tool.get("name")?.clone();
+            let description = tool.get("description").cloned().unwrap_or(Value::Null);
+            let parameters = tool.get("parameters").cloned().unwrap_or_else(|| {
+                json!({
+                    "type": "object",
+                    "properties": {},
+                })
+            });
+            Some(json!({
+                "type": "function",
+                "function": {
+                    "name": name,
+                    "description": description,
+                    "parameters": parameters,
+                },
+            }))
+        })
+        .collect();
+
+    (!converted_tools.is_empty()).then_some(converted_tools)
+}
+
+fn append_ollama_message_from_response_item(
+    item: ResponseItem,
+    messages: &mut Vec<OllamaChatMessage>,
+) -> std::result::Result<(), ApiError> {
+    match item {
+        ResponseItem::Message { role, content, .. } => {
+            let role = match role.as_str() {
+                "developer" => "system",
+                "system" | "user" | "assistant" | "tool" => role.as_str(),
+                _ => role.as_str(),
+            };
+            messages.push(OllamaChatMessage {
+                role: role.to_string(),
+                content: ollama_content_text(content)?,
+                tool_calls: None,
+            });
+        }
+        ResponseItem::FunctionCall {
+            name, arguments, ..
+        } => {
+            let arguments = serde_json::from_str(&arguments).unwrap_or(Value::String(arguments));
+            messages.push(OllamaChatMessage {
+                role: "assistant".to_string(),
+                content: String::new(),
+                tool_calls: Some(vec![OllamaToolCall {
+                    function: OllamaToolCallFunction { name, arguments },
+                }]),
+            });
+        }
+        ResponseItem::FunctionCallOutput {
+            call_id, output, ..
+        } => {
+            messages.push(OllamaChatMessage {
+                role: "tool".to_string(),
+                content: format!("Tool output for {call_id}:\n{output}"),
+                tool_calls: None,
+            });
+        }
+        ResponseItem::CustomToolCall { name, input, .. } => {
+            let arguments = serde_json::from_str(&input).unwrap_or(Value::String(input));
+            messages.push(OllamaChatMessage {
+                role: "assistant".to_string(),
+                content: String::new(),
+                tool_calls: Some(vec![OllamaToolCall {
+                    function: OllamaToolCallFunction { name, arguments },
+                }]),
+            });
+        }
+        ResponseItem::CustomToolCallOutput {
+            call_id, output, ..
+        } => {
+            messages.push(OllamaChatMessage {
+                role: "tool".to_string(),
+                content: format!("Tool output for {call_id}:\n{output}"),
+                tool_calls: None,
+            });
+        }
+        ResponseItem::AdditionalTools { .. }
+        | ResponseItem::Reasoning { .. }
+        | ResponseItem::LocalShellCall { .. }
+        | ResponseItem::ToolSearchCall { .. }
+        | ResponseItem::ToolSearchOutput { .. }
+        | ResponseItem::WebSearchCall { .. }
+        | ResponseItem::ImageGenerationCall { .. }
+        | ResponseItem::Compaction { .. }
+        | ResponseItem::CompactionTrigger { .. }
+        | ResponseItem::ContextCompaction { .. }
+        | ResponseItem::AgentMessage { .. }
+        | ResponseItem::Other => {}
+    }
+    Ok(())
+}
+
+fn ollama_content_text(content: Vec<ContentItem>) -> std::result::Result<String, ApiError> {
+    let mut parts = Vec::new();
+    for item in content {
+        match item {
+            ContentItem::InputText { text } | ContentItem::OutputText { text } => {
+                parts.push(text);
+            }
+            ContentItem::InputImage { .. } => {
+                return Err(ApiError::InvalidRequest {
+                    message: "native Ollama smartcontext does not support image inputs yet"
+                        .to_string(),
+                });
+            }
+        }
+    }
+    Ok(parts.join("\n"))
+}
+
+fn native_ollama_chat_response_stream<S>(mut byte_stream: S) -> codex_api::ResponseStream
+where
+    S: futures::Stream<Item = std::result::Result<bytes::Bytes, reqwest::Error>>
+        + Unpin
+        + Send
+        + 'static,
+{
+    let (tx_event, rx_event) = mpsc::channel::<std::result::Result<ResponseEvent, ApiError>>(1600);
+    tokio::spawn(async move {
+        let mut pending = String::new();
+        let mut content = String::new();
+        let mut tool_calls = Vec::new();
+        let mut prompt_eval_count = None;
+        let mut eval_count = None;
+        while let Some(chunk) = byte_stream.next().await {
+            let chunk = match chunk {
+                Ok(chunk) => chunk,
+                Err(err) => {
+                    let _ = tx_event
+                        .send(Err(ApiError::Stream(format!(
+                            "native Ollama chat stream failed: {err}"
+                        ))))
+                        .await;
+                    return;
+                }
+            };
+            pending.push_str(&String::from_utf8_lossy(&chunk));
+            while let Some(newline) = pending.find('\n') {
+                let line = pending[..newline].trim().to_string();
+                pending = pending[newline + 1..].to_string();
+                if line.is_empty() {
+                    continue;
+                }
+                if !process_ollama_chat_line(
+                    &line,
+                    &mut content,
+                    &mut tool_calls,
+                    &mut prompt_eval_count,
+                    &mut eval_count,
+                    &tx_event,
+                )
+                .await
+                {
+                    return;
+                }
+            }
+        }
+
+        let line = pending.trim();
+        if !line.is_empty()
+            && !process_ollama_chat_line(
+                line,
+                &mut content,
+                &mut tool_calls,
+                &mut prompt_eval_count,
+                &mut eval_count,
+                &tx_event,
+            )
+            .await
+        {
+            return;
+        }
+
+        emit_native_ollama_done(
+            content,
+            tool_calls,
+            prompt_eval_count,
+            eval_count,
+            &tx_event,
+        )
+        .await;
+    });
+
+    codex_api::ResponseStream {
+        rx_event,
+        upstream_request_id: None,
+    }
+}
+
+async fn process_ollama_chat_line(
+    line: &str,
+    content: &mut String,
+    tool_calls: &mut Vec<OllamaToolCall>,
+    prompt_eval_count: &mut Option<i64>,
+    eval_count: &mut Option<i64>,
+    tx_event: &mpsc::Sender<std::result::Result<ResponseEvent, ApiError>>,
+) -> bool {
+    let chunk = match serde_json::from_str::<OllamaChatStreamChunk>(line) {
+        Ok(chunk) => chunk,
+        Err(err) => {
+            let _ = tx_event
+                .send(Err(ApiError::Stream(format!(
+                    "failed to parse native Ollama chat stream line: {err}: {line}"
+                ))))
+                .await;
+            return false;
+        }
+    };
+    if let Some(error) = chunk.error {
+        let _ = tx_event
+            .send(Err(ApiError::InvalidRequest { message: error }))
+            .await;
+        return false;
+    }
+    if let Some(message) = chunk.message {
+        content.push_str(&message.content);
+        if let Some(calls) = message.tool_calls {
+            tool_calls.extend(calls);
+        }
+    }
+    if chunk.prompt_eval_count.is_some() {
+        *prompt_eval_count = chunk.prompt_eval_count;
+    }
+    if chunk.eval_count.is_some() {
+        *eval_count = chunk.eval_count;
+    }
+    if chunk.done {
+        emit_native_ollama_done(
+            std::mem::take(content),
+            std::mem::take(tool_calls),
+            *prompt_eval_count,
+            *eval_count,
+            tx_event,
+        )
+        .await;
+        return false;
+    }
+    true
+}
+
+async fn emit_native_ollama_done(
+    content: String,
+    tool_calls: Vec<OllamaToolCall>,
+    prompt_eval_count: Option<i64>,
+    eval_count: Option<i64>,
+    tx_event: &mpsc::Sender<std::result::Result<ResponseEvent, ApiError>>,
+) {
+    let response_id = "ollama-chat-response".to_string();
+    for (index, tool_call) in tool_calls.into_iter().enumerate() {
+        let arguments = serde_json::to_string(&tool_call.function.arguments)
+            .unwrap_or_else(|_| "{}".to_string());
+        let item = ResponseItem::FunctionCall {
+            id: Some(format!("ollama-tool-call-{index}")),
+            name: tool_call.function.name.clone(),
+            namespace: None,
+            arguments,
+            call_id: format!("ollama-tool-call-{index}-{}", tool_call.function.name),
+            internal_chat_message_metadata_passthrough: None,
+        };
+        if tx_event
+            .send(Ok(ResponseEvent::OutputItemDone(item)))
+            .await
+            .is_err()
+        {
+            return;
+        }
+    }
+    if !content.is_empty() {
+        let item = ResponseItem::Message {
+            id: Some("ollama-message".to_string()),
+            role: "assistant".to_string(),
+            content: vec![ContentItem::OutputText { text: content }],
+            phase: None,
+            internal_chat_message_metadata_passthrough: None,
+        };
+        if tx_event
+            .send(Ok(ResponseEvent::OutputItemDone(item)))
+            .await
+            .is_err()
+        {
+            return;
+        }
+    }
+    let input_tokens = prompt_eval_count.unwrap_or_default();
+    let output_tokens = eval_count.unwrap_or_default();
+    let token_usage = Some(TokenUsage {
+        input_tokens,
+        cached_input_tokens: 0,
+        output_tokens,
+        reasoning_output_tokens: 0,
+        total_tokens: input_tokens + output_tokens,
+    });
+    let _ = tx_event
+        .send(Ok(ResponseEvent::Completed {
+            response_id,
+            token_usage,
+            end_turn: Some(true),
+        }))
+        .await;
+}
+
+fn is_ollama_provider(provider: &ApiProvider) -> bool {
+    let provider_name = provider.name.to_ascii_lowercase();
+    let base_url = provider.base_url.to_ascii_lowercase();
+    provider_name.contains("ollama") || base_url.contains(":11434")
+}
+
+fn ollama_host_root(base_url: &str) -> String {
+    base_url
+        .trim_end_matches('/')
+        .strip_suffix("/v1")
+        .unwrap_or_else(|| base_url.trim_end_matches('/'))
+        .to_string()
+}
+
+fn ollama_context_model_alias(model: &str, num_ctx: i64) -> String {
+    let model_without_tag = match model.rsplit_once(':') {
+        Some((name, tag)) if !tag.contains('/') => name,
+        Some(_) | None => model,
+    };
+    format!("{model_without_tag}_ctx{num_ctx}")
+}
+
+fn uses_compact_ollama_prompt(
+    provider: &ApiProvider,
+    provider_request_options: Option<&ProviderRequestOptions>,
+) -> bool {
+    uses_ollama_responses_compat(provider, provider_request_options)
+        && provider_request_options
+            .and_then(|options| options.num_ctx)
+            .is_some_and(|num_ctx| num_ctx <= OLLAMA_COMPACT_CONTEXT_THRESHOLD)
+}
+
+fn retain_ollama_compatible_tools(tools: &mut Vec<serde_json::Value>) {
+    tools.retain(|tool| tool.get("type").and_then(serde_json::Value::as_str) == Some("function"));
+}
+
+fn compact_ollama_base_instructions(base_instructions: &str) -> String {
+    let is_default_base_instructions = base_instructions == BASE_INSTRUCTIONS_DEFAULT
+        || (base_instructions.contains("You are a coding agent running in")
+            && base_instructions.contains("Your capabilities:")
+            && base_instructions.contains("Emit function calls"));
+    if is_default_base_instructions {
+        return OLLAMA_COMPACT_BASE_INSTRUCTIONS.to_string();
+    }
+
+    let custom = truncate_chars(base_instructions, OLLAMA_CUSTOM_INSTRUCTIONS_MAX_CHARS);
+    format!("{OLLAMA_COMPACT_BASE_INSTRUCTIONS}\n\nUser configured base instructions:\n{custom}")
+}
+
+fn truncate_chars(text: &str, max_chars: usize) -> String {
+    if text.chars().count() <= max_chars {
+        return text.to_string();
+    }
+
+    let mut truncated: String = text.chars().take(max_chars).collect();
+    truncated.push_str("\n[truncated]");
+    truncated
+}
+
+#[cfg(test)]
+#[path = "client_tests.rs"]
+mod tests;

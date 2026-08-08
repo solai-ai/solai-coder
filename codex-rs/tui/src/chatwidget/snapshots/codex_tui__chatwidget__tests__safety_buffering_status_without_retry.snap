@@ -1,0 +1,11 @@
+---
+source: tui/src/chatwidget/tests/app_server.rs
+expression: popup
+---
+• Working (0s • esc to interrupt) · read -- tok/s · write -- tok/s
+  └ This request requires additional safety checks, which can take extra time.
+
+
+› Ask SolaiAgent to do anything
+
+  gpt-5.5 default · /tmp/project

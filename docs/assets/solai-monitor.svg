@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760" role="img" aria-labelledby="title desc">
+  <title id="title">SOLAI Agent terminal with monitor status line</title>
+  <desc id="desc">A terminal screenshot mockup showing SOLAI Agent with smartcontext enabled and a second monitor status line.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#10131a"/>
+      <stop offset="1" stop-color="#171b24"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="760" fill="#0b0d12"/>
+  <rect x="44" y="38" width="1192" height="684" rx="14" fill="url(#bg)" filter="url(#shadow)"/>
+  <rect x="44" y="38" width="1192" height="42" rx="14" fill="#232733"/>
+  <rect x="44" y="66" width="1192" height="14" fill="#232733"/>
+  <circle cx="75" cy="59" r="7" fill="#ff5f57"/>
+  <circle cx="98" cy="59" r="7" fill="#febc2e"/>
+  <circle cx="121" cy="59" r="7" fill="#28c840"/>
+  <text x="640" y="65" text-anchor="middle" fill="#cdd6f4" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15">solai - ~/workspace/SOLAI-Agent</text>
+
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="24">
+    <text x="78" y="130" fill="#7dd3fc">SOLAI Agent</text>
+    <text x="78" y="170" fill="#8b949e">local-first coding agent</text>
+
+    <text x="78" y="236" fill="#f8fafc">› /smartcontext true</text>
+    <text x="78" y="276" fill="#a7f3d0">Smart context enabled for Ollama. Native num_ctx follows the active context window.</text>
+
+    <text x="78" y="342" fill="#f8fafc">› /statusline2</text>
+    <text x="78" y="382" fill="#cbd5e1">Configure Monitor Status Line</text>
+    <text x="78" y="424" fill="#94a3b8">[x] CPU      [x] RAM      [x] GPU      [x] VRAM      [x] Status      [x] Context</text>
+    <text x="78" y="466" fill="#94a3b8">[ ] Swap     [ ] GPU temp [ ] GPU model [ ] GPU x CPU</text>
+
+    <rect x="70" y="540" width="1140" height="1" fill="#303747"/>
+    <text x="78" y="585" fill="#d1d5db">gpt-5.1-codex · reasoning: high · ~/workspace/SOLAI-Agent · main</text>
+    <text x="78" y="628">
+      <tspan fill="#f8fafc">CPU</tspan><tspan fill="#64748b">: </tspan><tspan fill="#22c55e">18%</tspan>
+      <tspan fill="#64748b">  ·  </tspan><tspan fill="#f8fafc">RAM</tspan><tspan fill="#64748b">: </tspan><tspan fill="#eab308">11.4/32.0 GB</tspan>
+      <tspan fill="#64748b">  ·  </tspan><tspan fill="#f8fafc">GPU</tspan><tspan fill="#64748b">: </tspan><tspan fill="#22c55e">42%</tspan>
+      <tspan fill="#64748b">  ·  </tspan><tspan fill="#f8fafc">VRAM</tspan><tspan fill="#64748b">: </tspan><tspan fill="#eab308">9.8/24.0 GB</tspan>
+      <tspan fill="#64748b">  ·  </tspan><tspan fill="#f8fafc">Status</tspan><tspan fill="#64748b">: </tspan><tspan fill="#22c55e">Ollama running</tspan>
+      <tspan fill="#64748b">  ·  </tspan><tspan fill="#f8fafc">CTX</tspan><tspan fill="#64748b">: </tspan><tspan fill="#38bdf8">96k/128k</tspan>
+    </text>
+    <text x="78" y="684" fill="#f8fafc">› Ask SOLAI Agent to do anything</text>
+  </g>
+</svg>

@@ -1,0 +1,5 @@
+codex-rs/app-server-protocol/schema/** linguist-generated
+codex-rs/hooks/schema/generated/** linguist-generated
+
+*.py text eol=lf
+*.sh text eol=lf

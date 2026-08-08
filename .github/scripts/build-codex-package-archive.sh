@@ -94,7 +94,7 @@ case "$bundle" in
   primary)
     variant="codex"
     entrypoint="solai"
-    archive_stem="codex-package"
+    archive_stem="solai-package"
     ;;
   app-server)
     variant="codex-app-server"

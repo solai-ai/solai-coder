@@ -99,14 +99,14 @@ function findSolaiExecutable() {
     vendorRoot = path.join(__dirname, "..", "vendor");
   }
 
-  const codexExecutable = path.join(
+  const solaiExecutable = path.join(
     vendorRoot,
     targetTriple,
     "bin",
-    process.platform === "win32" ? "codex.exe" : "codex",
+    process.platform === "win32" ? "solai.exe" : "solai",
   );
-  if (existsSync(codexExecutable)) {
-    return codexExecutable;
+  if (existsSync(solaiExecutable)) {
+    return solaiExecutable;
   }
 
   const packageManager = detectPackageManager();

@@ -1,6 +1,9 @@
 //! Render composition for the main chat widget surface.
 
 use super::*;
+use ratatui::layout::Margin;
+use ratatui::widgets::Block;
+use ratatui::widgets::Borders;
 
 impl ChatWidget {
     pub(super) fn as_renderable(&self) -> RenderableItem<'_> {
@@ -131,19 +134,38 @@ impl TranscriptAreaRenderable<'_> {
 
 impl Renderable for ChatWidget {
     fn render(&self, area: Rect, buf: &mut Buffer) {
-        self.as_renderable().render(area, buf);
+        let content_area = main_content_area(area);
+        if content_area != area {
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(crate::style::solai_logo_style(/*index*/ 0))
+                .render(area, buf);
+        }
+        self.as_renderable().render(content_area, buf);
         self.last_rendered_width.set(Some(area.width as usize));
     }
 
     fn desired_height(&self, width: u16) -> u16 {
-        self.as_renderable().desired_height(width)
+        self.as_renderable()
+            .desired_height(width.saturating_sub(2).max(1))
+            .saturating_add(2)
     }
 
     fn cursor_pos(&self, area: Rect) -> Option<(u16, u16)> {
-        self.as_renderable().cursor_pos(area)
+        self.as_renderable().cursor_pos(main_content_area(area))
     }
 
     fn cursor_style(&self, area: Rect) -> crossterm::cursor::SetCursorStyle {
-        self.as_renderable().cursor_style(area)
+        self.as_renderable().cursor_style(main_content_area(area))
     }
+}
+
+fn main_content_area(area: Rect) -> Rect {
+    if area.width < 3 || area.height < 3 {
+        return area;
+    }
+    area.inner(Margin {
+        horizontal: 1,
+        vertical: 1,
+    })
 }

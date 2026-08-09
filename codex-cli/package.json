@@ -1,6 +1,6 @@
 {
   "name": "@solaiecosystem/solai",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "SOLAI Agent is a local-first AI agent and coder that runs locally on your computer.",
   "license": "Apache-2.0",
   "bin": {

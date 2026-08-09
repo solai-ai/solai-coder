@@ -11,6 +11,8 @@ use ratatui::style::Style;
 use ratatui::style::Stylize;
 
 const LIGHT_BG_ACCENT_RGB: (u8, u8, u8) = (0, 95, 135);
+const SOLAI_LOGO_RGB: [(u8, u8, u8); 3] = [(125, 211, 252), (217, 70, 239), (34, 197, 94)];
+const SOLAI_LOGO_ANSI: [Color; 3] = [Color::Cyan, Color::Magenta, Color::Green];
 // Decorative table rules should remain visible without competing with cell content.
 const TABLE_SEPARATOR_FG_ALPHA: f32 = 0.20;
 
@@ -30,6 +32,11 @@ pub(crate) fn table_separator_style() -> Style {
 /// Returns the shared accent style for active or selected TUI controls.
 pub(crate) fn accent_style() -> Style {
     accent_style_for(default_bg())
+}
+
+/// Returns one color from the SOLAI logo accent sequence.
+pub(crate) fn solai_logo_style(index: usize) -> Style {
+    solai_logo_style_for(index, stdout_color_level())
 }
 
 /// Returns the style for a user-authored message using the provided terminal background.
@@ -54,6 +61,16 @@ pub(crate) fn accent_style_for(terminal_bg: Option<(u8, u8, u8)>) -> Style {
     } else {
         Style::default().fg(Color::Cyan).bold()
     }
+}
+
+pub(crate) fn solai_logo_style_for(index: usize, color_level: StdoutColorLevel) -> Style {
+    let color_index = index % SOLAI_LOGO_RGB.len();
+    let color = match color_level {
+        StdoutColorLevel::TrueColor => rgb_color(SOLAI_LOGO_RGB[color_index]),
+        StdoutColorLevel::Ansi256 => best_color(SOLAI_LOGO_RGB[color_index]),
+        StdoutColorLevel::Ansi16 | StdoutColorLevel::Unknown => SOLAI_LOGO_ANSI[color_index],
+    };
+    Style::default().fg(color)
 }
 
 fn table_separator_style_for(
@@ -107,6 +124,42 @@ mod tests {
 
         assert_eq!(accent_style_for(Some((0, 0, 0))), expected);
         assert_eq!(accent_style_for(/*terminal_bg*/ None), expected);
+    }
+
+    #[test]
+    fn solai_logo_style_uses_logo_truecolor_sequence() {
+        assert_eq!(
+            solai_logo_style_for(/*index*/ 0, StdoutColorLevel::TrueColor).fg,
+            Some(rgb_color((125, 211, 252)))
+        );
+        assert_eq!(
+            solai_logo_style_for(/*index*/ 1, StdoutColorLevel::TrueColor).fg,
+            Some(rgb_color((217, 70, 239)))
+        );
+        assert_eq!(
+            solai_logo_style_for(/*index*/ 2, StdoutColorLevel::TrueColor).fg,
+            Some(rgb_color((34, 197, 94)))
+        );
+        assert_eq!(
+            solai_logo_style_for(/*index*/ 3, StdoutColorLevel::TrueColor).fg,
+            Some(rgb_color((125, 211, 252)))
+        );
+    }
+
+    #[test]
+    fn solai_logo_style_falls_back_to_ansi_sequence() {
+        assert_eq!(
+            solai_logo_style_for(/*index*/ 0, StdoutColorLevel::Ansi16).fg,
+            Some(Color::Cyan)
+        );
+        assert_eq!(
+            solai_logo_style_for(/*index*/ 1, StdoutColorLevel::Unknown).fg,
+            Some(Color::Magenta)
+        );
+        assert_eq!(
+            solai_logo_style_for(/*index*/ 2, StdoutColorLevel::Ansi16).fg,
+            Some(Color::Green)
+        );
     }
 
     #[test]

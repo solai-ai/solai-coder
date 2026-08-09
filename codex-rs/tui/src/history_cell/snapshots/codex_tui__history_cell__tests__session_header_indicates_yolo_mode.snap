@@ -1,9 +1,10 @@
 ---
 source: tui/src/history_cell/tests.rs
+assertion_line: 1567
 expression: rendered
 ---
 ╭───────────────────────────────────────╮
-│ >_ SolaiAgent (vtest)              │
+│ >_ SolaiAgent (vtest)                 │
 │                                       │
 │ model:       gpt-5   /model to change │
 │ directory:   /tmp/project             │

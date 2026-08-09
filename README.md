@@ -1,5 +1,11 @@
 # SOLAI Agent
 
+![Funding Phase](https://img.shields.io/badge/Funding%20Phase-Pump.fun-7dd3fc?style=for-the-badge)
+![AI + DePIN](https://img.shields.io/badge/AI%20%2B%20DePIN-Ecosystem-d946ef?style=for-the-badge)
+
+> 🚀 **SOLAI is currently in the Funding Phase on Pump.fun.**  
+> Everyone can participate and become part of the AI + DePIN ecosystem from the beginning. 🔥
+
 SOLAI Agent is a local-first AI agent and coder built around the `solai` CLI and the Rust workspace in `codex-rs/`.
 
 ## Install

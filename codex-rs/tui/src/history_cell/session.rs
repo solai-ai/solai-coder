@@ -48,7 +48,12 @@ fn with_border_internal(
 
     let mut out = Vec::with_capacity(lines.len() + 2);
     let border_inner_width = content_width + 2;
-    out.push(vec![format!("╭{}╮", "─".repeat(border_inner_width)).dim()].into());
+    out.push(logo_border_line(
+        "╭",
+        &"─".repeat(border_inner_width),
+        "╮",
+        /*index*/ 0,
+    ));
 
     for line in lines.into_iter() {
         let used_width: usize = line
@@ -57,18 +62,38 @@ fn with_border_internal(
             .sum();
         let span_count = line.spans.len();
         let mut spans: Vec<Span<'static>> = Vec::with_capacity(span_count + 4);
-        spans.push(Span::from("│ ").dim());
+        let border_style = crate::style::solai_logo_style(out.len());
+        spans.push(Span::styled("│ ", border_style));
         spans.extend(line);
         if used_width < content_width {
             spans.push(Span::from(" ".repeat(content_width - used_width)).dim());
         }
-        spans.push(Span::from(" │").dim());
+        spans.push(Span::styled(" │", border_style));
         out.push(Line::from(spans));
     }
 
-    out.push(vec![format!("╰{}╯", "─".repeat(border_inner_width)).dim()].into());
+    out.push(logo_border_line(
+        "╰",
+        &"─".repeat(border_inner_width),
+        "╯",
+        out.len(),
+    ));
 
     out
+}
+
+fn logo_border_line(
+    left: &'static str,
+    middle: &str,
+    right: &'static str,
+    index: usize,
+) -> Line<'static> {
+    let style = crate::style::solai_logo_style(index);
+    Line::from(vec![
+        Span::styled(left, style),
+        Span::styled(middle.to_string(), style),
+        Span::styled(right, style),
+    ])
 }
 
 /// Return the emoji followed by a hair space (U+200A).

@@ -434,8 +434,8 @@ impl ExecCell {
         if !continuation_lines.is_empty() {
             lines.extend(prefix_lines(
                 continuation_lines,
-                Span::from(layout.command_continuation.initial_prefix).dim(),
-                Span::from(layout.command_continuation.subsequent_prefix).dim(),
+                logo_prefix(layout.command_continuation.initial_prefix, /*index*/ 0),
+                logo_prefix(layout.command_continuation.subsequent_prefix, /*index*/ 1),
             ));
         }
 
@@ -464,8 +464,8 @@ impl ExecCell {
                 if !call.is_unified_exec_interaction() {
                     lines.extend(prefix_lines(
                         vec![Line::from("(no output)".dim())],
-                        Span::from(layout.output_block.initial_prefix).dim(),
-                        Span::from(layout.output_block.subsequent_prefix),
+                        logo_prefix(layout.output_block.initial_prefix, /*index*/ 2),
+                        logo_prefix(layout.output_block.subsequent_prefix, /*index*/ 0),
                     ));
                 }
             } else {
@@ -485,17 +485,18 @@ impl ExecCell {
 
                 let prefixed_output = prefix_lines(
                     wrapped_output,
-                    Span::from(layout.output_block.initial_prefix).dim(),
-                    Span::from(layout.output_block.subsequent_prefix),
+                    logo_prefix(layout.output_block.initial_prefix, /*index*/ 2),
+                    logo_prefix(layout.output_block.subsequent_prefix, /*index*/ 0),
                 );
                 let trimmed_output = Self::truncate_lines_middle(
                     &prefixed_output,
                     display_limit,
                     width,
                     raw_output.omitted,
-                    Some(Line::from(
-                        Span::from(layout.output_block.subsequent_prefix).dim(),
-                    )),
+                    Some(Line::from(logo_prefix(
+                        layout.output_block.subsequent_prefix,
+                        /*index*/ 0,
+                    ))),
                 );
 
                 if !trimmed_output.is_empty() {
@@ -658,6 +659,10 @@ impl ExecCell {
     }
 }
 
+fn logo_prefix(prefix: &'static str, index: usize) -> Span<'static> {
+    Span::styled(prefix, crate::style::solai_logo_style(index))
+}
+
 #[derive(Clone, Copy)]
 struct PrefixedBlock {
     initial_prefix: &'static str,
@@ -763,8 +768,8 @@ mod tests {
         }
         let full_prefixed_output = prefix_lines(
             full_wrapped_output,
-            Span::from(layout.output_block.initial_prefix).dim(),
-            Span::from(layout.output_block.subsequent_prefix),
+            logo_prefix(layout.output_block.initial_prefix, /*index*/ 2),
+            logo_prefix(layout.output_block.subsequent_prefix, /*index*/ 0),
         );
         let full_screen_lines = Paragraph::new(Text::from(full_prefixed_output))
             .wrap(Wrap { trim: false })

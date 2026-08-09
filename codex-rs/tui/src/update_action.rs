@@ -8,9 +8,9 @@ use codex_install_context::StandalonePlatform;
 /// Update action the CLI should perform after the TUI exits.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UpdateAction {
-    /// Update via `npm install -g solai@latest`.
+    /// Update via `npm install -g @solaiecosystem/solai@latest`.
     NpmGlobalLatest,
-    /// Update via `bun install -g solai@latest`.
+    /// Update via `bun install -g @solaiecosystem/solai@latest`.
     BunGlobalLatest,
     /// Update via `brew upgrade codex`.
     BrewUpgrade,

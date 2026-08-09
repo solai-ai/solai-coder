@@ -5,7 +5,7 @@ SOLAI Agent is a local-first AI agent and coder built around the `solai` CLI and
 ## Install
 
 ```bash
-npm install -g solai
+npm install -g @solaiecosystem/solai
 ```
 
 ## Local model setup

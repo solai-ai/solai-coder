@@ -132,8 +132,8 @@ fn push_cached_version_details(details: &mut Vec<String>, version_file: &Path) {
 
 fn update_action_label(context: &InstallContext) -> &'static str {
     match &context.method {
-        InstallMethod::Npm => "npm install -g solai",
-        InstallMethod::Bun => "bun install -g solai",
+        InstallMethod::Npm => "npm install -g @solaiecosystem/solai",
+        InstallMethod::Bun => "bun install -g @solaiecosystem/solai",
         InstallMethod::Brew => "brew upgrade --cask codex",
         InstallMethod::Standalone { .. } => "standalone installer",
         InstallMethod::Other => "manual or unknown",
@@ -222,7 +222,7 @@ mod tests {
                 method: InstallMethod::Npm,
                 package_layout: None,
             }),
-            "npm install -g solai"
+            "npm install -g @solaiecosystem/solai"
         );
         assert_eq!(
             update_action_label(&InstallContext {

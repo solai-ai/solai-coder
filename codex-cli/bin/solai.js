@@ -112,8 +112,8 @@ function findSolaiExecutable() {
   const packageManager = detectPackageManager();
   const updateCommand =
     packageManager === "bun"
-      ? "bun install -g solai@latest"
-      : "npm install -g solai@latest";
+      ? "bun install -g @solaiecosystem/solai@latest"
+      : "npm install -g @solaiecosystem/solai@latest";
   throw new Error(
     `Missing optional dependency ${platformPackage}. Reinstall SOLAI Agent: ${updateCommand}`,
   );

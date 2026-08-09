@@ -75,12 +75,12 @@ personal/
 
 # local-only artifacts
 \$HOME/
-MIDNIGHT_CODER_VS_CODEX_CLI.md
+SOLAI_AGENT_VS_CODEX_CLI.md
 config.toml
 config.toml.backup
-midcoder
-midnight-code/
-midnight-coder-ollama-remote.cmd
+solai
+solai-code/
+solai-agent-ollama-remote.cmd
 test_file.txt
 tool-check.txt
 tool-test-file.txt

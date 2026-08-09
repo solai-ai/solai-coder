@@ -6,7 +6,7 @@ inputs:
     required: true
   binaries:
     description: Space-delimited binary basenames to sign.
-    default: "midnight-coder codex-responses-api-proxy codex-windows-sandbox-setup codex-command-runner"
+    default: "solai codex-responses-api-proxy codex-windows-sandbox-setup codex-command-runner"
   client-id:
     description: Azure Trusted Signing client ID.
     required: true

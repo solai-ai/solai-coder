@@ -89,11 +89,11 @@ impl fmt::Display for SessionPickerViewMode {
 #[serde(rename_all = "lowercase")]
 pub enum AuthCredentialsStoreMode {
     #[default]
-    /// Persist credentials in MIDCODER_HOME/auth.json.
+    /// Persist credentials in SOLAI_HOME/auth.json.
     File,
     /// Persist credentials in the keyring. Fail if unavailable.
     Keyring,
-    /// Use keyring when available; otherwise, fall back to a file in MIDCODER_HOME.
+    /// Use keyring when available; otherwise, fall back to a file in SOLAI_HOME.
     Auto,
     /// Store credentials in memory only for the current process.
     Ephemeral,
@@ -107,7 +107,7 @@ pub enum OAuthCredentialsStoreMode {
     /// Credentials stored in the keyring will only be readable by SolaiAgent unless the user explicitly grants access via OS-level keyring access.
     #[default]
     Auto,
-    /// MIDCODER_HOME/.credentials.json
+    /// SOLAI_HOME/.credentials.json
     /// This file will be readable to SolaiAgent and other applications running as the same user.
     File,
     /// Keyring when available, otherwise fail.
@@ -750,13 +750,13 @@ pub struct Tui {
     /// Syntax highlighting theme name (kebab-case).
     ///
     /// When set, overrides automatic light/dark theme detection.
-    /// Use `/theme` in the TUI or see `$MIDCODER_HOME/themes` for custom themes.
+    /// Use `/theme` in the TUI or see `$SOLAI_HOME/themes` for custom themes.
     #[serde(default)]
     pub theme: Option<String>,
 
     /// Pet id to preselect in the terminal pet picker.
     ///
-    /// Custom pet ids resolve against MIDCODER_HOME/pets/<pet-id>/pet.json.
+    /// Custom pet ids resolve against SOLAI_HOME/pets/<pet-id>/pet.json.
     #[serde(default)]
     pub pet: Option<String>,
 

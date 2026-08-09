@@ -2,20 +2,20 @@ use codex_utils_absolute_path::AbsolutePathBuf;
 use dirs::home_dir;
 use std::path::PathBuf;
 
-const MIDCODER_HOME_ENV_VAR: &str = "MIDCODER_HOME";
+const SOLAI_HOME_ENV_VAR: &str = "SOLAI_HOME";
 const LEGACY_CODEX_HOME_ENV_VAR: &str = "CODEX_HOME";
-const DEFAULT_MIDCODER_HOME_DIR: &str = ".midCoder";
+const DEFAULT_SOLAI_HOME_DIR: &str = ".solai";
 
 /// Returns the path to the SolaiAgent configuration directory, which can be
-/// specified by the `MIDCODER_HOME` environment variable. If not set, defaults
-/// to `~/.midCoder`.
+/// specified by the `SOLAI_HOME` environment variable. If not set, defaults
+/// to `~/.solai`.
 ///
-/// - If `MIDCODER_HOME` is set, the value must exist and be a directory. The
+/// - If `SOLAI_HOME` is set, the value must exist and be a directory. The
 ///   value will be canonicalized and this function will Err otherwise.
-/// - If `MIDCODER_HOME` is not set, this function does not verify that the
+/// - If `SOLAI_HOME` is not set, this function does not verify that the
 ///   directory exists.
 pub fn find_codex_home() -> std::io::Result<AbsolutePathBuf> {
-    let codex_home_env = std::env::var(MIDCODER_HOME_ENV_VAR)
+    let codex_home_env = std::env::var(SOLAI_HOME_ENV_VAR)
         .ok()
         .filter(|val| !val.is_empty())
         .or_else(|| {
@@ -36,12 +36,12 @@ fn find_codex_home_from_env(codex_home_env: Option<&str>) -> std::io::Result<Abs
                 std::io::ErrorKind::NotFound => std::io::Error::new(
                     std::io::ErrorKind::NotFound,
                     format!(
-                        "{MIDCODER_HOME_ENV_VAR} points to {val:?}, but that path does not exist"
+                        "{SOLAI_HOME_ENV_VAR} points to {val:?}, but that path does not exist"
                     ),
                 ),
                 _ => std::io::Error::new(
                     err.kind(),
-                    format!("failed to read {MIDCODER_HOME_ENV_VAR} {val:?}: {err}"),
+                    format!("failed to read {SOLAI_HOME_ENV_VAR} {val:?}: {err}"),
                 ),
             })?;
 
@@ -49,14 +49,14 @@ fn find_codex_home_from_env(codex_home_env: Option<&str>) -> std::io::Result<Abs
                 Err(std::io::Error::new(
                     std::io::ErrorKind::InvalidInput,
                     format!(
-                        "{MIDCODER_HOME_ENV_VAR} points to {val:?}, but that path is not a directory"
+                        "{SOLAI_HOME_ENV_VAR} points to {val:?}, but that path is not a directory"
                     ),
                 ))
             } else {
                 let canonical = path.canonicalize().map_err(|err| {
                     std::io::Error::new(
                         err.kind(),
-                        format!("failed to canonicalize {MIDCODER_HOME_ENV_VAR} {val:?}: {err}"),
+                        format!("failed to canonicalize {SOLAI_HOME_ENV_VAR} {val:?}: {err}"),
                     )
                 })?;
                 AbsolutePathBuf::from_absolute_path(canonical)
@@ -69,7 +69,7 @@ fn find_codex_home_from_env(codex_home_env: Option<&str>) -> std::io::Result<Abs
                     "Could not find home directory",
                 )
             })?;
-            p.push(DEFAULT_MIDCODER_HOME_DIR);
+            p.push(DEFAULT_SOLAI_HOME_DIR);
             AbsolutePathBuf::from_absolute_path(p)
         }
     }
@@ -93,10 +93,10 @@ mod tests {
             .to_str()
             .expect("missing SolaiAgent home path should be valid utf-8");
 
-        let err = find_codex_home_from_env(Some(missing_str)).expect_err("missing MIDCODER_HOME");
+        let err = find_codex_home_from_env(Some(missing_str)).expect_err("missing SOLAI_HOME");
         assert_eq!(err.kind(), ErrorKind::NotFound);
         assert!(
-            err.to_string().contains("MIDCODER_HOME"),
+            err.to_string().contains("SOLAI_HOME"),
             "unexpected error: {err}"
         );
     }
@@ -110,7 +110,7 @@ mod tests {
             .to_str()
             .expect("file SolaiAgent home path should be valid utf-8");
 
-        let err = find_codex_home_from_env(Some(file_str)).expect_err("file MIDCODER_HOME");
+        let err = find_codex_home_from_env(Some(file_str)).expect_err("file SOLAI_HOME");
         assert_eq!(err.kind(), ErrorKind::InvalidInput);
         assert!(
             err.to_string().contains("not a directory"),
@@ -126,7 +126,7 @@ mod tests {
             .to_str()
             .expect("temp SolaiAgent home path should be valid utf-8");
 
-        let resolved = find_codex_home_from_env(Some(temp_str)).expect("valid MIDCODER_HOME");
+        let resolved = find_codex_home_from_env(Some(temp_str)).expect("valid SOLAI_HOME");
         let expected = temp_home
             .path()
             .canonicalize()
@@ -138,9 +138,9 @@ mod tests {
     #[test]
     fn find_codex_home_without_env_uses_default_home_dir() {
         let resolved =
-            find_codex_home_from_env(/*codex_home_env*/ None).expect("default MIDCODER_HOME");
+            find_codex_home_from_env(/*codex_home_env*/ None).expect("default SOLAI_HOME");
         let mut expected = home_dir().expect("home dir");
-        expected.push(".midCoder");
+        expected.push(".solai");
         let expected = AbsolutePathBuf::from_absolute_path(expected).expect("absolute home");
         assert_eq!(resolved, expected);
     }

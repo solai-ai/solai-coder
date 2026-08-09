@@ -285,7 +285,7 @@
       "description": "Determine where SolaiAgent should store CLI auth credentials.",
       "oneOf": [
         {
-          "description": "Persist credentials in MIDCODER_HOME/auth.json.",
+          "description": "Persist credentials in SOLAI_HOME/auth.json.",
           "enum": [
             "file"
           ],
@@ -299,7 +299,7 @@
           "type": "string"
         },
         {
-          "description": "Use keyring when available; otherwise, fall back to a file in MIDCODER_HOME.",
+          "description": "Use keyring when available; otherwise, fall back to a file in SOLAI_HOME.",
           "enum": [
             "auto"
           ],
@@ -2130,7 +2130,7 @@
           "type": "string"
         },
         {
-          "description": "MIDCODER_HOME/.credentials.json This file will be readable to SolaiAgent and other applications running as the same user.",
+          "description": "SOLAI_HOME/.credentials.json This file will be readable to SolaiAgent and other applications running as the same user.",
           "enum": [
             "file"
           ],
@@ -3214,7 +3214,7 @@
         },
         "pet": {
           "default": null,
-          "description": "Pet id to preselect in the terminal pet picker.\n\nCustom pet ids resolve against MIDCODER_HOME/pets/<pet-id>/pet.json.",
+          "description": "Pet id to preselect in the terminal pet picker.\n\nCustom pet ids resolve against SOLAI_HOME/pets/<pet-id>/pet.json.",
           "type": "string"
         },
         "pet_anchor": {
@@ -3275,7 +3275,7 @@
         },
         "theme": {
           "default": null,
-          "description": "Syntax highlighting theme name (kebab-case).\n\nWhen set, overrides automatic light/dark theme detection. Use `/theme` in the TUI or see `$MIDCODER_HOME/themes` for custom themes.",
+          "description": "Syntax highlighting theme name (kebab-case).\n\nWhen set, overrides automatic light/dark theme detection. Use `/theme` in the TUI or see `$SOLAI_HOME/themes` for custom themes.",
           "type": "string"
         },
         "vim_mode_default": {

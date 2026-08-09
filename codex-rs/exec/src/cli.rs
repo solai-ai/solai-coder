@@ -32,7 +32,7 @@ pub struct Cli {
     #[arg(long = "ephemeral", global = true, default_value_t = false)]
     pub ephemeral: bool,
 
-    /// Do not load `$MIDCODER_HOME/config.toml`; auth still uses `MIDCODER_HOME`.
+    /// Do not load `$SOLAI_HOME/config.toml`; auth still uses `SOLAI_HOME`.
     #[arg(long = "ignore-user-config", global = true, default_value_t = false)]
     pub ignore_user_config: bool,
 

@@ -518,10 +518,10 @@ def test_source_sdk_package_declares_beta_documentation() -> None:
         "is_beta": "Development Status :: 4 - Beta" in pyproject["project"]["classifiers"],
         "license": pyproject["project"]["license"],
         "documentation": pyproject["project"]["urls"]["Documentation"],
-        "readme_is_beta": "# SolaiAgent Python SDK (Beta)" in readme,
+        "readme_is_beta": "# SOLAI Agent Python SDK (Beta)" in readme,
         "local_license_file": (ROOT / "LICENSE").exists(),
     } == {
-        "description": "Python SDK for SolaiAgent",
+        "description": "Python SDK for SOLAI Agent",
         "is_beta": True,
         "license": "Apache-2.0",
         "documentation": "https://github.com/solai-ai/solai-agent/tree/main/sdk/python/docs",
@@ -938,7 +938,7 @@ def test_default_runtime_is_resolved_from_installed_runtime_package(
 ) -> None:
     from openai_codex import client as client_module
 
-    fake_binary = tmp_path / ("codex.exe" if client_module.os.name == "nt" else "codex")
+    fake_binary = tmp_path / ("solai.exe" if client_module.os.name == "nt" else "solai")
     fake_binary.write_text("")
     ops = client_module.SolaiAgentBinResolverOps(
         installed_codex_path=lambda: fake_binary,

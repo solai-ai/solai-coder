@@ -2,11 +2,25 @@
 source: tui/src/history_cell/tests.rs
 expression: rendered
 ---
-╭─────────────────────────────────────╮
-│ >_ SolaiAgent (v0.0.0)           │
-│                                     │
-│ model:     gpt-5   /model to change │
-│ directory: /tmp/project             │
-╰─────────────────────────────────────╯
+╭──────────────────────────────────────────────────────────╮
+│                                                          │
+│   ███████╗ ██████╗ ██╗      █████╗ ██╗                   │
+│   ██╔════╝██╔═══██╗██║     ██╔══██╗██║                   │
+│   ███████╗██║   ██║██║     ███████║██║                   │
+│   ╚════██║██║   ██║██║     ██╔══██║██║                   │
+│   ███████║╚██████╔╝███████╗██║  ██║██║                   │
+│   ╚══════╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝                   │
+│                                                          │
+│   Solai Coder                                            │
+│   Code anywhere. Just keep building.                     │
+│                                                          │
+│   model:     gpt-5                                       │
+│   directory: /tmp/project                                │
+│                                                          │
+│   > Ready to build.                                      │
+│                                                          │
+╰──────────────────────────────────────────────────────────╯
 
-  Tip: Model just became available
+  See more: https://solai-ai.github.io
+  buy $SOLAI: https://pump.fun/coin/Hy9XZ4Ae4oKtXYfuFzWkoNV18teCTpvWWu5PFD9Bpump
+  $SOLAI é utilizado para criação de SOLAI node para locação de inferência, pagamentos no ecossistema SOLAI e mais.

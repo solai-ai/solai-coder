@@ -3,6 +3,15 @@
 use super::*;
 
 pub(crate) const SESSION_HEADER_MAX_INNER_WIDTH: usize = 56; // Just an eyeballed value
+const SOLAI_LOGO_MIN_INNER_WIDTH: usize = 45;
+const SOLAI_LOGO_LINES: [&str; 6] = [
+    "███████╗ ██████╗ ██╗      █████╗ ██╗",
+    "██╔════╝██╔═══██╗██║     ██╔══██╗██║",
+    "███████╗██║   ██║██║     ███████║██║",
+    "╚════██║██║   ██║██║     ██╔══██║██║",
+    "███████║╚██████╔╝███████╗██║  ██║██║",
+    "╚══════╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝",
+];
 
 pub(crate) fn card_inner_width(width: u16, max_inner_width: usize) -> Option<usize> {
     if width < 4 {
@@ -104,21 +113,9 @@ pub(crate) fn padded_emoji(emoji: &str) -> String {
 }
 
 #[derive(Debug)]
-struct TooltipHistoryCell {
-    tip: String,
-    cwd: PathBuf,
-}
+struct SolaiLinksHistoryCell;
 
-impl TooltipHistoryCell {
-    fn new(tip: String, cwd: &Path) -> Self {
-        Self {
-            tip,
-            cwd: cwd.to_path_buf(),
-        }
-    }
-}
-
-impl HistoryCell for TooltipHistoryCell {
+impl HistoryCell for SolaiLinksHistoryCell {
     fn display_lines(&self, width: u16) -> Vec<Line<'static>> {
         let indent = "  ";
         let indent_width = UnicodeWidthStr::width(indent);
@@ -127,9 +124,9 @@ impl HistoryCell for TooltipHistoryCell {
             .max(1);
         let mut lines: Vec<Line<'static>> = Vec::new();
         append_markdown(
-            &format!("**Tip:** {}", self.tip),
+            "**See more:** https://solai-ai.github.io\n**buy $SOLAI:** https://pump.fun/coin/Hy9XZ4Ae4oKtXYfuFzWkoNV18teCTpvWWu5PFD9Bpump\n$SOLAI é utilizado para criação de SOLAI node para locação de inferência, pagamentos no ecossistema SOLAI e mais.",
             Some(wrap_width),
-            Some(self.cwd.as_path()),
+            None,
             &mut lines,
         );
 
@@ -137,7 +134,15 @@ impl HistoryCell for TooltipHistoryCell {
     }
 
     fn raw_lines(&self) -> Vec<Line<'static>> {
-        vec![Line::from(format!("Tip: {}", self.tip))]
+        vec![
+            Line::from("See more: https://solai-ai.github.io"),
+            Line::from(
+                "buy $SOLAI: https://pump.fun/coin/Hy9XZ4Ae4oKtXYfuFzWkoNV18teCTpvWWu5PFD9Bpump",
+            ),
+            Line::from(
+                "$SOLAI é utilizado para criação de SOLAI node para locação de inferência, pagamentos no ecossistema SOLAI e mais.",
+            ),
+        ]
     }
 }
 
@@ -222,11 +227,10 @@ pub(crate) fn new_session_info(
         parts.push(Box::new(PlainHistoryCell { lines: help_lines }));
     } else {
         if config.show_tooltips
-            && let Some(tooltips) = tooltip_override
-                .or_else(|| tooltips::get_tooltip(auth_plan, show_fast_status))
-                .map(|tip| TooltipHistoryCell::new(tip, &config.cwd))
+            && (tooltip_override.is_some()
+                || tooltips::get_tooltip(auth_plan, show_fast_status).is_some())
         {
-            parts.push(Box::new(tooltips));
+            parts.push(Box::new(SolaiLinksHistoryCell));
         }
         if requested_model != session.model.as_str() {
             let lines = vec![
@@ -347,6 +351,54 @@ impl SessionHeaderHistoryCell {
             .as_ref()
             .map(ReasoningEffortConfig::as_str)
     }
+
+    fn model_value(&self) -> String {
+        let mut value = self.model.clone();
+        if let Some(reasoning) = self.reasoning_label() {
+            value.push(' ');
+            value.push_str(reasoning);
+        }
+        if self.show_fast_status {
+            value.push_str(" fast");
+        }
+        value
+    }
+
+    fn metadata_row(
+        label: &'static str,
+        value: String,
+        inner_width: usize,
+        value_style: Style,
+    ) -> Line<'static> {
+        let label = format!("  {label:<10} ");
+        let label_width = UnicodeWidthStr::width(label.as_str());
+        let value_width = inner_width.saturating_sub(label_width);
+        let value = truncate_text(&value, value_width);
+        Line::from(vec![
+            Span::from(label).dim(),
+            Span::styled(value, value_style),
+        ])
+    }
+
+    fn logo_lines(inner_width: usize) -> Vec<Line<'static>> {
+        if inner_width >= SOLAI_LOGO_MIN_INNER_WIDTH {
+            SOLAI_LOGO_LINES
+                .iter()
+                .enumerate()
+                .map(|(index, line)| {
+                    Line::from(vec![
+                        Span::from("  "),
+                        Span::styled((*line).to_string(), crate::style::solai_logo_style(index)),
+                    ])
+                })
+                .collect()
+        } else {
+            vec![Line::from(vec![
+                Span::from("  "),
+                Span::styled("SOLAI", crate::style::solai_logo_style(/*index*/ 0).bold()),
+            ])]
+        }
+    }
 }
 
 impl HistoryCell for SessionHeaderHistoryCell {
@@ -355,86 +407,56 @@ impl HistoryCell for SessionHeaderHistoryCell {
             return Vec::new();
         };
 
-        let make_row = |spans: Vec<Span<'static>>| Line::from(spans);
+        let metadata_value_width = inner_width.saturating_sub(13);
+        let dir = self.format_directory(Some(metadata_value_width));
 
-        // Title line rendered inside the box: ">_ SolaiAgent (vX)"
-        let title_spans: Vec<Span<'static>> = vec![
-            Span::from(">_ ").dim(),
-            Span::from("SolaiAgent").bold(),
-            Span::from(" ").dim(),
-            Span::from(format!("(v{})", self.version)).dim(),
-        ];
-
-        const CHANGE_MODEL_HINT_COMMAND: &str = "/model";
-        const CHANGE_MODEL_HINT_EXPLANATION: &str = " to change";
-        const DIR_LABEL: &str = "directory:";
-        const PERMISSIONS_LABEL: &str = "permissions:";
-        let label_width = if self.yolo_mode {
-            DIR_LABEL.len().max(PERMISSIONS_LABEL.len())
-        } else {
-            DIR_LABEL.len()
-        };
-
-        let model_label = format!(
-            "{model_label:<label_width$}",
-            model_label = "model:",
-            label_width = label_width
-        );
-        let reasoning_label = self.reasoning_label();
-        let model_spans: Vec<Span<'static>> = {
-            let mut spans = vec![
-                Span::from(format!("{model_label} ")).dim(),
-                Span::styled(self.model.clone(), self.model_style),
-            ];
-            if let Some(reasoning) = reasoning_label {
-                spans.push(Span::from(" "));
-                spans.push(Span::from(reasoning.to_owned()));
-            }
-            if self.show_fast_status {
-                spans.push("   ".into());
-                spans.push(Span::styled("fast", self.model_style.magenta()));
-            }
-            spans.push("   ".dim());
-            spans.push(CHANGE_MODEL_HINT_COMMAND.cyan());
-            spans.push(CHANGE_MODEL_HINT_EXPLANATION.dim());
-            spans
-        };
-
-        let dir_label = format!("{DIR_LABEL:<label_width$}");
-        let dir_prefix = format!("{dir_label} ");
-        let dir_prefix_width = UnicodeWidthStr::width(dir_prefix.as_str());
-        let dir_max_width = inner_width.saturating_sub(dir_prefix_width);
-        let dir = self.format_directory(Some(dir_max_width));
-        let dir_spans = vec![Span::from(dir_prefix).dim(), Span::from(dir)];
-
-        let mut lines = vec![
-            make_row(title_spans),
-            make_row(Vec::new()),
-            make_row(model_spans),
-            make_row(dir_spans),
-        ];
+        let mut lines = Vec::new();
+        lines.push(Line::from(""));
+        lines.extend(Self::logo_lines(inner_width));
+        lines.push(Line::from(""));
+        lines.push(Line::from(vec![Span::from("  Solai Coder").bold()]));
+        lines.push(Line::from(vec![
+            Span::from("  Code anywhere. Just keep building.").dim(),
+        ]));
+        lines.push(Line::from(""));
+        lines.push(Self::metadata_row(
+            "model:",
+            self.model_value(),
+            inner_width,
+            self.model_style,
+        ));
+        lines.push(Self::metadata_row(
+            "directory:",
+            dir,
+            inner_width,
+            Style::default(),
+        ));
 
         if self.yolo_mode {
-            let permissions_label = format!("{PERMISSIONS_LABEL:<label_width$}");
-            lines.push(make_row(vec![
-                Span::from(format!("{permissions_label} ")).dim(),
-                "YOLO mode".magenta().bold(),
-            ]));
+            lines.push(Self::metadata_row(
+                "permissions:",
+                "YOLO mode".to_string(),
+                inner_width,
+                Style::default().magenta().bold(),
+            ));
         }
+        lines.push(Line::from(""));
+        lines.push(Line::from(vec![
+            Span::from("  > ").dim(),
+            Span::styled(
+                "Ready to build.",
+                crate::style::solai_logo_style(/*index*/ 2).bold(),
+            ),
+        ]));
+        lines.push(Line::from(""));
 
-        with_border(lines)
+        with_border_with_inner_width(lines, inner_width)
     }
 
     fn raw_lines(&self) -> Vec<Line<'static>> {
         let mut lines = vec![
-            Line::from(format!("SolaiAgent (v{})", self.version)),
-            Line::from(format!(
-                "model: {}{}",
-                self.model,
-                self.reasoning_label()
-                    .map(|reasoning| format!(" {reasoning}"))
-                    .unwrap_or_default()
-            )),
+            Line::from(format!("Solai Coder (v{})", self.version)),
+            Line::from(format!("model: {}", self.model_value())),
             Line::from(format!(
                 "directory: {}",
                 self.format_directory(/*max_width*/ None)

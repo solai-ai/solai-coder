@@ -615,7 +615,12 @@ async fn session_info_uses_availability_nux_tooltip_override() {
     );
 
     let rendered = render_transcript(&cell).join("\n");
-    assert!(rendered.contains("Model just became available"));
+    assert!(rendered.contains("See more: https://solai-ai.github.io"));
+    assert!(rendered.contains(
+        "buy $SOLAI: https://pump.fun/coin/Hy9XZ4Ae4oKtXYfuFzWkoNV18teCTpvWWu5PFD9Bpump"
+    ));
+    assert!(rendered.contains("$SOLAI é utilizado para criação de SOLAI node para locação de inferência, pagamentos no ecossistema SOLAI e mais."));
+    assert!(!rendered.contains("Model just became available"));
 }
 
 #[tokio::test]
@@ -655,6 +660,9 @@ async fn session_info_first_event_suppresses_tooltips_and_nux() {
 
     let rendered = render_transcript(&cell).join("\n");
     assert!(!rendered.contains("Model just became available"));
+    assert!(!rendered.contains("See more: https://solai-ai.github.io"));
+    assert!(!rendered.contains("buy $SOLAI:"));
+    assert!(!rendered.contains("$SOLAI é utilizado"));
     assert!(rendered.contains("To get started"));
 }
 
@@ -674,6 +682,9 @@ async fn session_info_hides_tooltips_when_disabled() {
 
     let rendered = render_transcript(&cell).join("\n");
     assert!(!rendered.contains("Model just became available"));
+    assert!(!rendered.contains("See more: https://solai-ai.github.io"));
+    assert!(!rendered.contains("buy $SOLAI:"));
+    assert!(!rendered.contains("$SOLAI é utilizado"));
 }
 
 #[test]
@@ -1524,8 +1535,8 @@ fn session_header_includes_reasoning_level_when_present() {
         .find(|line| line.contains("model:"))
         .expect("model line");
 
-    assert!(model_line.contains("gpt-4o high   fast"));
-    assert!(model_line.contains("/model to change"));
+    assert!(model_line.contains("gpt-4o high fast"));
+    assert!(!model_line.contains("/model to change"));
 }
 
 #[test]

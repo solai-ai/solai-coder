@@ -3,10 +3,22 @@ source: tui/src/history_cell/tests.rs
 assertion_line: 1567
 expression: rendered
 ---
-╭───────────────────────────────────────╮
-│ >_ SolaiAgent (vtest)                 │
-│                                       │
-│ model:       gpt-5   /model to change │
-│ directory:   /tmp/project             │
-│ permissions: YOLO mode                │
-╰───────────────────────────────────────╯
+╭──────────────────────────────────────────────────────────╮
+│                                                          │
+│   ███████╗ ██████╗ ██╗      █████╗ ██╗                   │
+│   ██╔════╝██╔═══██╗██║     ██╔══██╗██║                   │
+│   ███████╗██║   ██║██║     ███████║██║                   │
+│   ╚════██║██║   ██║██║     ██╔══██║██║                   │
+│   ███████║╚██████╔╝███████╗██║  ██║██║                   │
+│   ╚══════╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝                   │
+│                                                          │
+│   Solai Coder                                            │
+│   Code anywhere. Just keep building.                     │
+│                                                          │
+│   model:     gpt-5                                       │
+│   directory: /tmp/project                                │
+│   permissions: YOLO mode                                 │
+│                                                          │
+│   > Ready to build.                                      │
+│                                                          │
+╰──────────────────────────────────────────────────────────╯

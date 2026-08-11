@@ -1,5 +1,7 @@
 # SOLAI Agent
 
+> 🚀 **SOLAI is currently in the Funding Phase on Pump.fun. Everyone can participate and become part of the AI + DePIN ecosystem from the beginning. 🔥 Buy $SOLAI:** https://pump.fun/coin/Hy9XZ4Ae4oKtXYfuFzWkoNV18teCTpvWWu5PFD9Bpump
+
 SOLAI Agent is a local-first AI agent and coder built around the `solai` CLI and the Rust workspace in `codex-rs/`.
 
 ## Install

@@ -619,7 +619,7 @@ async fn session_info_uses_availability_nux_tooltip_override() {
     assert!(rendered.contains(
         "buy $SOLAI: https://pump.fun/coin/Hy9XZ4Ae4oKtXYfuFzWkoNV18teCTpvWWu5PFD9Bpump"
     ));
-    assert!(rendered.contains("$SOLAI é utilizado para criação de SOLAI node para locação de inferência, pagamentos no ecossistema SOLAI e mais."));
+    assert!(rendered.contains("$SOLAI is used to create SOLAI Nodes for inference rental, power payments across the SOLAI ecosystem, and more."));
     assert!(!rendered.contains("Model just became available"));
 }
 

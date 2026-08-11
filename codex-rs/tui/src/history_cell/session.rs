@@ -124,7 +124,7 @@ impl HistoryCell for SolaiLinksHistoryCell {
             .max(1);
         let mut lines: Vec<Line<'static>> = Vec::new();
         append_markdown(
-            "**See more:** https://solai-ai.github.io\n**buy $SOLAI:** https://pump.fun/coin/Hy9XZ4Ae4oKtXYfuFzWkoNV18teCTpvWWu5PFD9Bpump\n$SOLAI é utilizado para criação de SOLAI node para locação de inferência, pagamentos no ecossistema SOLAI e mais.",
+            "**See more:** https://solai-ai.github.io\n**buy $SOLAI:** https://pump.fun/coin/Hy9XZ4Ae4oKtXYfuFzWkoNV18teCTpvWWu5PFD9Bpump\n$SOLAI is used to create SOLAI Nodes for inference rental, power payments across the SOLAI ecosystem, and more.",
             Some(wrap_width),
             None,
             &mut lines,
@@ -140,7 +140,7 @@ impl HistoryCell for SolaiLinksHistoryCell {
                 "buy $SOLAI: https://pump.fun/coin/Hy9XZ4Ae4oKtXYfuFzWkoNV18teCTpvWWu5PFD9Bpump",
             ),
             Line::from(
-                "$SOLAI é utilizado para criação de SOLAI node para locação de inferência, pagamentos no ecossistema SOLAI e mais.",
+                "$SOLAI is used to create SOLAI Nodes for inference rental, power payments across the SOLAI ecosystem, and more.",
             ),
         ]
     }

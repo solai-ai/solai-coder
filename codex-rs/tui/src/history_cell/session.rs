@@ -21,11 +21,6 @@ pub(crate) fn card_inner_width(width: u16, max_inner_width: usize) -> Option<usi
     Some(inner_width)
 }
 
-/// Render `lines` inside a border sized to the widest span in the content.
-pub(crate) fn with_border(lines: Vec<Line<'static>>) -> Vec<Line<'static>> {
-    with_border_internal(lines, /*forced_inner_width*/ None)
-}
-
 /// Render `lines` inside a border whose inner width is at least `inner_width`.
 ///
 /// This is useful when callers have already clamped their content to a
@@ -97,12 +92,33 @@ fn logo_border_line(
     right: &'static str,
     index: usize,
 ) -> Line<'static> {
-    let style = crate::style::solai_logo_style(index);
-    Line::from(vec![
-        Span::styled(left, style),
-        Span::styled(middle.to_string(), style),
-        Span::styled(right, style),
-    ])
+    let text = format!("{left}{middle}{right}");
+    logo_gradient_line(&text, index)
+}
+
+fn logo_gradient_line(text: &str, row_offset: usize) -> Line<'static> {
+    let width = UnicodeWidthStr::width(text);
+    let mut column = 0;
+    let spans = text
+        .chars()
+        .map(|ch| {
+            let ch_width = UnicodeWidthStr::width(ch.to_string().as_str()).max(1);
+            let style = if ch.is_whitespace() {
+                Style::default()
+            } else {
+                crate::style::solai_logo_gradient_style(column + row_offset, width + row_offset)
+            };
+            column += ch_width;
+            Span::styled(ch.to_string(), style)
+        })
+        .collect::<Vec<_>>();
+    Line::from(spans)
+}
+
+fn solai_logo_line(text: &str, row_offset: usize) -> Line<'static> {
+    let mut spans = vec![Span::from("  ")];
+    spans.extend(logo_gradient_line(text, row_offset).spans);
+    Line::from(spans)
 }
 
 /// Return the emoji followed by a hair space (U+200A).
@@ -385,17 +401,15 @@ impl SessionHeaderHistoryCell {
             SOLAI_LOGO_LINES
                 .iter()
                 .enumerate()
-                .map(|(index, line)| {
-                    Line::from(vec![
-                        Span::from("  "),
-                        Span::styled((*line).to_string(), crate::style::solai_logo_style(index)),
-                    ])
-                })
+                .map(|(index, line)| solai_logo_line(line, index))
                 .collect()
         } else {
             vec![Line::from(vec![
                 Span::from("  "),
-                Span::styled("SOLAI", crate::style::solai_logo_style(/*index*/ 0).bold()),
+                Span::styled(
+                    "SOLAI",
+                    crate::style::solai_logo_gradient_style(/*position*/ 0, /*width*/ 5).bold(),
+                ),
             ])]
         }
     }

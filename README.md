@@ -9,9 +9,37 @@
 
 SOLAI Agent is a local-first AI agent and coder built around the `solai` CLI and the Rust workspace in `codex-rs/`.
 
-The SOLAI protocol is under active development. The current work connects local
-agents, model providers, pricing, scheduling, signed heartbeats, and provider
-telemetry into a compute network that can grow with the ecosystem.
+## SOLAI Protocol
+
+The SOLAI protocol is under active development in this repository. It connects
+local agents, model providers, pricing, scheduling, signed heartbeats, telemetry,
+and provider discovery into a compute network for AI workloads.
+
+The current protocol work includes:
+
+- Provider identity with signed heartbeat payloads
+- Local compute provider mode through `solai provider`
+- Ollama-compatible inference routing
+- Provider pricing per model in SOLAI/hour
+- Availability scheduling for provider machines
+- Runtime metrics for CPU, memory, GPU, model inventory, queue size and job state
+- HTTP endpoints for health checks, metrics, heartbeats, jobs and chat completions
+- A separate `provider/` package so the compute layer can evolve alongside the CLI
+
+Provider commands:
+
+```bash
+solai provider enable
+solai provider status
+solai provider price SOLAI-20B 4
+solai provider schedule --from 22:00 --to 07:00
+solai provider disable
+```
+
+The protocol code currently lives in this repository with the coder CLI because
+provider registration, local execution and agent workflows are being developed
+together. As the network layer expands, the protocol can be split into dedicated
+packages or repositories without changing the user-facing `solai` command flow.
 
 ## Install
 

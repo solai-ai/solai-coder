@@ -9,6 +9,10 @@
 
 SOLAI Agent is a local-first AI agent and coder built around the `solai` CLI and the Rust workspace in `codex-rs/`.
 
+The SOLAI protocol is under active development. The current work connects local
+agents, model providers, pricing, scheduling, signed heartbeats, and provider
+telemetry into a compute network that can grow with the ecosystem.
+
 ## Install
 
 ```bash

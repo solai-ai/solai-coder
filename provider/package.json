@@ -1,0 +1,22 @@
+{
+  "name": "@solaiecosystem/provider",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "SOLAI local compute provider daemon.",
+  "bin": {
+    "solai-provider": "src/cli.js"
+  },
+  "scripts": {
+    "provider": "node src/cli.js",
+    "daemon": "node src/cli.js daemon",
+    "check": "node --check src/cli.js"
+  },
+  "dependencies": {
+    "bs58": "^6.0.0",
+    "tweetnacl": "^1.0.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

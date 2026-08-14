@@ -6,8 +6,10 @@
 > 🚀 **SOLAI is currently in the Funding Phase on Pump.fun.**
 > Everyone can participate and become part of the AI + DePIN ecosystem from the beginning. 🔥
 > Buy $SOLAI: https://pump.fun/coin/Hy9XZ4Ae4oKtXYfuFzWkoNV18teCTpvWWu5PFD9Bpump
+>
+> HOLDERS of $SOLAI will be able to rent their inference power to other SOLAI Coder users and earn $SOLAI in return.
 
-SOLAI Agent is a local-first AI agent and coder built around the `solai` CLI and the Rust workspace in `codex-rs/`.
+SOLAI Agent is a local-first AI agent and coder built around the `solai` CLI.
 
 ## SOLAI Protocol
 
@@ -131,7 +133,5 @@ SOLAI Agent is the free local agent and coder layer for the SOLAI ecosystem.
 
 ## More
 
-- [Repository](https://github.com/solai-ai/solai-agent)
-- [Configuration guide](codex-rs/CONFIGURATION.md)
-- [App server protocol](codex-rs/app-server/README.md)
-- [Core crate notes](codex-rs/core/README.md)
+- [Repository](https://github.com/solai-ai/solai-coder)
+- [SOLAI website](https://solai-ai.github.io)

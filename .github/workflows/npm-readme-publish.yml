@@ -1,0 +1,62 @@
+name: npm-readme-publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Root npm package version to publish"
+        required: true
+        default: "1.0.11"
+      native_version:
+        description: "Existing native package version to reference"
+        required: true
+        default: "1.0.10"
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
+        with:
+          node-version: 24
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Stage root package
+        env:
+          VERSION: ${{ inputs.version }}
+          NATIVE_VERSION: ${{ inputs.native_version }}
+        run: |
+          set -euo pipefail
+          rm -rf dist/npm-root
+          mkdir -p dist/npm-root/bin
+          cp README.md dist/npm-root/README.md
+          cp codex-cli/bin/solai.js dist/npm-root/bin/solai.js
+          node <<'NODE'
+          const fs = require("fs");
+          const version = process.env.VERSION;
+          const nativeVersion = process.env.NATIVE_VERSION;
+          const pkg = JSON.parse(fs.readFileSync("codex-cli/package.json", "utf8"));
+          pkg.version = version;
+          pkg.files = ["bin/solai.js"];
+          pkg.optionalDependencies = {
+            "solai-linux-x64": `npm:@solaiecosystem/solai@${nativeVersion}-linux-x64`,
+            "solai-linux-arm64": `npm:@solaiecosystem/solai@${nativeVersion}-linux-arm64`,
+            "solai-win32-x64": `npm:@solaiecosystem/solai@${nativeVersion}-win32-x64`,
+            "solai-win32-arm64": `npm:@solaiecosystem/solai@${nativeVersion}-win32-arm64`,
+            "solai-android-x64": `npm:@solaiecosystem/solai@${nativeVersion}-android-x64`,
+            "solai-android-arm64": `npm:@solaiecosystem/solai@${nativeVersion}-android-arm64`
+          };
+          fs.writeFileSync("dist/npm-root/package.json", `${JSON.stringify(pkg, null, 2)}\n`);
+          NODE
+          grep -q "HOLDERS of \$SOLAI" dist/npm-root/README.md
+          ! grep -q "codex-rs" dist/npm-root/README.md
+
+      - name: Publish root package
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish dist/npm-root --access public

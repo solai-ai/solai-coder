@@ -41,6 +41,7 @@ jobs:
           const version = process.env.VERSION;
           const nativeVersion = process.env.NATIVE_VERSION;
           const pkg = JSON.parse(fs.readFileSync("codex-cli/package.json", "utf8"));
+          pkg.name = "@solaiecosystem/solai";
           pkg.version = version;
           pkg.files = ["bin/solai.js"];
           pkg.optionalDependencies = {

@@ -14,6 +14,12 @@ npm run provider -- enable
 npm run provider -- status
 npm run provider -- price SOLAI-20B 4
 npm run provider -- schedule --from 22:00 --to 07:00
+npm run provider -- register --endpoint https://provider.example.com:9898 --name gpu-node-1
+npm run provider -- probe https://provider.example.com:9898
+npm run provider -- refresh
+npm run provider -- list --model SOLAI-20B --max-price 4 --available
+npm run provider -- quote --model SOLAI-20B --max-price 4
+npm run provider -- run --model SOLAI-20B --prompt "Explain SOLAI in one paragraph"
 npm run provider -- daemon
 npm run provider -- disable
 ```
@@ -25,7 +31,35 @@ solai provider enable
 solai provider status
 solai provider price SOLAI-20B 4
 solai provider schedule --from 22:00 --to 07:00
+solai provider register --endpoint https://provider.example.com:9898 --name gpu-node-1
+solai provider probe https://provider.example.com:9898
+solai provider refresh
+solai provider list --model SOLAI-20B --max-price 4 --available
+solai provider quote --model SOLAI-20B --max-price 4
+solai provider run --model SOLAI-20B --prompt "Explain SOLAI in one paragraph"
 solai provider disable
+```
+
+Marketplace operations are also exposed as a grouped SOLAI CLI surface:
+
+```bash
+solai marketplace register --endpoint https://provider.example.com:9898 --name gpu-node-1
+solai marketplace probe https://provider.example.com:9898
+solai marketplace refresh
+solai marketplace list --model SOLAI-20B --max-price 4 --available
+solai marketplace quote --model SOLAI-20B --max-price 4
+solai marketplace run --model SOLAI-20B --prompt "Explain SOLAI in one paragraph"
+```
+
+Inside the interactive SOLAI Agent session, the same marketplace flow is
+available through slash commands:
+
+```text
+/marketplace probe https://provider.example.com:9898
+/marketplace refresh
+/providers --model SOLAI-20B --max-price 4 --available
+/quote --model SOLAI-20B --max-price 4
+/rent --model SOLAI-20B --prompt "Explain SOLAI in one paragraph"
 ```
 
 ## Runtime
@@ -35,19 +69,34 @@ The daemon stores state under `~/.solai` by default:
 - `provider.json` - provider config, pricing, schedule and identity
 - `provider.pid` - daemon PID when started by `enable`
 - `provider.log` - operational logs
+- `provider-registry.json` - discovered marketplace providers, endpoints, signed heartbeat snapshots and reputation counters
 
 Set `SOLAI_HOME` to use another directory.
 
 Default HTTP port: `9898`.
+Default HTTP bind host: `127.0.0.1`. Set `SOLAI_PROVIDER_HOST=0.0.0.0`
+when running a network-reachable provider behind your firewall or reverse proxy.
 
 Endpoints:
 
 - `GET /health`
 - `GET /metrics`
 - `GET /heartbeat`
+- `GET /marketplace/provider`
+- `GET /marketplace/providers`
 - `GET /jobs`
 - `POST /jobs`
 - `POST /v1/chat/completions`
 
 The daemon only proxies inference requests to Ollama. It does not expose shell
 execution or filesystem mutation endpoints.
+
+## Marketplace flow
+
+Provider discovery uses signed heartbeats. `probe` fetches `/heartbeat`,
+verifies the provider signature against the advertised public key and stores the
+provider in `provider-registry.json`. `refresh` rechecks all registered endpoints
+and marks unreachable providers offline. `quote` selects the lowest-priced
+online provider matching the requested model and availability window. `run`
+submits a job to the selected provider and updates reputation counters based on
+success or failure.

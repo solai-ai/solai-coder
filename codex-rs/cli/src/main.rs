@@ -57,6 +57,7 @@ mod provider_cmd;
 mod remote_control_cmd;
 #[cfg(target_os = "windows")]
 mod sandbox_setup;
+mod solai_marketplace_cmd;
 mod state_db_recovery;
 #[cfg(not(windows))]
 mod wsl_paths;
@@ -66,6 +67,7 @@ use crate::plugin_cmd::PluginCli;
 use crate::plugin_cmd::PluginSubcommand;
 use crate::provider_cmd::ProviderCli;
 use crate::remote_control_cmd::RemoteControlCommand;
+use crate::solai_marketplace_cmd::SolaiMarketplaceCli;
 use doctor::DoctorCommand;
 use state_db_recovery as local_state_db;
 
@@ -146,6 +148,9 @@ enum Subcommand {
 
     /// Manage SOLAI compute provider mode.
     Provider(ProviderCli),
+
+    /// Discover, quote and run jobs on SOLAI compute marketplace providers.
+    Marketplace(SolaiMarketplaceCli),
 
     /// Start SolaiAgent as an MCP server (stdio).
     McpServer(McpServerCommand),
@@ -1110,6 +1115,14 @@ async fn cli_main(
                 "provider",
             )?;
             provider_cli.run().await?;
+        }
+        Some(Subcommand::Marketplace(marketplace_cli)) => {
+            reject_remote_mode_for_subcommand(
+                root_remote.as_deref(),
+                root_remote_auth_token_env.as_deref(),
+                "marketplace",
+            )?;
+            marketplace_cli.run().await?;
         }
         Some(Subcommand::AppServer(app_server_cli)) => {
             let AppServerCommand {
@@ -2136,6 +2149,7 @@ fn unsupported_subcommand_name_for_strict_config(
         Some(Subcommand::Mcp(_)) => Some("mcp"),
         Some(Subcommand::Plugin(_)) => Some("plugin"),
         Some(Subcommand::Provider(_)) => Some("provider"),
+        Some(Subcommand::Marketplace(_)) => Some("marketplace"),
         #[cfg(any(target_os = "macos", target_os = "windows"))]
         Some(Subcommand::App(_)) => Some("app"),
         Some(Subcommand::Login(_)) => Some("login"),

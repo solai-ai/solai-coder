@@ -42,6 +42,10 @@ const CONTEXT_USAGE: &str = "Usage: /context <tokens>";
 const MINI_MODEL_USAGE: &str = "Usage: /miniModel <model>";
 const RESUME_TYPE_USAGE: &str = "Usage: /resumeType [0|1|summarize|drop-history]";
 const USAGE_CHATGPT_LOGIN_REQUIRED: &str = "Sign in with ChatGPT to use /usage.";
+const MARKETPLACE_USAGE: &str =
+    "Usage: /marketplace <register|probe|refresh|list|quote|run|remove> [args]";
+const QUOTE_USAGE: &str = "Usage: /quote --model <MODEL> [--max-price <SOLAI_PER_HOUR>]";
+const RENT_USAGE: &str = "Usage: /rent --model <MODEL> (--prompt <TEXT> | --prompt-file <PATH>) [--provider <PUBLIC_KEY>] [--max-price <SOLAI_PER_HOUR>]";
 
 enum CompactCommandArg {
     AutoCompaction(bool),
@@ -284,6 +288,18 @@ impl ChatWidget {
             }
             SlashCommand::ProviderConf => {
                 self.show_provider_config_prompt();
+            }
+            SlashCommand::Marketplace => {
+                self.add_info_message(MARKETPLACE_USAGE.to_string(), None);
+            }
+            SlashCommand::Providers => {
+                self.run_marketplace_shell_command("list", "");
+            }
+            SlashCommand::Quote => {
+                self.add_info_message(QUOTE_USAGE.to_string(), None);
+            }
+            SlashCommand::Rent => {
+                self.add_info_message(RENT_USAGE.to_string(), None);
             }
             SlashCommand::Personality => {
                 self.open_personality_popup();
@@ -654,6 +670,16 @@ impl ChatWidget {
         self.bottom_pane.drain_pending_submission_state();
     }
 
+    fn run_marketplace_shell_command(&mut self, subcommand: &str, args: &str) {
+        let trimmed = args.trim();
+        let command = if trimmed.is_empty() {
+            format!("solai marketplace {subcommand}")
+        } else {
+            format!("solai marketplace {subcommand} {trimmed}")
+        };
+        self.submit_op(AppCommand::run_user_shell_command(command));
+    }
+
     fn prepared_inline_user_message(
         &mut self,
         args: String,
@@ -953,6 +979,18 @@ impl ChatWidget {
                 self.app_event_tx
                     .send(AppEvent::ConfigureProvider { address: args });
             }
+            SlashCommand::Marketplace if !trimmed.is_empty() => {
+                self.run_marketplace_shell_command(trimmed, "");
+            }
+            SlashCommand::Providers if !trimmed.is_empty() => {
+                self.run_marketplace_shell_command("list", trimmed);
+            }
+            SlashCommand::Quote if !trimmed.is_empty() => {
+                self.run_marketplace_shell_command("quote", trimmed);
+            }
+            SlashCommand::Rent if !trimmed.is_empty() => {
+                self.run_marketplace_shell_command("run", trimmed);
+            }
             SlashCommand::SandboxReadRoot if !trimmed.is_empty() => {
                 self.app_event_tx
                     .send(AppEvent::BeginWindowsSandboxGrantReadRoot { path: args });
@@ -1153,6 +1191,10 @@ impl ChatWidget {
             | SlashCommand::Review
             | SlashCommand::Model
             | SlashCommand::ProviderConf
+            | SlashCommand::Marketplace
+            | SlashCommand::Providers
+            | SlashCommand::Quote
+            | SlashCommand::Rent
             | SlashCommand::Personality
             | SlashCommand::Plan
             | SlashCommand::Goal

@@ -15,6 +15,7 @@ const SOLAI_HOME = process.env.SOLAI_HOME || path.join(os.homedir(), ".solai");
 const CONFIG_FILE = path.join(SOLAI_HOME, "provider.json");
 const PID_FILE = path.join(SOLAI_HOME, "provider.pid");
 const LOG_FILE = path.join(SOLAI_HOME, "provider.log");
+const REGISTRY_FILE = path.join(SOLAI_HOME, "provider-registry.json");
 
 const args = process.argv.slice(2);
 const command = args[0] || "help";
@@ -44,6 +45,28 @@ async function main() {
     case "schedule":
       await setSchedule(args.slice(1));
       break;
+    case "register":
+      await registerLocalProvider(args.slice(1));
+      break;
+    case "probe":
+      await probeProvider(args.slice(1));
+      break;
+    case "list":
+    case "discover":
+      await listProviders(args.slice(1));
+      break;
+    case "refresh":
+      await refreshProviders(args.slice(1));
+      break;
+    case "quote":
+      await quoteProvider(args.slice(1));
+      break;
+    case "run":
+      await runMarketplaceJob(args.slice(1));
+      break;
+    case "remove":
+      await removeProvider(args.slice(1));
+      break;
     case "daemon":
       await runDaemon();
       break;
@@ -64,10 +87,18 @@ function printHelp() {
   solai provider status
   solai provider price <MODEL> <SOLAI_PER_HOUR>
   solai provider schedule --from <HH:MM> --to <HH:MM>
+  solai provider register [--endpoint <URL>] [--name <NAME>]
+  solai provider probe <ENDPOINT> [--name <NAME>]
+  solai provider list [--model <MODEL>] [--max-price <SOLAI_PER_HOUR>] [--available] [--json]
+  solai provider refresh [--json]
+  solai provider quote --model <MODEL> [--max-price <SOLAI_PER_HOUR>] [--json]
+  solai provider run --model <MODEL> (--prompt <TEXT> | --prompt-file <PATH>) [--provider <PUBLIC_KEY>] [--max-price <SOLAI_PER_HOUR>]
+  solai provider remove <PROVIDER_PUBLIC_KEY>
   solai provider daemon
 
 Environment:
   SOLAI_HOME           config directory, default ~/.solai
+  SOLAI_PROVIDER_HOST  HTTP bind host, default 127.0.0.1
   SOLAI_PROVIDER_PORT  HTTP port, default 9898
   OLLAMA_HOST          Ollama base URL, default http://127.0.0.1:11434`);
 }
@@ -78,6 +109,7 @@ async function enableProvider() {
   const next = {
     ...config,
     enabled: true,
+    host: config.host || process.env.SOLAI_PROVIDER_HOST || "127.0.0.1",
     port: config.port || Number.parseInt(process.env.SOLAI_PROVIDER_PORT || `${DEFAULT_PORT}`, 10),
     ollamaUrl: config.ollamaUrl || process.env.OLLAMA_HOST || DEFAULT_OLLAMA_URL,
     limits: {
@@ -169,6 +201,245 @@ async function setSchedule(scheduleArgs) {
   console.log(`Provider schedule set from ${from} to ${to}.`);
 }
 
+async function registerLocalProvider(registerArgs) {
+  const config = await loadConfig();
+  if (!config.identity?.publicKey) {
+    throw new Error("Provider identity is missing. Run `solai provider enable` first.");
+  }
+
+  const endpoint = valueAfter(registerArgs, "--endpoint") || `http://${config.host || "127.0.0.1"}:${config.port || DEFAULT_PORT}`;
+  const name = valueAfter(registerArgs, "--name") || os.hostname();
+  const detected = await detectSystem().catch(() => ({ hardware: config.hardware || {}, models: config.models || [] }));
+  const heartbeat = buildHeartbeat(config, detected);
+  const record = providerRecordFromHeartbeat(heartbeat, { endpoint, name, source: "local" });
+  await upsertProviderRecord(record);
+
+  console.log(`Registered provider ${record.id}`);
+  console.log(`Endpoint: ${record.endpoint}`);
+  console.log(`Models: ${record.models.length ? record.models.map((model) => model.name).join(", ") : "none detected"}`);
+}
+
+async function probeProvider(probeArgs) {
+  const endpoint = probeArgs.find((arg) => !arg.startsWith("--"));
+  if (!endpoint) {
+    throw new Error("Usage: solai provider probe <ENDPOINT> [--name <NAME>]");
+  }
+
+  const heartbeatUrl = new URL("/heartbeat", normalizeEndpoint(endpoint));
+  const response = await fetch(heartbeatUrl, { signal: AbortSignal.timeout(3000) });
+  if (!response.ok) {
+    throw new Error(`Provider heartbeat returned ${response.status}: ${await response.text()}`);
+  }
+
+  const heartbeat = await response.json();
+  verifyHeartbeat(heartbeat);
+  const record = providerRecordFromHeartbeat(heartbeat, {
+    endpoint: normalizeEndpoint(endpoint),
+    name: valueAfter(probeArgs, "--name") || null,
+    source: "probe",
+  });
+  await upsertProviderRecord(record);
+
+  console.log(`Discovered provider ${record.id}`);
+  console.log(`Endpoint: ${record.endpoint}`);
+  console.log(`Status: ${record.status}`);
+}
+
+async function listProviders(listArgs) {
+  const registry = await loadRegistry();
+  const modelFilter = valueAfter(listArgs, "--model");
+  const maxPriceText = valueAfter(listArgs, "--max-price");
+  const maxPrice = maxPriceText == null ? null : Number(maxPriceText);
+  const availableOnly = listArgs.includes("--available");
+  const json = listArgs.includes("--json");
+
+  if (maxPriceText != null && (!Number.isFinite(maxPrice) || maxPrice < 0)) {
+    throw new Error("--max-price must be a non-negative number");
+  }
+
+  const providers = registry.providers
+    .map((provider) => ({ ...provider, availableNow: isAvailableNow(provider.schedule) }))
+    .filter((provider) => !modelFilter || provider.models.some((model) => model.name?.toLowerCase().includes(modelFilter.toLowerCase())))
+    .filter((provider) => maxPrice == null || minProviderPrice(provider, modelFilter) <= maxPrice)
+    .filter((provider) => !availableOnly || provider.availableNow)
+    .sort(compareProviders);
+
+  if (json) {
+    console.log(JSON.stringify({ providers }, null, 2));
+    return;
+  }
+
+  if (providers.length === 0) {
+    console.log("No providers found.");
+    return;
+  }
+
+  const rows = providers.map((provider) => ({
+    id: provider.id,
+    status: provider.status,
+    available: provider.availableNow ? "yes" : "no",
+    price: formatPrice(minProviderPrice(provider, modelFilter)),
+    models: provider.models.map((model) => model.name).filter(Boolean).join(", ") || "-",
+    endpoint: provider.endpoint,
+    score: provider.reputation?.score ?? 0,
+  }));
+
+  const widths = {
+    id: Math.max(8, ...rows.map((row) => row.id.length)),
+    status: Math.max(6, ...rows.map((row) => row.status.length)),
+    available: 9,
+    price: Math.max(5, ...rows.map((row) => row.price.length)),
+    score: 5,
+  };
+
+  console.log(`${"PROVIDER".padEnd(widths.id)}  ${"STATUS".padEnd(widths.status)}  AVAILABLE  ${"PRICE".padEnd(widths.price)}  SCORE  MODELS`);
+  for (const row of rows) {
+    console.log(`${row.id.padEnd(widths.id)}  ${row.status.padEnd(widths.status)}  ${row.available.padEnd(widths.available)}  ${row.price.padEnd(widths.price)}  ${String(row.score).padEnd(widths.score)}  ${row.models}`);
+    console.log(`${"".padEnd(widths.id)}  endpoint: ${row.endpoint}`);
+  }
+}
+
+async function refreshProviders(refreshArgs) {
+  const json = refreshArgs.includes("--json");
+  const registry = await loadRegistry();
+  const refreshed = [];
+
+  for (const provider of registry.providers) {
+    try {
+      const heartbeatUrl = new URL("/heartbeat", provider.endpoint);
+      const response = await fetch(heartbeatUrl, { signal: AbortSignal.timeout(3000) });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const heartbeat = await response.json();
+      verifyHeartbeat(heartbeat);
+      refreshed.push({
+        ...providerRecordFromHeartbeat(heartbeat, {
+          endpoint: provider.endpoint,
+          name: provider.name,
+          source: provider.source,
+        }),
+        reputation: provider.reputation,
+        firstSeenAt: provider.firstSeenAt,
+        lastError: null,
+      });
+    } catch (error) {
+      refreshed.push({
+        ...provider,
+        status: "OFFLINE",
+        lastError: error.message,
+        updatedAt: new Date().toISOString(),
+      });
+    }
+  }
+
+  const next = { ...registry, providers: refreshed, updatedAt: new Date().toISOString() };
+  await saveRegistry(next);
+
+  if (json) {
+    console.log(JSON.stringify(next, null, 2));
+    return;
+  }
+
+  const online = refreshed.filter((provider) => provider.status === "ONLINE").length;
+  console.log(`Refreshed ${refreshed.length} provider(s). Online: ${online}.`);
+}
+
+async function quoteProvider(quoteArgs) {
+  const model = valueAfter(quoteArgs, "--model");
+  const maxPriceText = valueAfter(quoteArgs, "--max-price");
+  const maxPrice = maxPriceText == null ? null : Number(maxPriceText);
+  const json = quoteArgs.includes("--json");
+
+  if (!model) {
+    throw new Error("Usage: solai provider quote --model <MODEL> [--max-price <SOLAI_PER_HOUR>] [--json]");
+  }
+  if (maxPriceText != null && (!Number.isFinite(maxPrice) || maxPrice < 0)) {
+    throw new Error("--max-price must be a non-negative number");
+  }
+
+  const provider = await selectProvider({ model, maxPrice, providerId: null, availableOnly: true });
+  const quote = {
+    providerId: provider.id,
+    endpoint: provider.endpoint,
+    model,
+    solaiPerHour: minProviderPrice(provider, model),
+    availableNow: isAvailableNow(provider.schedule),
+    reputation: provider.reputation,
+  };
+
+  if (json) {
+    console.log(JSON.stringify(quote, null, 2));
+    return;
+  }
+
+  console.log(`Provider: ${quote.providerId}`);
+  console.log(`Endpoint: ${quote.endpoint}`);
+  console.log(`Model: ${quote.model}`);
+  console.log(`Price: ${formatPrice(quote.solaiPerHour)} SOLAI/hour`);
+  console.log(`Available now: ${quote.availableNow ? "yes" : "no"}`);
+}
+
+async function runMarketplaceJob(runArgs) {
+  const model = valueAfter(runArgs, "--model");
+  const providerId = valueAfter(runArgs, "--provider");
+  const maxPriceText = valueAfter(runArgs, "--max-price");
+  const maxPrice = maxPriceText == null ? null : Number(maxPriceText);
+  const promptText = valueAfter(runArgs, "--prompt");
+  const promptFile = valueAfter(runArgs, "--prompt-file");
+
+  if (!model || (!promptText && !promptFile)) {
+    throw new Error("Usage: solai provider run --model <MODEL> (--prompt <TEXT> | --prompt-file <PATH>) [--provider <PUBLIC_KEY>] [--max-price <SOLAI_PER_HOUR>]");
+  }
+  if (maxPriceText != null && (!Number.isFinite(maxPrice) || maxPrice < 0)) {
+    throw new Error("--max-price must be a non-negative number");
+  }
+
+  const prompt = promptFile ? fs.readFileSync(promptFile, "utf8") : promptText;
+  const provider = await selectProvider({ model, maxPrice, providerId, availableOnly: true });
+  const startedAt = Date.now();
+
+  try {
+    const response = await fetch(new URL("/jobs", provider.endpoint), {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ model, prompt }),
+      signal: AbortSignal.timeout(300_000),
+    });
+    if (!response.ok) {
+      throw new Error(`Provider returned ${response.status}: ${await response.text()}`);
+    }
+
+    const result = await response.json();
+    await recordProviderOutcome(provider.id, true);
+    console.log(JSON.stringify({
+      providerId: provider.id,
+      endpoint: provider.endpoint,
+      elapsedMs: Date.now() - startedAt,
+      result,
+    }, null, 2));
+  } catch (error) {
+    await recordProviderOutcome(provider.id, false);
+    throw error;
+  }
+}
+
+async function removeProvider(removeArgs) {
+  const id = removeArgs[0];
+  if (!id) {
+    throw new Error("Usage: solai provider remove <PROVIDER_PUBLIC_KEY>");
+  }
+
+  const registry = await loadRegistry();
+  const nextProviders = registry.providers.filter((provider) => provider.id !== id);
+  if (nextProviders.length === registry.providers.length) {
+    throw new Error(`Provider not found: ${id}`);
+  }
+
+  await saveRegistry({ ...registry, providers: nextProviders, updatedAt: new Date().toISOString() });
+  console.log(`Removed provider ${id}.`);
+}
+
 async function runDaemon() {
   const config = await loadConfig();
   if (!config.enabled) {
@@ -201,9 +472,10 @@ async function runDaemon() {
   });
 
   const port = config.port || Number.parseInt(process.env.SOLAI_PROVIDER_PORT || `${DEFAULT_PORT}`, 10);
-  server.listen(port, "127.0.0.1", () => {
-    log(`provider daemon listening on 127.0.0.1:${port}`);
-    console.log(`SOLAI provider daemon listening on 127.0.0.1:${port}`);
+  const host = config.host || process.env.SOLAI_PROVIDER_HOST || "127.0.0.1";
+  server.listen(port, host, () => {
+    log(`provider daemon listening on ${host}:${port}`);
+    console.log(`SOLAI provider daemon listening on ${host}:${port}`);
   });
 }
 
@@ -226,6 +498,19 @@ async function routeRequest(req, res, state) {
 
   if (req.method === "GET" && url.pathname === "/heartbeat") {
     return sendJson(res, 200, buildHeartbeat(config, await detectSystem()));
+  }
+
+  if (req.method === "GET" && url.pathname === "/marketplace/provider") {
+    const heartbeat = buildHeartbeat(config, await detectSystem());
+    return sendJson(res, 200, providerRecordFromHeartbeat(heartbeat, {
+      endpoint: `http://127.0.0.1:${config.port || DEFAULT_PORT}`,
+      name: os.hostname(),
+      source: "daemon",
+    }));
+  }
+
+  if (req.method === "GET" && url.pathname === "/marketplace/providers") {
+    return sendJson(res, 200, await loadRegistry());
   }
 
   if (req.method === "GET" && url.pathname === "/jobs") {
@@ -455,6 +740,196 @@ function buildHeartbeat(config, detected) {
     payload,
     signature: config.identity ? signPayload(config.identity.secretKey, payload) : null,
   };
+}
+
+function providerRecordFromHeartbeat(heartbeat, options) {
+  const payload = heartbeat.payload || {};
+  const id = payload.provider;
+  if (!id) {
+    throw new Error("Provider heartbeat is missing provider identity");
+  }
+  const models = mergeHeartbeatModels(payload.models || [], payload.prices || {});
+
+  return {
+    id,
+    name: options.name || id,
+    endpoint: normalizeEndpoint(options.endpoint),
+    source: options.source,
+    status: payload.status || "UNKNOWN",
+    models,
+    hardware: payload.hardware || {},
+    prices: payload.prices || {},
+    schedule: payload.schedule || null,
+    capacity: payload.capacity || {},
+    heartbeat,
+    reputation: {
+      score: 0,
+      rentals: 0,
+      failures: 0,
+    },
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function mergeHeartbeatModels(models, prices) {
+  const byName = new Map();
+  for (const model of models) {
+    if (model?.name) {
+      byName.set(model.name, model);
+    }
+  }
+  for (const model of Object.keys(prices)) {
+    if (!byName.has(model)) {
+      byName.set(model, { name: model, source: "price" });
+    }
+  }
+  return Array.from(byName.values());
+}
+
+function verifyHeartbeat(heartbeat) {
+  const payload = heartbeat.payload;
+  const signature = heartbeat.signature;
+  const publicKey = payload?.provider;
+  if (!payload || !signature || !publicKey) {
+    throw new Error("Provider heartbeat is missing payload, signature or provider key");
+  }
+
+  const ok = nacl.sign.detached.verify(
+    Buffer.from(JSON.stringify(payload)),
+    Buffer.from(signature, "base64"),
+    bs58.decode(publicKey),
+  );
+  if (!ok) {
+    throw new Error(`Invalid heartbeat signature for provider ${publicKey}`);
+  }
+}
+
+async function upsertProviderRecord(record) {
+  const registry = await loadRegistry();
+  const existing = registry.providers.find((provider) => provider.id === record.id);
+  const providers = registry.providers.filter((provider) => provider.id !== record.id);
+  providers.push({
+    ...record,
+    reputation: existing?.reputation || record.reputation,
+    firstSeenAt: existing?.firstSeenAt || record.updatedAt,
+  });
+  await saveRegistry({ ...registry, providers, updatedAt: new Date().toISOString() });
+}
+
+async function selectProvider({ model, maxPrice, providerId, availableOnly }) {
+  const registry = await loadRegistry();
+  const providers = registry.providers
+    .map((provider) => ({ ...provider, availableNow: isAvailableNow(provider.schedule) }))
+    .filter((provider) => !providerId || provider.id === providerId)
+    .filter((provider) => provider.status === "ONLINE")
+    .filter((provider) => provider.models.some((candidate) => candidate.name?.toLowerCase().includes(model.toLowerCase())))
+    .filter((provider) => Number.isFinite(minProviderPrice(provider, model)))
+    .filter((provider) => maxPrice == null || minProviderPrice(provider, model) <= maxPrice)
+    .filter((provider) => !availableOnly || provider.availableNow)
+    .sort(compareProviders);
+
+  if (providers.length === 0) {
+    throw new Error("No matching online provider found. Run `solai provider refresh` or probe a provider endpoint.");
+  }
+
+  return providers[0];
+}
+
+async function recordProviderOutcome(providerId, success) {
+  const registry = await loadRegistry();
+  const providers = registry.providers.map((provider) => {
+    if (provider.id !== providerId) {
+      return provider;
+    }
+
+    const reputation = {
+      score: provider.reputation?.score || 0,
+      rentals: provider.reputation?.rentals || 0,
+      failures: provider.reputation?.failures || 0,
+    };
+    reputation.rentals += 1;
+    if (success) {
+      reputation.score += 1;
+    } else {
+      reputation.failures += 1;
+      reputation.score -= 1;
+    }
+    return { ...provider, reputation, updatedAt: new Date().toISOString() };
+  });
+  await saveRegistry({ ...registry, providers, updatedAt: new Date().toISOString() });
+}
+
+async function loadRegistry() {
+  if (!fs.existsSync(REGISTRY_FILE)) {
+    return { version: 1, providers: [], updatedAt: null };
+  }
+  const registry = JSON.parse(fs.readFileSync(REGISTRY_FILE, "utf8"));
+  return {
+    version: registry.version || 1,
+    providers: Array.isArray(registry.providers) ? registry.providers : [],
+    updatedAt: registry.updatedAt || null,
+  };
+}
+
+async function saveRegistry(registry) {
+  fs.writeFileSync(REGISTRY_FILE, `${JSON.stringify(registry, null, 2)}\n`, { mode: 0o600 });
+}
+
+function normalizeEndpoint(endpoint) {
+  const withProtocol = /^https?:\/\//i.test(endpoint) ? endpoint : `http://${endpoint}`;
+  const url = new URL(withProtocol);
+  url.pathname = url.pathname.replace(/\/+$/, "");
+  url.search = "";
+  url.hash = "";
+  return url.toString().replace(/\/$/, "");
+}
+
+function minProviderPrice(provider, modelFilter) {
+  const prices = provider.prices || {};
+  const entries = Object.entries(prices).filter(([model]) => {
+    return !modelFilter || model.toLowerCase().includes(modelFilter.toLowerCase());
+  });
+  if (entries.length === 0) {
+    return Number.POSITIVE_INFINITY;
+  }
+  return Math.min(...entries.map(([, price]) => Number(price)).filter(Number.isFinite));
+}
+
+function formatPrice(price) {
+  return Number.isFinite(price) ? `${price}` : "-";
+}
+
+function compareProviders(a, b) {
+  const aPrice = minProviderPrice(a, null);
+  const bPrice = minProviderPrice(b, null);
+  if (Number.isFinite(aPrice) && Number.isFinite(bPrice) && aPrice !== bPrice) {
+    return aPrice - bPrice;
+  }
+  if (Number.isFinite(aPrice) !== Number.isFinite(bPrice)) {
+    return Number.isFinite(aPrice) ? -1 : 1;
+  }
+  return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+}
+
+function isAvailableNow(schedule) {
+  if (!schedule?.from || !schedule?.to || !isTime(schedule.from) || !isTime(schedule.to)) {
+    return true;
+  }
+
+  const now = new Date();
+  const minutes = now.getHours() * 60 + now.getMinutes();
+  const [fromHour, fromMinute] = schedule.from.split(":").map(Number);
+  const [toHour, toMinute] = schedule.to.split(":").map(Number);
+  const from = fromHour * 60 + fromMinute;
+  const to = toHour * 60 + toMinute;
+
+  if (from === to) {
+    return true;
+  }
+  if (from < to) {
+    return minutes >= from && minutes < to;
+  }
+  return minutes >= from || minutes < to;
 }
 
 function signPayload(secretKey, payload) {

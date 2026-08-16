@@ -26,6 +26,8 @@ The current protocol work includes:
 - Availability scheduling for provider machines
 - Runtime metrics for CPU, memory, GPU, model inventory, queue size and job state
 - HTTP endpoints for health checks, metrics, heartbeats, jobs and chat completions
+- Marketplace discovery with signed heartbeat verification, provider refresh,
+  model/price/availability filters, quotes and remote job submission
 - A separate `provider/` package so the compute layer can evolve alongside the CLI
 
 Provider commands:
@@ -35,7 +37,34 @@ solai provider enable
 solai provider status
 solai provider price SOLAI-20B 4
 solai provider schedule --from 22:00 --to 07:00
+solai provider register --endpoint https://provider.example.com:9898 --name gpu-node-1
+solai provider probe https://provider.example.com:9898
+solai provider refresh
+solai provider list --model SOLAI-20B --max-price 4 --available
+solai provider quote --model SOLAI-20B --max-price 4
+solai provider run --model SOLAI-20B --prompt "Explain SOLAI in one paragraph"
 solai provider disable
+```
+
+Marketplace commands:
+
+```bash
+solai marketplace register --endpoint https://provider.example.com:9898 --name gpu-node-1
+solai marketplace probe https://provider.example.com:9898
+solai marketplace refresh
+solai marketplace list --model SOLAI-20B --max-price 4 --available
+solai marketplace quote --model SOLAI-20B --max-price 4
+solai marketplace run --model SOLAI-20B --prompt "Explain SOLAI in one paragraph"
+```
+
+Inside the interactive SOLAI Agent session, use slash commands:
+
+```text
+/marketplace probe https://provider.example.com:9898
+/marketplace refresh
+/providers --model SOLAI-20B --max-price 4 --available
+/quote --model SOLAI-20B --max-price 4
+/rent --model SOLAI-20B --prompt "Explain SOLAI in one paragraph"
 ```
 
 The protocol code currently lives in this repository with the coder CLI because

@@ -15,6 +15,10 @@ pub enum SlashCommand {
     Model,
     #[strum(to_string = "provider_conf", serialize = "provider-conf")]
     ProviderConf,
+    Marketplace,
+    Providers,
+    Quote,
+    Rent,
     Ide,
     Permissions,
     Keymap,
@@ -110,9 +114,7 @@ impl SlashCommand {
             SlashCommand::Raw => "toggle raw scrollback mode for copy-friendly terminal selection",
             SlashCommand::Diff => "show git diff (including untracked files)",
             SlashCommand::Mention => "mention a file",
-            SlashCommand::Skills => {
-                "use skills to improve how SolaiAgent performs specific tasks"
-            }
+            SlashCommand::Skills => "use skills to improve how SolaiAgent performs specific tasks",
             SlashCommand::Import => "import setup, this project, and recent chats from Claude Code",
             SlashCommand::Hooks => "view and manage lifecycle hooks",
             SlashCommand::Context => "set max context tokens before auto-compaction",
@@ -133,6 +135,10 @@ impl SlashCommand {
             SlashCommand::MemoryUpdate => "DO NOT USE",
             SlashCommand::Model => "choose what model and reasoning effort to use",
             SlashCommand::ProviderConf => "configure a local model provider",
+            SlashCommand::Marketplace => "manage SOLAI compute marketplace providers",
+            SlashCommand::Providers => "list SOLAI marketplace providers",
+            SlashCommand::Quote => "quote SOLAI compute for a model",
+            SlashCommand::Rent => "run a prompt on a SOLAI marketplace provider",
             SlashCommand::Ide => {
                 "include current selection, open files, and other context from your IDE"
             }
@@ -192,6 +198,10 @@ impl SlashCommand {
                 | SlashCommand::Resume
                 | SlashCommand::SandboxReadRoot
                 | SlashCommand::ProviderConf
+                | SlashCommand::Marketplace
+                | SlashCommand::Providers
+                | SlashCommand::Quote
+                | SlashCommand::Rent
         )
     }
 
@@ -232,6 +242,10 @@ impl SlashCommand {
             | SlashCommand::ResumeType
             | SlashCommand::Review
             | SlashCommand::Plan
+            | SlashCommand::Marketplace
+            | SlashCommand::Providers
+            | SlashCommand::Quote
+            | SlashCommand::Rent
             | SlashCommand::Clear
             | SlashCommand::Logout
             | SlashCommand::MemoryDrop

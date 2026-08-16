@@ -30,6 +30,27 @@ enum ProviderSubcommand {
     /// Set the provider availability window.
     Schedule(ProviderScheduleArgs),
 
+    /// Register the local provider in the local marketplace registry.
+    Register(ProviderRegisterArgs),
+
+    /// Probe a remote provider endpoint and add it to the marketplace registry.
+    Probe(ProviderProbeArgs),
+
+    /// List marketplace providers from the local registry.
+    List(ProviderListArgs),
+
+    /// Refresh registered providers by fetching signed heartbeats.
+    Refresh(ProviderRefreshArgs),
+
+    /// Select the best provider for a model and print a quote.
+    Quote(ProviderQuoteArgs),
+
+    /// Run a prompt on a selected marketplace provider.
+    Run(ProviderRunArgs),
+
+    /// Remove a provider from the marketplace registry.
+    Remove(ProviderRemoveArgs),
+
     /// Run the provider daemon in the foreground.
     Daemon,
 }
@@ -47,6 +68,79 @@ struct ProviderScheduleArgs {
 
     #[arg(long)]
     to: String,
+}
+
+#[derive(Debug, Parser)]
+struct ProviderRegisterArgs {
+    #[arg(long)]
+    endpoint: Option<String>,
+
+    #[arg(long)]
+    name: Option<String>,
+}
+
+#[derive(Debug, Parser)]
+struct ProviderProbeArgs {
+    endpoint: String,
+
+    #[arg(long)]
+    name: Option<String>,
+}
+
+#[derive(Debug, Parser)]
+struct ProviderListArgs {
+    #[arg(long)]
+    model: Option<String>,
+
+    #[arg(long)]
+    max_price: Option<f64>,
+
+    #[arg(long)]
+    available: bool,
+
+    #[arg(long)]
+    json: bool,
+}
+
+#[derive(Debug, Parser)]
+struct ProviderRefreshArgs {
+    #[arg(long)]
+    json: bool,
+}
+
+#[derive(Debug, Parser)]
+struct ProviderQuoteArgs {
+    #[arg(long)]
+    model: String,
+
+    #[arg(long)]
+    max_price: Option<f64>,
+
+    #[arg(long)]
+    json: bool,
+}
+
+#[derive(Debug, Parser)]
+struct ProviderRunArgs {
+    #[arg(long)]
+    model: String,
+
+    #[arg(long)]
+    prompt: Option<String>,
+
+    #[arg(long)]
+    prompt_file: Option<String>,
+
+    #[arg(long)]
+    provider: Option<String>,
+
+    #[arg(long)]
+    max_price: Option<f64>,
+}
+
+#[derive(Debug, Parser)]
+struct ProviderRemoveArgs {
+    provider_public_key: String,
 }
 
 impl ProviderCli {
@@ -72,13 +166,109 @@ impl ProviderCli {
                 args.push("--to".to_string());
                 args.push(to);
             }
+            ProviderSubcommand::Register(ProviderRegisterArgs { endpoint, name }) => {
+                args.push("register".to_string());
+                if let Some(endpoint) = endpoint {
+                    args.push("--endpoint".to_string());
+                    args.push(endpoint);
+                }
+                if let Some(name) = name {
+                    args.push("--name".to_string());
+                    args.push(name);
+                }
+            }
+            ProviderSubcommand::Probe(ProviderProbeArgs { endpoint, name }) => {
+                args.push("probe".to_string());
+                args.push(endpoint);
+                if let Some(name) = name {
+                    args.push("--name".to_string());
+                    args.push(name);
+                }
+            }
+            ProviderSubcommand::List(ProviderListArgs {
+                model,
+                max_price,
+                available,
+                json,
+            }) => {
+                args.push("list".to_string());
+                if let Some(model) = model {
+                    args.push("--model".to_string());
+                    args.push(model);
+                }
+                if let Some(max_price) = max_price {
+                    args.push("--max-price".to_string());
+                    args.push(max_price.to_string());
+                }
+                if available {
+                    args.push("--available".to_string());
+                }
+                if json {
+                    args.push("--json".to_string());
+                }
+            }
+            ProviderSubcommand::Refresh(ProviderRefreshArgs { json }) => {
+                args.push("refresh".to_string());
+                if json {
+                    args.push("--json".to_string());
+                }
+            }
+            ProviderSubcommand::Quote(ProviderQuoteArgs {
+                model,
+                max_price,
+                json,
+            }) => {
+                args.push("quote".to_string());
+                args.push("--model".to_string());
+                args.push(model);
+                if let Some(max_price) = max_price {
+                    args.push("--max-price".to_string());
+                    args.push(max_price.to_string());
+                }
+                if json {
+                    args.push("--json".to_string());
+                }
+            }
+            ProviderSubcommand::Run(ProviderRunArgs {
+                model,
+                prompt,
+                prompt_file,
+                provider,
+                max_price,
+            }) => {
+                args.push("run".to_string());
+                args.push("--model".to_string());
+                args.push(model);
+                if let Some(prompt) = prompt {
+                    args.push("--prompt".to_string());
+                    args.push(prompt);
+                }
+                if let Some(prompt_file) = prompt_file {
+                    args.push("--prompt-file".to_string());
+                    args.push(prompt_file);
+                }
+                if let Some(provider) = provider {
+                    args.push("--provider".to_string());
+                    args.push(provider);
+                }
+                if let Some(max_price) = max_price {
+                    args.push("--max-price".to_string());
+                    args.push(max_price.to_string());
+                }
+            }
+            ProviderSubcommand::Remove(ProviderRemoveArgs {
+                provider_public_key,
+            }) => {
+                args.push("remove".to_string());
+                args.push(provider_public_key);
+            }
         }
 
         run_provider_node_cli(args).await
     }
 }
 
-async fn run_provider_node_cli(args: Vec<String>) -> Result<()> {
+pub(crate) async fn run_provider_node_cli(args: Vec<String>) -> Result<()> {
     let script = resolve_provider_cli()?;
     let status = Command::new("node")
         .arg(&script)

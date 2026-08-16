@@ -53,8 +53,12 @@ solai marketplace register --endpoint https://provider.example.com:9898 --name g
 solai marketplace probe https://provider.example.com:9898
 solai marketplace refresh
 solai marketplace list --model SOLAI-20B --max-price 4 --available
-solai marketplace quote --model SOLAI-20B --max-price 4
-solai marketplace run --model SOLAI-20B --prompt "Explain SOLAI in one paragraph"
+solai marketplace quote --model SOLAI-20B --hours 1 --max-price 4
+solai marketplace rent --model SOLAI-20B --hours 1 --max-price 4
+solai marketplace leases
+solai marketplace lease <LEASE_ID>
+solai marketplace run --model SOLAI-20B --lease <LEASE_ID> --prompt "Explain SOLAI in one paragraph"
+solai marketplace release <LEASE_ID>
 ```
 
 Inside the interactive SOLAI Agent session, use slash commands:
@@ -63,8 +67,12 @@ Inside the interactive SOLAI Agent session, use slash commands:
 /marketplace probe https://provider.example.com:9898
 /marketplace refresh
 /providers --model SOLAI-20B --max-price 4 --available
-/quote --model SOLAI-20B --max-price 4
-/rent --model SOLAI-20B --prompt "Explain SOLAI in one paragraph"
+/quote --model SOLAI-20B --hours 1 --max-price 4
+/rent --model SOLAI-20B --hours 1 --max-price 4
+/leases
+/lease <LEASE_ID>
+/marketplace run --model SOLAI-20B --lease <LEASE_ID> --prompt "Explain SOLAI in one paragraph"
+/release <LEASE_ID>
 ```
 
 The protocol code currently lives in this repository with the coder CLI because

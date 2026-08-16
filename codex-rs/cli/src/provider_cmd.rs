@@ -45,6 +45,18 @@ enum ProviderSubcommand {
     /// Select the best provider for a model and print a quote.
     Quote(ProviderQuoteArgs),
 
+    /// Reserve an exclusive provider lease for a fixed number of hours.
+    Rent(ProviderRentArgs),
+
+    /// List local marketplace leases.
+    Leases(ProviderLeasesArgs),
+
+    /// Show one local marketplace lease.
+    Lease(ProviderLeaseArgs),
+
+    /// Release an active marketplace lease.
+    Release(ProviderReleaseArgs),
+
     /// Run a prompt on a selected marketplace provider.
     Run(ProviderRunArgs),
 
@@ -114,10 +126,50 @@ struct ProviderQuoteArgs {
     model: String,
 
     #[arg(long)]
+    hours: Option<u64>,
+
+    #[arg(long)]
     max_price: Option<f64>,
 
     #[arg(long)]
     json: bool,
+}
+
+#[derive(Debug, Parser)]
+struct ProviderRentArgs {
+    #[arg(long)]
+    model: String,
+
+    #[arg(long)]
+    hours: u64,
+
+    #[arg(long)]
+    provider: Option<String>,
+
+    #[arg(long)]
+    max_price: Option<f64>,
+
+    #[arg(long)]
+    json: bool,
+}
+
+#[derive(Debug, Parser)]
+struct ProviderLeasesArgs {
+    #[arg(long)]
+    json: bool,
+}
+
+#[derive(Debug, Parser)]
+struct ProviderLeaseArgs {
+    lease_id: String,
+
+    #[arg(long)]
+    json: bool,
+}
+
+#[derive(Debug, Parser)]
+struct ProviderReleaseArgs {
+    lease_id: String,
 }
 
 #[derive(Debug, Parser)]
@@ -130,6 +182,9 @@ struct ProviderRunArgs {
 
     #[arg(long)]
     prompt_file: Option<String>,
+
+    #[arg(long)]
+    lease: Option<String>,
 
     #[arg(long)]
     provider: Option<String>,
@@ -215,12 +270,17 @@ impl ProviderCli {
             }
             ProviderSubcommand::Quote(ProviderQuoteArgs {
                 model,
+                hours,
                 max_price,
                 json,
             }) => {
                 args.push("quote".to_string());
                 args.push("--model".to_string());
                 args.push(model);
+                if let Some(hours) = hours {
+                    args.push("--hours".to_string());
+                    args.push(hours.to_string());
+                }
                 if let Some(max_price) = max_price {
                     args.push("--max-price".to_string());
                     args.push(max_price.to_string());
@@ -229,10 +289,52 @@ impl ProviderCli {
                     args.push("--json".to_string());
                 }
             }
+            ProviderSubcommand::Rent(ProviderRentArgs {
+                model,
+                hours,
+                provider,
+                max_price,
+                json,
+            }) => {
+                args.push("rent".to_string());
+                args.push("--model".to_string());
+                args.push(model);
+                args.push("--hours".to_string());
+                args.push(hours.to_string());
+                if let Some(provider) = provider {
+                    args.push("--provider".to_string());
+                    args.push(provider);
+                }
+                if let Some(max_price) = max_price {
+                    args.push("--max-price".to_string());
+                    args.push(max_price.to_string());
+                }
+                if json {
+                    args.push("--json".to_string());
+                }
+            }
+            ProviderSubcommand::Leases(ProviderLeasesArgs { json }) => {
+                args.push("leases".to_string());
+                if json {
+                    args.push("--json".to_string());
+                }
+            }
+            ProviderSubcommand::Lease(ProviderLeaseArgs { lease_id, json }) => {
+                args.push("lease".to_string());
+                args.push(lease_id);
+                if json {
+                    args.push("--json".to_string());
+                }
+            }
+            ProviderSubcommand::Release(ProviderReleaseArgs { lease_id }) => {
+                args.push("release".to_string());
+                args.push(lease_id);
+            }
             ProviderSubcommand::Run(ProviderRunArgs {
                 model,
                 prompt,
                 prompt_file,
+                lease,
                 provider,
                 max_price,
             }) => {
@@ -246,6 +348,10 @@ impl ProviderCli {
                 if let Some(prompt_file) = prompt_file {
                     args.push("--prompt-file".to_string());
                     args.push(prompt_file);
+                }
+                if let Some(lease) = lease {
+                    args.push("--lease".to_string());
+                    args.push(lease);
                 }
                 if let Some(provider) = provider {
                     args.push("--provider".to_string());

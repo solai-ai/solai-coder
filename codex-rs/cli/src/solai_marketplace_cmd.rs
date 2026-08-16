@@ -27,6 +27,18 @@ enum SolaiMarketplaceSubcommand {
     /// Select the best provider for a model and print a quote.
     Quote(QuoteArgs),
 
+    /// Reserve an exclusive provider lease for a fixed number of hours.
+    Rent(RentArgs),
+
+    /// List local marketplace leases.
+    Leases(LeasesArgs),
+
+    /// Show one local marketplace lease.
+    Lease(LeaseArgs),
+
+    /// Release an active marketplace lease.
+    Release(ReleaseArgs),
+
     /// Run a prompt on a selected marketplace provider.
     Run(RunArgs),
 
@@ -78,10 +90,50 @@ struct QuoteArgs {
     model: String,
 
     #[arg(long)]
+    hours: Option<u64>,
+
+    #[arg(long)]
     max_price: Option<f64>,
 
     #[arg(long)]
     json: bool,
+}
+
+#[derive(Debug, Parser)]
+struct RentArgs {
+    #[arg(long)]
+    model: String,
+
+    #[arg(long)]
+    hours: u64,
+
+    #[arg(long)]
+    provider: Option<String>,
+
+    #[arg(long)]
+    max_price: Option<f64>,
+
+    #[arg(long)]
+    json: bool,
+}
+
+#[derive(Debug, Parser)]
+struct LeasesArgs {
+    #[arg(long)]
+    json: bool,
+}
+
+#[derive(Debug, Parser)]
+struct LeaseArgs {
+    lease_id: String,
+
+    #[arg(long)]
+    json: bool,
+}
+
+#[derive(Debug, Parser)]
+struct ReleaseArgs {
+    lease_id: String,
 }
 
 #[derive(Debug, Parser)]
@@ -94,6 +146,9 @@ struct RunArgs {
 
     #[arg(long)]
     prompt_file: Option<String>,
+
+    #[arg(long)]
+    lease: Option<String>,
 
     #[arg(long)]
     provider: Option<String>,
@@ -148,12 +203,17 @@ impl SolaiMarketplaceCli {
             }
             SolaiMarketplaceSubcommand::Quote(QuoteArgs {
                 model,
+                hours,
                 max_price,
                 json,
             }) => {
                 args.push("quote".to_string());
                 args.push("--model".to_string());
                 args.push(model);
+                if let Some(hours) = hours {
+                    args.push("--hours".to_string());
+                    args.push(hours.to_string());
+                }
                 if let Some(max_price) = max_price {
                     args.push("--max-price".to_string());
                     args.push(max_price.to_string());
@@ -162,10 +222,49 @@ impl SolaiMarketplaceCli {
                     args.push("--json".to_string());
                 }
             }
+            SolaiMarketplaceSubcommand::Rent(RentArgs {
+                model,
+                hours,
+                provider,
+                max_price,
+                json,
+            }) => {
+                args.push("rent".to_string());
+                args.push("--model".to_string());
+                args.push(model);
+                args.push("--hours".to_string());
+                args.push(hours.to_string());
+                push_optional_flag(&mut args, "--provider", provider);
+                if let Some(max_price) = max_price {
+                    args.push("--max-price".to_string());
+                    args.push(max_price.to_string());
+                }
+                if json {
+                    args.push("--json".to_string());
+                }
+            }
+            SolaiMarketplaceSubcommand::Leases(LeasesArgs { json }) => {
+                args.push("leases".to_string());
+                if json {
+                    args.push("--json".to_string());
+                }
+            }
+            SolaiMarketplaceSubcommand::Lease(LeaseArgs { lease_id, json }) => {
+                args.push("lease".to_string());
+                args.push(lease_id);
+                if json {
+                    args.push("--json".to_string());
+                }
+            }
+            SolaiMarketplaceSubcommand::Release(ReleaseArgs { lease_id }) => {
+                args.push("release".to_string());
+                args.push(lease_id);
+            }
             SolaiMarketplaceSubcommand::Run(RunArgs {
                 model,
                 prompt,
                 prompt_file,
+                lease,
                 provider,
                 max_price,
             }) => {
@@ -174,6 +273,7 @@ impl SolaiMarketplaceCli {
                 args.push(model);
                 push_optional_flag(&mut args, "--prompt", prompt);
                 push_optional_flag(&mut args, "--prompt-file", prompt_file);
+                push_optional_flag(&mut args, "--lease", lease);
                 push_optional_flag(&mut args, "--provider", provider);
                 if let Some(max_price) = max_price {
                     args.push("--max-price".to_string());

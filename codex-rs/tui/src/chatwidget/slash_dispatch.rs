@@ -42,10 +42,12 @@ const CONTEXT_USAGE: &str = "Usage: /context <tokens>";
 const MINI_MODEL_USAGE: &str = "Usage: /miniModel <model>";
 const RESUME_TYPE_USAGE: &str = "Usage: /resumeType [0|1|summarize|drop-history]";
 const USAGE_CHATGPT_LOGIN_REQUIRED: &str = "Sign in with ChatGPT to use /usage.";
-const MARKETPLACE_USAGE: &str =
-    "Usage: /marketplace <register|probe|refresh|list|quote|run|remove> [args]";
-const QUOTE_USAGE: &str = "Usage: /quote --model <MODEL> [--max-price <SOLAI_PER_HOUR>]";
-const RENT_USAGE: &str = "Usage: /rent --model <MODEL> (--prompt <TEXT> | --prompt-file <PATH>) [--provider <PUBLIC_KEY>] [--max-price <SOLAI_PER_HOUR>]";
+const MARKETPLACE_USAGE: &str = "Usage: /marketplace <register|probe|refresh|list|quote|rent|leases|lease|release|run|remove> [args]";
+const QUOTE_USAGE: &str =
+    "Usage: /quote --model <MODEL> [--hours <HOURS>] [--max-price <SOLAI_PER_HOUR>]";
+const RENT_USAGE: &str = "Usage: /rent --model <MODEL> --hours <HOURS> [--provider <PUBLIC_KEY>] [--max-price <SOLAI_PER_HOUR>]";
+const LEASE_USAGE: &str = "Usage: /lease <LEASE_ID>";
+const RELEASE_USAGE: &str = "Usage: /release <LEASE_ID>";
 
 enum CompactCommandArg {
     AutoCompaction(bool),
@@ -300,6 +302,15 @@ impl ChatWidget {
             }
             SlashCommand::Rent => {
                 self.add_info_message(RENT_USAGE.to_string(), None);
+            }
+            SlashCommand::Leases => {
+                self.run_marketplace_shell_command("leases", "");
+            }
+            SlashCommand::Lease => {
+                self.add_info_message(LEASE_USAGE.to_string(), None);
+            }
+            SlashCommand::Release => {
+                self.add_info_message(RELEASE_USAGE.to_string(), None);
             }
             SlashCommand::Personality => {
                 self.open_personality_popup();
@@ -989,7 +1000,16 @@ impl ChatWidget {
                 self.run_marketplace_shell_command("quote", trimmed);
             }
             SlashCommand::Rent if !trimmed.is_empty() => {
-                self.run_marketplace_shell_command("run", trimmed);
+                self.run_marketplace_shell_command("rent", trimmed);
+            }
+            SlashCommand::Leases if !trimmed.is_empty() => {
+                self.run_marketplace_shell_command("leases", trimmed);
+            }
+            SlashCommand::Lease if !trimmed.is_empty() => {
+                self.run_marketplace_shell_command("lease", trimmed);
+            }
+            SlashCommand::Release if !trimmed.is_empty() => {
+                self.run_marketplace_shell_command("release", trimmed);
             }
             SlashCommand::SandboxReadRoot if !trimmed.is_empty() => {
                 self.app_event_tx
@@ -1195,6 +1215,9 @@ impl ChatWidget {
             | SlashCommand::Providers
             | SlashCommand::Quote
             | SlashCommand::Rent
+            | SlashCommand::Leases
+            | SlashCommand::Lease
+            | SlashCommand::Release
             | SlashCommand::Personality
             | SlashCommand::Plan
             | SlashCommand::Goal

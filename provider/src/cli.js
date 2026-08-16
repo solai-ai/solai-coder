@@ -16,6 +16,9 @@ const CONFIG_FILE = path.join(SOLAI_HOME, "provider.json");
 const PID_FILE = path.join(SOLAI_HOME, "provider.pid");
 const LOG_FILE = path.join(SOLAI_HOME, "provider.log");
 const REGISTRY_FILE = path.join(SOLAI_HOME, "provider-registry.json");
+const PROVIDER_LEASES_FILE = path.join(SOLAI_HOME, "provider-leases.json");
+const MARKETPLACE_LEASES_FILE = path.join(SOLAI_HOME, "marketplace-leases.json");
+const MARKETPLACE_IDENTITY_FILE = path.join(SOLAI_HOME, "marketplace-client.json");
 
 const args = process.argv.slice(2);
 const command = args[0] || "help";
@@ -61,6 +64,18 @@ async function main() {
     case "quote":
       await quoteProvider(args.slice(1));
       break;
+    case "rent":
+      await rentProvider(args.slice(1));
+      break;
+    case "leases":
+      await listMarketplaceLeases(args.slice(1));
+      break;
+    case "lease":
+      await showMarketplaceLease(args.slice(1));
+      break;
+    case "release":
+      await releaseMarketplaceLease(args.slice(1));
+      break;
     case "run":
       await runMarketplaceJob(args.slice(1));
       break;
@@ -91,8 +106,12 @@ function printHelp() {
   solai provider probe <ENDPOINT> [--name <NAME>]
   solai provider list [--model <MODEL>] [--max-price <SOLAI_PER_HOUR>] [--available] [--json]
   solai provider refresh [--json]
-  solai provider quote --model <MODEL> [--max-price <SOLAI_PER_HOUR>] [--json]
-  solai provider run --model <MODEL> (--prompt <TEXT> | --prompt-file <PATH>) [--provider <PUBLIC_KEY>] [--max-price <SOLAI_PER_HOUR>]
+  solai provider quote --model <MODEL> [--hours <HOURS>] [--max-price <SOLAI_PER_HOUR>] [--json]
+  solai provider rent --model <MODEL> --hours <HOURS> [--provider <PUBLIC_KEY>] [--max-price <SOLAI_PER_HOUR>] [--json]
+  solai provider leases [--json]
+  solai provider lease <LEASE_ID> [--json]
+  solai provider release <LEASE_ID>
+  solai provider run --model <MODEL> (--prompt <TEXT> | --prompt-file <PATH>) [--lease <LEASE_ID>] [--provider <PUBLIC_KEY>] [--max-price <SOLAI_PER_HOUR>]
   solai provider remove <PROVIDER_PUBLIC_KEY>
   solai provider daemon
 
@@ -347,12 +366,13 @@ async function refreshProviders(refreshArgs) {
 
 async function quoteProvider(quoteArgs) {
   const model = valueAfter(quoteArgs, "--model");
+  const hours = parseHours(valueAfter(quoteArgs, "--hours") || "1");
   const maxPriceText = valueAfter(quoteArgs, "--max-price");
   const maxPrice = maxPriceText == null ? null : Number(maxPriceText);
   const json = quoteArgs.includes("--json");
 
-  if (!model) {
-    throw new Error("Usage: solai provider quote --model <MODEL> [--max-price <SOLAI_PER_HOUR>] [--json]");
+  if (!model || !Number.isFinite(hours)) {
+    throw new Error("Usage: solai provider quote --model <MODEL> [--hours <HOURS>] [--max-price <SOLAI_PER_HOUR>] [--json]");
   }
   if (maxPriceText != null && (!Number.isFinite(maxPrice) || maxPrice < 0)) {
     throw new Error("--max-price must be a non-negative number");
@@ -364,6 +384,8 @@ async function quoteProvider(quoteArgs) {
     endpoint: provider.endpoint,
     model,
     solaiPerHour: minProviderPrice(provider, model),
+    hours,
+    totalSolai: minProviderPrice(provider, model) * hours,
     availableNow: isAvailableNow(provider.schedule),
     reputation: provider.reputation,
   };
@@ -377,11 +399,138 @@ async function quoteProvider(quoteArgs) {
   console.log(`Endpoint: ${quote.endpoint}`);
   console.log(`Model: ${quote.model}`);
   console.log(`Price: ${formatPrice(quote.solaiPerHour)} SOLAI/hour`);
+  console.log(`Hours: ${quote.hours}`);
+  console.log(`Total: ${formatPrice(quote.totalSolai)} SOLAI`);
   console.log(`Available now: ${quote.availableNow ? "yes" : "no"}`);
+}
+
+async function rentProvider(rentArgs) {
+  const model = valueAfter(rentArgs, "--model");
+  const hours = parseHours(valueAfter(rentArgs, "--hours"));
+  const providerId = valueAfter(rentArgs, "--provider");
+  const maxPriceText = valueAfter(rentArgs, "--max-price");
+  const maxPrice = maxPriceText == null ? null : Number(maxPriceText);
+  const json = rentArgs.includes("--json");
+
+  if (!model || !Number.isFinite(hours)) {
+    throw new Error("Usage: solai provider rent --model <MODEL> --hours <HOURS> [--provider <PUBLIC_KEY>] [--max-price <SOLAI_PER_HOUR>] [--json]");
+  }
+  if (maxPriceText != null && (!Number.isFinite(maxPrice) || maxPrice < 0)) {
+    throw new Error("--max-price must be a non-negative number");
+  }
+
+  const renter = await loadMarketplaceIdentity();
+  const provider = await selectProvider({ model, maxPrice, providerId, availableOnly: true });
+  const response = await fetch(new URL("/leases", provider.endpoint), {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ renter: renter.publicKey, model, hours }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!response.ok) {
+    throw new Error(`Provider lease request returned ${response.status}: ${await response.text()}`);
+  }
+
+  const lease = await response.json();
+  const localLease = {
+    ...lease,
+    providerId: provider.id,
+    endpoint: provider.endpoint,
+    renter: renter.publicKey,
+    status: "ACTIVE",
+    updatedAt: new Date().toISOString(),
+  };
+  await upsertMarketplaceLease(localLease);
+
+  if (json) {
+    console.log(JSON.stringify(publicLocalLease(localLease), null, 2));
+    return;
+  }
+
+  console.log(`Lease: ${localLease.id}`);
+  console.log(`Provider: ${localLease.providerId}`);
+  console.log(`Model: ${localLease.model}`);
+  console.log(`Hours: ${localLease.hours}`);
+  console.log(`Total: ${formatPrice(localLease.totalSolai)} SOLAI`);
+  console.log(`Expires: ${localLease.expiresAt}`);
+}
+
+async function listMarketplaceLeases(leaseArgs) {
+  const json = leaseArgs.includes("--json");
+  const leases = (await loadMarketplaceLeases()).leases.map((lease) => ({
+    ...publicLocalLease(lease),
+    activeNow: isLeaseActive(lease),
+  }));
+
+  if (json) {
+    console.log(JSON.stringify({ leases }, null, 2));
+    return;
+  }
+
+  if (leases.length === 0) {
+    console.log("No marketplace leases found.");
+    return;
+  }
+
+  console.log(`${"LEASE".padEnd(16)}  ${"STATUS".padEnd(8)}  MODEL  EXPIRES`);
+  for (const lease of leases) {
+    console.log(`${lease.id.padEnd(16)}  ${(lease.activeNow ? "ACTIVE" : lease.status || "EXPIRED").padEnd(8)}  ${lease.model}  ${lease.expiresAt}`);
+  }
+}
+
+async function showMarketplaceLease(leaseArgs) {
+  const leaseId = leaseArgs.find((arg) => !arg.startsWith("--"));
+  const json = leaseArgs.includes("--json");
+  if (!leaseId) {
+    throw new Error("Usage: solai provider lease <LEASE_ID> [--json]");
+  }
+
+  const lease = await findMarketplaceLease(leaseId);
+  if (!lease) {
+    throw new Error(`Lease not found: ${leaseId}`);
+  }
+
+  const output = { ...publicLocalLease(lease), activeNow: isLeaseActive(lease) };
+  if (json) {
+    console.log(JSON.stringify(output, null, 2));
+    return;
+  }
+
+  console.log(`Lease: ${output.id}`);
+  console.log(`Provider: ${output.providerId}`);
+  console.log(`Endpoint: ${output.endpoint}`);
+  console.log(`Model: ${output.model}`);
+  console.log(`Status: ${output.activeNow ? "ACTIVE" : output.status || "EXPIRED"}`);
+  console.log(`Expires: ${output.expiresAt}`);
+}
+
+async function releaseMarketplaceLease(leaseArgs) {
+  const leaseId = leaseArgs[0];
+  if (!leaseId) {
+    throw new Error("Usage: solai provider release <LEASE_ID>");
+  }
+
+  const lease = await findMarketplaceLease(leaseId);
+  if (!lease) {
+    throw new Error(`Lease not found: ${leaseId}`);
+  }
+
+  const response = await fetch(new URL(`/leases/${lease.id}`, lease.endpoint), {
+    method: "DELETE",
+    headers: leaseHeaders(lease),
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!response.ok) {
+    throw new Error(`Provider lease release returned ${response.status}: ${await response.text()}`);
+  }
+
+  await markMarketplaceLeaseReleased(lease.id);
+  console.log(`Released lease ${lease.id}.`);
 }
 
 async function runMarketplaceJob(runArgs) {
   const model = valueAfter(runArgs, "--model");
+  const leaseId = valueAfter(runArgs, "--lease");
   const providerId = valueAfter(runArgs, "--provider");
   const maxPriceText = valueAfter(runArgs, "--max-price");
   const maxPrice = maxPriceText == null ? null : Number(maxPriceText);
@@ -389,20 +538,34 @@ async function runMarketplaceJob(runArgs) {
   const promptFile = valueAfter(runArgs, "--prompt-file");
 
   if (!model || (!promptText && !promptFile)) {
-    throw new Error("Usage: solai provider run --model <MODEL> (--prompt <TEXT> | --prompt-file <PATH>) [--provider <PUBLIC_KEY>] [--max-price <SOLAI_PER_HOUR>]");
+    throw new Error("Usage: solai provider run --model <MODEL> (--prompt <TEXT> | --prompt-file <PATH>) [--lease <LEASE_ID>] [--provider <PUBLIC_KEY>] [--max-price <SOLAI_PER_HOUR>]");
   }
   if (maxPriceText != null && (!Number.isFinite(maxPrice) || maxPrice < 0)) {
     throw new Error("--max-price must be a non-negative number");
   }
 
   const prompt = promptFile ? fs.readFileSync(promptFile, "utf8") : promptText;
-  const provider = await selectProvider({ model, maxPrice, providerId, availableOnly: true });
+  const lease = leaseId
+    ? await findMarketplaceLease(leaseId)
+    : await findActiveMarketplaceLease({ model, providerId });
+  if (leaseId && !lease) {
+    throw new Error(`Lease not found: ${leaseId}`);
+  }
+  if (lease && !isLeaseActive(lease)) {
+    throw new Error(`Lease is not active: ${lease.id}`);
+  }
+  const provider = lease
+    ? { id: lease.providerId, endpoint: lease.endpoint }
+    : await selectProvider({ model, maxPrice, providerId, availableOnly: true });
   const startedAt = Date.now();
 
   try {
     const response = await fetch(new URL("/jobs", provider.endpoint), {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        ...(lease ? leaseHeaders(lease) : {}),
+      },
       body: JSON.stringify({ model, prompt }),
       signal: AbortSignal.timeout(300_000),
     });
@@ -415,6 +578,7 @@ async function runMarketplaceJob(runArgs) {
     console.log(JSON.stringify({
       providerId: provider.id,
       endpoint: provider.endpoint,
+      leaseId: lease?.id || null,
       elapsedMs: Date.now() - startedAt,
       result,
     }, null, 2));
@@ -460,6 +624,7 @@ async function runDaemon() {
     failed: 0,
     startedAt: new Date().toISOString(),
     config,
+    leases: await loadProviderLeases(),
   };
 
   const server = http.createServer(async (req, res) => {
@@ -483,6 +648,7 @@ async function routeRequest(req, res, state) {
   const url = new URL(req.url, "http://127.0.0.1");
   const config = await loadConfig();
   state.config = config;
+  state.leases = await loadProviderLeases();
 
   if (!config.enabled) {
     return sendJson(res, 503, { error: "provider disabled" });
@@ -523,6 +689,28 @@ async function routeRequest(req, res, state) {
     });
   }
 
+  if (req.method === "GET" && url.pathname === "/leases") {
+    const leases = await loadProviderLeases();
+    return sendJson(res, 200, publicLeases(leases));
+  }
+
+  if (req.method === "POST" && url.pathname === "/leases") {
+    const body = await readBody(req, 32_000);
+    const payload = JSON.parse(body || "{}");
+    return createProviderLease(res, state, payload);
+  }
+
+  const leaseMatch = url.pathname.match(/^\/leases\/([^/]+)$/);
+  if (leaseMatch && req.method === "GET") {
+    const leases = await loadProviderLeases();
+    const lease = leases.leases.find((candidate) => candidate.id === leaseMatch[1]);
+    return lease ? sendJson(res, 200, publicLease(lease)) : sendJson(res, 404, { error: "lease not found" });
+  }
+
+  if (leaseMatch && req.method === "DELETE") {
+    return releaseProviderLease(res, req, leaseMatch[1]);
+  }
+
   if (req.method === "POST" && url.pathname === "/jobs") {
     const body = await readBody(req, config.limits?.maxPromptChars || 120_000);
     const payload = JSON.parse(body || "{}");
@@ -530,6 +718,7 @@ async function routeRequest(req, res, state) {
       model: payload.model,
       prompt: payload.prompt,
       stream: false,
+      leaseAuth: readLeaseAuth(req),
     });
   }
 
@@ -543,6 +732,7 @@ async function routeRequest(req, res, state) {
       model: payload.model,
       prompt,
       stream: false,
+      leaseAuth: readLeaseAuth(req),
       openAiShape: true,
     });
   }
@@ -553,9 +743,18 @@ async function routeRequest(req, res, state) {
 function enqueueJob(res, state, jobInput) {
   const limits = state.config.limits || {};
   const maxQueueSize = limits.maxQueueSize || 32;
+  const activeLease = activeProviderLease(state.leases);
 
   if (!jobInput.model || !jobInput.prompt) {
     return sendJson(res, 400, { error: "model and prompt are required" });
+  }
+
+  if (activeLease && !leaseAllowsJob(activeLease, jobInput.leaseAuth)) {
+    return sendJson(res, 423, {
+      error: "provider is locked by an active lease",
+      leaseId: activeLease.id,
+      expiresAt: activeLease.expiresAt,
+    });
   }
 
   if (state.jobs.length >= maxQueueSize) {
@@ -857,6 +1056,231 @@ async function recordProviderOutcome(providerId, success) {
     return { ...provider, reputation, updatedAt: new Date().toISOString() };
   });
   await saveRegistry({ ...registry, providers, updatedAt: new Date().toISOString() });
+}
+
+async function createProviderLease(res, state, payload) {
+  const model = payload.model;
+  const renter = payload.renter;
+  const hours = parseHours(payload.hours);
+  if (!model || !renter || !Number.isFinite(hours)) {
+    return sendJson(res, 400, { error: "model, renter and positive integer hours are required" });
+  }
+
+  const activeLease = activeProviderLease(state.leases);
+  if (activeLease) {
+    return sendJson(res, 423, {
+      error: "provider already has an active exclusive lease",
+      leaseId: activeLease.id,
+      expiresAt: activeLease.expiresAt,
+    });
+  }
+
+  const pricePerHour = Number(state.config.prices?.[model]);
+  if (!Number.isFinite(pricePerHour)) {
+    return sendJson(res, 400, { error: `provider has no SOLAI/hour price for ${model}` });
+  }
+
+  const startsAt = new Date();
+  const expiresAt = new Date(startsAt.getTime() + hours * 60 * 60 * 1000);
+  const lease = {
+    id: cryptoId(),
+    provider: state.config.identity?.publicKey || null,
+    renter,
+    model,
+    hours,
+    pricePerHour,
+    totalSolai: pricePerHour * hours,
+    startsAt: startsAt.toISOString(),
+    expiresAt: expiresAt.toISOString(),
+    status: "ACTIVE",
+    authToken: randomBytes(32).toString("base64url"),
+    createdAt: startsAt.toISOString(),
+    updatedAt: startsAt.toISOString(),
+  };
+
+  const leases = await loadProviderLeases();
+  leases.leases = expireLeases(leases.leases).concat(lease);
+  leases.updatedAt = new Date().toISOString();
+  await saveProviderLeases(leases);
+  state.leases = leases;
+  log(`created lease ${lease.id} renter=${renter} model=${model} hours=${hours}`);
+
+  return sendJson(res, 201, publicLease(lease, { includeAuthToken: true }));
+}
+
+async function releaseProviderLease(res, req, leaseId) {
+  const auth = readLeaseAuth(req);
+  const leases = await loadProviderLeases();
+  const lease = leases.leases.find((candidate) => candidate.id === leaseId);
+  if (!lease) {
+    return sendJson(res, 404, { error: "lease not found" });
+  }
+  if (!leaseAllowsJob(lease, auth)) {
+    return sendJson(res, 403, { error: "lease token is invalid" });
+  }
+
+  const updated = { ...lease, status: "RELEASED", releasedAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+  leases.leases = leases.leases.map((candidate) => candidate.id === lease.id ? updated : candidate);
+  leases.updatedAt = new Date().toISOString();
+  await saveProviderLeases(leases);
+  log(`released lease ${lease.id}`);
+  return sendJson(res, 200, publicLease(updated));
+}
+
+async function loadMarketplaceIdentity() {
+  if (fs.existsSync(MARKETPLACE_IDENTITY_FILE)) {
+    return JSON.parse(fs.readFileSync(MARKETPLACE_IDENTITY_FILE, "utf8"));
+  }
+  const identity = createIdentity();
+  fs.writeFileSync(MARKETPLACE_IDENTITY_FILE, `${JSON.stringify(identity, null, 2)}\n`, { mode: 0o600 });
+  return identity;
+}
+
+async function loadMarketplaceLeases() {
+  if (!fs.existsSync(MARKETPLACE_LEASES_FILE)) {
+    return { version: 1, leases: [], updatedAt: null };
+  }
+  const leases = JSON.parse(fs.readFileSync(MARKETPLACE_LEASES_FILE, "utf8"));
+  return {
+    version: leases.version || 1,
+    leases: Array.isArray(leases.leases) ? leases.leases : [],
+    updatedAt: leases.updatedAt || null,
+  };
+}
+
+async function saveMarketplaceLeases(leases) {
+  fs.writeFileSync(MARKETPLACE_LEASES_FILE, `${JSON.stringify(leases, null, 2)}\n`, { mode: 0o600 });
+}
+
+async function upsertMarketplaceLease(lease) {
+  const leases = await loadMarketplaceLeases();
+  leases.leases = leases.leases.filter((candidate) => candidate.id !== lease.id).concat(lease);
+  leases.updatedAt = new Date().toISOString();
+  await saveMarketplaceLeases(leases);
+}
+
+async function findMarketplaceLease(leaseId) {
+  const leases = await loadMarketplaceLeases();
+  return leases.leases.find((lease) => lease.id === leaseId) || null;
+}
+
+async function findActiveMarketplaceLease({ model, providerId }) {
+  const leases = await loadMarketplaceLeases();
+  return leases.leases.find((lease) => {
+    return isLeaseActive(lease)
+      && (!model || lease.model === model)
+      && (!providerId || lease.providerId === providerId);
+  }) || null;
+}
+
+async function markMarketplaceLeaseReleased(leaseId) {
+  const leases = await loadMarketplaceLeases();
+  leases.leases = leases.leases.map((lease) => {
+    if (lease.id !== leaseId) {
+      return lease;
+    }
+    return { ...lease, status: "RELEASED", releasedAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+  });
+  leases.updatedAt = new Date().toISOString();
+  await saveMarketplaceLeases(leases);
+}
+
+async function loadProviderLeases() {
+  if (!fs.existsSync(PROVIDER_LEASES_FILE)) {
+    return { version: 1, leases: [], updatedAt: null };
+  }
+  const leases = JSON.parse(fs.readFileSync(PROVIDER_LEASES_FILE, "utf8"));
+  return {
+    version: leases.version || 1,
+    leases: expireLeases(Array.isArray(leases.leases) ? leases.leases : []),
+    updatedAt: leases.updatedAt || null,
+  };
+}
+
+async function saveProviderLeases(leases) {
+  fs.writeFileSync(PROVIDER_LEASES_FILE, `${JSON.stringify(leases, null, 2)}\n`, { mode: 0o600 });
+}
+
+function expireLeases(leases) {
+  const now = Date.now();
+  return leases.map((lease) => {
+    if (lease.status === "ACTIVE" && new Date(lease.expiresAt).getTime() <= now) {
+      return { ...lease, status: "EXPIRED", updatedAt: new Date().toISOString() };
+    }
+    return lease;
+  });
+}
+
+function activeProviderLease(leases) {
+  return expireLeases(leases.leases || []).find(isLeaseActive) || null;
+}
+
+function isLeaseActive(lease) {
+  return lease?.status === "ACTIVE"
+    && new Date(lease.startsAt).getTime() <= Date.now()
+    && new Date(lease.expiresAt).getTime() > Date.now();
+}
+
+function leaseAllowsJob(lease, auth) {
+  return isLeaseActive(lease)
+    && auth?.leaseId === lease.id
+    && auth?.token === lease.authToken;
+}
+
+function readLeaseAuth(req) {
+  return {
+    leaseId: req.headers["x-solai-lease-id"] || null,
+    token: req.headers["x-solai-lease-token"] || null,
+  };
+}
+
+function leaseHeaders(lease) {
+  return {
+    "x-solai-lease-id": lease.id,
+    "x-solai-lease-token": lease.authToken,
+  };
+}
+
+function publicLeases(leases) {
+  return {
+    version: leases.version || 1,
+    leases: (leases.leases || []).map((lease) => publicLease(lease)),
+    updatedAt: leases.updatedAt || null,
+  };
+}
+
+function publicLease(lease, options = {}) {
+  const output = {
+    id: lease.id,
+    provider: lease.provider,
+    renter: lease.renter,
+    model: lease.model,
+    hours: lease.hours,
+    pricePerHour: lease.pricePerHour,
+    totalSolai: lease.totalSolai,
+    startsAt: lease.startsAt,
+    expiresAt: lease.expiresAt,
+    status: isLeaseActive(lease) ? "ACTIVE" : lease.status,
+    createdAt: lease.createdAt,
+    updatedAt: lease.updatedAt,
+  };
+  if (options.includeAuthToken) {
+    output.authToken = lease.authToken;
+  }
+  return output;
+}
+
+function publicLocalLease(lease) {
+  const { authToken, ...publicLease } = lease;
+  return publicLease;
+}
+
+function parseHours(value) {
+  const hours = Number(value);
+  if (!Number.isInteger(hours) || hours < 1 || hours > 720) {
+    return Number.NaN;
+  }
+  return hours;
 }
 
 async function loadRegistry() {

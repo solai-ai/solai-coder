@@ -18,8 +18,12 @@ npm run provider -- register --endpoint https://provider.example.com:9898 --name
 npm run provider -- probe https://provider.example.com:9898
 npm run provider -- refresh
 npm run provider -- list --model SOLAI-20B --max-price 4 --available
-npm run provider -- quote --model SOLAI-20B --max-price 4
-npm run provider -- run --model SOLAI-20B --prompt "Explain SOLAI in one paragraph"
+npm run provider -- quote --model SOLAI-20B --hours 1 --max-price 4
+npm run provider -- rent --model SOLAI-20B --hours 1 --max-price 4
+npm run provider -- leases
+npm run provider -- lease <LEASE_ID>
+npm run provider -- run --model SOLAI-20B --lease <LEASE_ID> --prompt "Explain SOLAI in one paragraph"
+npm run provider -- release <LEASE_ID>
 npm run provider -- daemon
 npm run provider -- disable
 ```
@@ -35,8 +39,12 @@ solai provider register --endpoint https://provider.example.com:9898 --name gpu-
 solai provider probe https://provider.example.com:9898
 solai provider refresh
 solai provider list --model SOLAI-20B --max-price 4 --available
-solai provider quote --model SOLAI-20B --max-price 4
-solai provider run --model SOLAI-20B --prompt "Explain SOLAI in one paragraph"
+solai provider quote --model SOLAI-20B --hours 1 --max-price 4
+solai provider rent --model SOLAI-20B --hours 1 --max-price 4
+solai provider leases
+solai provider lease <LEASE_ID>
+solai provider run --model SOLAI-20B --lease <LEASE_ID> --prompt "Explain SOLAI in one paragraph"
+solai provider release <LEASE_ID>
 solai provider disable
 ```
 
@@ -47,8 +55,12 @@ solai marketplace register --endpoint https://provider.example.com:9898 --name g
 solai marketplace probe https://provider.example.com:9898
 solai marketplace refresh
 solai marketplace list --model SOLAI-20B --max-price 4 --available
-solai marketplace quote --model SOLAI-20B --max-price 4
-solai marketplace run --model SOLAI-20B --prompt "Explain SOLAI in one paragraph"
+solai marketplace quote --model SOLAI-20B --hours 1 --max-price 4
+solai marketplace rent --model SOLAI-20B --hours 1 --max-price 4
+solai marketplace leases
+solai marketplace lease <LEASE_ID>
+solai marketplace run --model SOLAI-20B --lease <LEASE_ID> --prompt "Explain SOLAI in one paragraph"
+solai marketplace release <LEASE_ID>
 ```
 
 Inside the interactive SOLAI Agent session, the same marketplace flow is
@@ -58,8 +70,12 @@ available through slash commands:
 /marketplace probe https://provider.example.com:9898
 /marketplace refresh
 /providers --model SOLAI-20B --max-price 4 --available
-/quote --model SOLAI-20B --max-price 4
-/rent --model SOLAI-20B --prompt "Explain SOLAI in one paragraph"
+/quote --model SOLAI-20B --hours 1 --max-price 4
+/rent --model SOLAI-20B --hours 1 --max-price 4
+/leases
+/lease <LEASE_ID>
+/marketplace run --model SOLAI-20B --lease <LEASE_ID> --prompt "Explain SOLAI in one paragraph"
+/release <LEASE_ID>
 ```
 
 ## Runtime
@@ -70,6 +86,9 @@ The daemon stores state under `~/.solai` by default:
 - `provider.pid` - daemon PID when started by `enable`
 - `provider.log` - operational logs
 - `provider-registry.json` - discovered marketplace providers, endpoints, signed heartbeat snapshots and reputation counters
+- `provider-leases.json` - exclusive leases active on a provider machine
+- `marketplace-leases.json` - local client leases and lease tokens used to submit work
+- `marketplace-client.json` - local marketplace renter identity
 
 Set `SOLAI_HOME` to use another directory.
 
@@ -97,6 +116,7 @@ Provider discovery uses signed heartbeats. `probe` fetches `/heartbeat`,
 verifies the provider signature against the advertised public key and stores the
 provider in `provider-registry.json`. `refresh` rechecks all registered endpoints
 and marks unreachable providers offline. `quote` selects the lowest-priced
-online provider matching the requested model and availability window. `run`
-submits a job to the selected provider and updates reputation counters based on
-success or failure.
+online provider matching the requested model and availability window. `rent`
+creates an exclusive hourly lease and returns a lease token. While the lease is
+active, the provider rejects jobs from other clients with `423 Locked`. `run`
+can submit work through an active lease by sending the lease id and token.

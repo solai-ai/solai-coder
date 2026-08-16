@@ -19,6 +19,9 @@ pub enum SlashCommand {
     Providers,
     Quote,
     Rent,
+    Leases,
+    Lease,
+    Release,
     Ide,
     Permissions,
     Keymap,
@@ -138,7 +141,10 @@ impl SlashCommand {
             SlashCommand::Marketplace => "manage SOLAI compute marketplace providers",
             SlashCommand::Providers => "list SOLAI marketplace providers",
             SlashCommand::Quote => "quote SOLAI compute for a model",
-            SlashCommand::Rent => "run a prompt on a SOLAI marketplace provider",
+            SlashCommand::Rent => "reserve exclusive SOLAI compute by the hour",
+            SlashCommand::Leases => "list SOLAI marketplace leases",
+            SlashCommand::Lease => "show one SOLAI marketplace lease",
+            SlashCommand::Release => "release an active SOLAI marketplace lease",
             SlashCommand::Ide => {
                 "include current selection, open files, and other context from your IDE"
             }
@@ -202,6 +208,9 @@ impl SlashCommand {
                 | SlashCommand::Providers
                 | SlashCommand::Quote
                 | SlashCommand::Rent
+                | SlashCommand::Leases
+                | SlashCommand::Lease
+                | SlashCommand::Release
         )
     }
 
@@ -246,6 +255,9 @@ impl SlashCommand {
             | SlashCommand::Providers
             | SlashCommand::Quote
             | SlashCommand::Rent
+            | SlashCommand::Leases
+            | SlashCommand::Lease
+            | SlashCommand::Release
             | SlashCommand::Clear
             | SlashCommand::Logout
             | SlashCommand::MemoryDrop

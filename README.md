@@ -52,9 +52,9 @@ Marketplace commands:
 solai marketplace register --endpoint https://provider.example.com:9898 --name gpu-node-1
 solai marketplace probe https://provider.example.com:9898
 solai marketplace refresh
-solai marketplace list --model SOLAI-20B --max-price 4 --available
-solai marketplace quote --model SOLAI-20B --hours 1 --max-price 4
-solai marketplace rent --model SOLAI-20B --hours 1 --max-price 4
+solai marketplace list
+solai marketplace quote --choice 1 --hours 1
+solai marketplace rent --choice 1 --hours 1
 solai marketplace leases
 solai marketplace lease <LEASE_ID>
 solai marketplace run --model SOLAI-20B --lease <LEASE_ID> --prompt "Explain SOLAI in one paragraph"
@@ -66,9 +66,9 @@ Inside the interactive SOLAI Agent session, use slash commands:
 ```text
 /marketplace probe https://provider.example.com:9898
 /marketplace refresh
-/providers --model SOLAI-20B --max-price 4 --available
-/quote --model SOLAI-20B --hours 1 --max-price 4
-/rent --model SOLAI-20B --hours 1 --max-price 4
+/providers
+/quote --choice 1 --hours 1
+/rent --choice 1 --hours 1
 /leases
 /lease <LEASE_ID>
 /marketplace run --model SOLAI-20B --lease <LEASE_ID> --prompt "Explain SOLAI in one paragraph"

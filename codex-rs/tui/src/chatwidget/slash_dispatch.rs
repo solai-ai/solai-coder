@@ -44,8 +44,9 @@ const RESUME_TYPE_USAGE: &str = "Usage: /resumeType [0|1|summarize|drop-history]
 const USAGE_CHATGPT_LOGIN_REQUIRED: &str = "Sign in with ChatGPT to use /usage.";
 const MARKETPLACE_USAGE: &str = "Usage: /marketplace <register|probe|refresh|list|quote|rent|leases|lease|release|run|remove> [args]";
 const QUOTE_USAGE: &str =
-    "Usage: /quote --model <MODEL> [--hours <HOURS>] [--max-price <SOLAI_PER_HOUR>]";
-const RENT_USAGE: &str = "Usage: /rent --model <MODEL> --hours <HOURS> [--provider <PUBLIC_KEY>] [--max-price <SOLAI_PER_HOUR>]";
+    "Usage: /quote --choice <N> [--hours <HOURS>] or /quote --model <MODEL> [--hours <HOURS>]";
+const RENT_USAGE: &str =
+    "Usage: /rent --choice <N> --hours <HOURS> or /rent --model <MODEL> --hours <HOURS>";
 const LEASE_USAGE: &str = "Usage: /lease <LEASE_ID>";
 const RELEASE_USAGE: &str = "Usage: /release <LEASE_ID>";
 

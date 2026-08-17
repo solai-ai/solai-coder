@@ -16,6 +16,7 @@ const CONFIG_FILE = path.join(SOLAI_HOME, "provider.json");
 const PID_FILE = path.join(SOLAI_HOME, "provider.pid");
 const LOG_FILE = path.join(SOLAI_HOME, "provider.log");
 const REGISTRY_FILE = path.join(SOLAI_HOME, "provider-registry.json");
+const PROVIDER_CHOICES_FILE = path.join(SOLAI_HOME, "provider-choices.json");
 const PROVIDER_LEASES_FILE = path.join(SOLAI_HOME, "provider-leases.json");
 const MARKETPLACE_LEASES_FILE = path.join(SOLAI_HOME, "marketplace-leases.json");
 const MARKETPLACE_IDENTITY_FILE = path.join(SOLAI_HOME, "marketplace-client.json");
@@ -104,14 +105,14 @@ function printHelp() {
   solai provider schedule --from <HH:MM> --to <HH:MM>
   solai provider register [--endpoint <URL>] [--name <NAME>]
   solai provider probe <ENDPOINT> [--name <NAME>]
-  solai provider list [--model <MODEL>] [--max-price <SOLAI_PER_HOUR>] [--available] [--json]
+  solai provider list [--model <MODEL>] [--max-price <SOLAI_PER_HOUR>] [--all] [--json]
   solai provider refresh [--json]
-  solai provider quote --model <MODEL> [--hours <HOURS>] [--max-price <SOLAI_PER_HOUR>] [--json]
-  solai provider rent --model <MODEL> --hours <HOURS> [--provider <PUBLIC_KEY>] [--max-price <SOLAI_PER_HOUR>] [--json]
+  solai provider quote (--choice <N> | --model <MODEL>) [--hours <HOURS>] [--max-price <SOLAI_PER_HOUR>] [--json]
+  solai provider rent (--choice <N> | --model <MODEL>) --hours <HOURS> [--provider <PUBLIC_KEY>] [--max-price <SOLAI_PER_HOUR>] [--json]
   solai provider leases [--json]
   solai provider lease <LEASE_ID> [--json]
   solai provider release <LEASE_ID>
-  solai provider run --model <MODEL> (--prompt <TEXT> | --prompt-file <PATH>) [--lease <LEASE_ID>] [--provider <PUBLIC_KEY>] [--max-price <SOLAI_PER_HOUR>]
+  solai provider run (--choice <N> | --model <MODEL>) (--prompt <TEXT> | --prompt-file <PATH>) [--lease <LEASE_ID>] [--provider <PUBLIC_KEY>] [--max-price <SOLAI_PER_HOUR>]
   solai provider remove <PROVIDER_PUBLIC_KEY>
   solai provider daemon
 
@@ -269,52 +270,36 @@ async function listProviders(listArgs) {
   const modelFilter = valueAfter(listArgs, "--model");
   const maxPriceText = valueAfter(listArgs, "--max-price");
   const maxPrice = maxPriceText == null ? null : Number(maxPriceText);
-  const availableOnly = listArgs.includes("--available");
+  const includeUnavailable = listArgs.includes("--all");
   const json = listArgs.includes("--json");
 
   if (maxPriceText != null && (!Number.isFinite(maxPrice) || maxPrice < 0)) {
     throw new Error("--max-price must be a non-negative number");
   }
 
-  const providers = registry.providers
-    .map((provider) => ({ ...provider, availableNow: isAvailableNow(provider.schedule) }))
-    .filter((provider) => !modelFilter || provider.models.some((model) => model.name?.toLowerCase().includes(modelFilter.toLowerCase())))
-    .filter((provider) => maxPrice == null || minProviderPrice(provider, modelFilter) <= maxPrice)
-    .filter((provider) => !availableOnly || provider.availableNow)
-    .sort(compareProviders);
+  const choices = marketplaceChoices(registry.providers, { modelFilter, maxPrice, includeUnavailable });
+  await saveProviderChoices(choices);
 
   if (json) {
-    console.log(JSON.stringify({ providers }, null, 2));
+    console.log(JSON.stringify({ choices }, null, 2));
     return;
   }
 
-  if (providers.length === 0) {
-    console.log("No providers found.");
+  if (choices.length === 0) {
+    console.log("No available providers found.");
+    console.log("Tip: run `solai marketplace probe <ENDPOINT>` or use `--all` to include unavailable providers.");
     return;
   }
 
-  const rows = providers.map((provider) => ({
-    id: provider.id,
-    status: provider.status,
-    available: provider.availableNow ? "yes" : "no",
-    price: formatPrice(minProviderPrice(provider, modelFilter)),
-    models: provider.models.map((model) => model.name).filter(Boolean).join(", ") || "-",
-    endpoint: provider.endpoint,
-    score: provider.reputation?.score ?? 0,
-  }));
-
-  const widths = {
-    id: Math.max(8, ...rows.map((row) => row.id.length)),
-    status: Math.max(6, ...rows.map((row) => row.status.length)),
-    available: 9,
-    price: Math.max(5, ...rows.map((row) => row.price.length)),
-    score: 5,
-  };
-
-  console.log(`${"PROVIDER".padEnd(widths.id)}  ${"STATUS".padEnd(widths.status)}  AVAILABLE  ${"PRICE".padEnd(widths.price)}  SCORE  MODELS`);
-  for (const row of rows) {
-    console.log(`${row.id.padEnd(widths.id)}  ${row.status.padEnd(widths.status)}  ${row.available.padEnd(widths.available)}  ${row.price.padEnd(widths.price)}  ${String(row.score).padEnd(widths.score)}  ${row.models}`);
-    console.log(`${"".padEnd(widths.id)}  endpoint: ${row.endpoint}`);
+  console.log("Available SOLAI compute");
+  console.log("Use: solai marketplace rent --choice <N> --hours <HOURS>");
+  console.log("");
+  for (const choice of choices) {
+    console.log(`${choice.choice}. ${choice.name}`);
+    console.log(`   model: ${choice.model}`);
+    console.log(`   price: ${formatPrice(choice.pricePerHour)} SOLAI/hour   available: ${choice.availableNow ? "yes" : "no"}   status: ${choice.status}`);
+    console.log(`   reputation: score ${choice.reputation.score}, rentals ${choice.reputation.rentals}, failures ${choice.reputation.failures}`);
+    console.log(`   endpoint: ${choice.endpoint}`);
   }
 }
 
@@ -365,20 +350,22 @@ async function refreshProviders(refreshArgs) {
 }
 
 async function quoteProvider(quoteArgs) {
-  const model = valueAfter(quoteArgs, "--model");
+  const choice = await choiceFromArgs(quoteArgs);
+  const model = choice?.model || valueAfter(quoteArgs, "--model");
   const hours = parseHours(valueAfter(quoteArgs, "--hours") || "1");
+  const providerIdFromChoice = choice?.providerId || null;
   const maxPriceText = valueAfter(quoteArgs, "--max-price");
   const maxPrice = maxPriceText == null ? null : Number(maxPriceText);
   const json = quoteArgs.includes("--json");
 
   if (!model || !Number.isFinite(hours)) {
-    throw new Error("Usage: solai provider quote --model <MODEL> [--hours <HOURS>] [--max-price <SOLAI_PER_HOUR>] [--json]");
+    throw new Error("Usage: solai provider quote (--choice <N> | --model <MODEL>) [--hours <HOURS>] [--max-price <SOLAI_PER_HOUR>] [--json]");
   }
   if (maxPriceText != null && (!Number.isFinite(maxPrice) || maxPrice < 0)) {
     throw new Error("--max-price must be a non-negative number");
   }
 
-  const provider = await selectProvider({ model, maxPrice, providerId: null, availableOnly: true });
+  const provider = await selectProvider({ model, maxPrice, providerId: providerIdFromChoice, availableOnly: true });
   const quote = {
     providerId: provider.id,
     endpoint: provider.endpoint,
@@ -405,15 +392,16 @@ async function quoteProvider(quoteArgs) {
 }
 
 async function rentProvider(rentArgs) {
-  const model = valueAfter(rentArgs, "--model");
+  const choice = await choiceFromArgs(rentArgs);
+  const model = choice?.model || valueAfter(rentArgs, "--model");
   const hours = parseHours(valueAfter(rentArgs, "--hours"));
-  const providerId = valueAfter(rentArgs, "--provider");
+  const providerId = choice?.providerId || valueAfter(rentArgs, "--provider");
   const maxPriceText = valueAfter(rentArgs, "--max-price");
   const maxPrice = maxPriceText == null ? null : Number(maxPriceText);
   const json = rentArgs.includes("--json");
 
   if (!model || !Number.isFinite(hours)) {
-    throw new Error("Usage: solai provider rent --model <MODEL> --hours <HOURS> [--provider <PUBLIC_KEY>] [--max-price <SOLAI_PER_HOUR>] [--json]");
+    throw new Error("Usage: solai provider rent (--choice <N> | --model <MODEL>) --hours <HOURS> [--provider <PUBLIC_KEY>] [--max-price <SOLAI_PER_HOUR>] [--json]");
   }
   if (maxPriceText != null && (!Number.isFinite(maxPrice) || maxPrice < 0)) {
     throw new Error("--max-price must be a non-negative number");
@@ -529,16 +517,17 @@ async function releaseMarketplaceLease(leaseArgs) {
 }
 
 async function runMarketplaceJob(runArgs) {
-  const model = valueAfter(runArgs, "--model");
+  const choice = await choiceFromArgs(runArgs);
+  const model = choice?.model || valueAfter(runArgs, "--model");
   const leaseId = valueAfter(runArgs, "--lease");
-  const providerId = valueAfter(runArgs, "--provider");
+  const providerId = choice?.providerId || valueAfter(runArgs, "--provider");
   const maxPriceText = valueAfter(runArgs, "--max-price");
   const maxPrice = maxPriceText == null ? null : Number(maxPriceText);
   const promptText = valueAfter(runArgs, "--prompt");
   const promptFile = valueAfter(runArgs, "--prompt-file");
 
   if (!model || (!promptText && !promptFile)) {
-    throw new Error("Usage: solai provider run --model <MODEL> (--prompt <TEXT> | --prompt-file <PATH>) [--lease <LEASE_ID>] [--provider <PUBLIC_KEY>] [--max-price <SOLAI_PER_HOUR>]");
+    throw new Error("Usage: solai provider run (--choice <N> | --model <MODEL>) (--prompt <TEXT> | --prompt-file <PATH>) [--lease <LEASE_ID>] [--provider <PUBLIC_KEY>] [--max-price <SOLAI_PER_HOUR>]");
   }
   if (maxPriceText != null && (!Number.isFinite(maxPrice) || maxPrice < 0)) {
     throw new Error("--max-price must be a non-negative number");
@@ -1056,6 +1045,96 @@ async function recordProviderOutcome(providerId, success) {
     return { ...provider, reputation, updatedAt: new Date().toISOString() };
   });
   await saveRegistry({ ...registry, providers, updatedAt: new Date().toISOString() });
+}
+
+function marketplaceChoices(providers, { modelFilter, maxPrice, includeUnavailable }) {
+  const choices = [];
+  for (const provider of providers) {
+    const availableNow = isAvailableNow(provider.schedule);
+    const reputation = normalizeReputation(provider.reputation);
+    const pricedModels = Object.entries(provider.prices || {})
+      .filter(([model, price]) => {
+        return Number.isFinite(Number(price))
+          && (!modelFilter || model.toLowerCase().includes(modelFilter.toLowerCase()))
+          && (maxPrice == null || Number(price) <= maxPrice);
+      });
+
+    for (const [model, price] of pricedModels) {
+      const status = provider.status || "UNKNOWN";
+      if (!includeUnavailable && (status !== "ONLINE" || !availableNow)) {
+        continue;
+      }
+      choices.push({
+        choice: choices.length + 1,
+        providerId: provider.id,
+        name: provider.name || provider.id,
+        endpoint: provider.endpoint,
+        model,
+        pricePerHour: Number(price),
+        status,
+        availableNow,
+        reputation,
+        hardware: provider.hardware || {},
+        updatedAt: provider.updatedAt,
+      });
+    }
+  }
+
+  return choices.sort(compareChoices).map((choice, index) => ({ ...choice, choice: index + 1 }));
+}
+
+function compareChoices(a, b) {
+  if (a.availableNow !== b.availableNow) {
+    return a.availableNow ? -1 : 1;
+  }
+  if (a.status !== b.status) {
+    return a.status === "ONLINE" ? -1 : 1;
+  }
+  if (a.pricePerHour !== b.pricePerHour) {
+    return a.pricePerHour - b.pricePerHour;
+  }
+  return b.reputation.score - a.reputation.score;
+}
+
+function normalizeReputation(reputation) {
+  return {
+    score: reputation?.score || 0,
+    rentals: reputation?.rentals || 0,
+    failures: reputation?.failures || 0,
+  };
+}
+
+async function saveProviderChoices(choices) {
+  fs.writeFileSync(PROVIDER_CHOICES_FILE, `${JSON.stringify({
+    version: 1,
+    generatedAt: new Date().toISOString(),
+    choices,
+  }, null, 2)}\n`, { mode: 0o600 });
+}
+
+async function loadProviderChoices() {
+  if (!fs.existsSync(PROVIDER_CHOICES_FILE)) {
+    throw new Error("No provider choices found. Run `solai marketplace list` first.");
+  }
+  const choices = JSON.parse(fs.readFileSync(PROVIDER_CHOICES_FILE, "utf8"));
+  return Array.isArray(choices.choices) ? choices.choices : [];
+}
+
+async function choiceFromArgs(args) {
+  const choiceText = valueAfter(args, "--choice");
+  if (!choiceText) {
+    return null;
+  }
+  const choiceNumber = Number(choiceText);
+  if (!Number.isInteger(choiceNumber) || choiceNumber < 1) {
+    throw new Error("--choice must be a positive number from `solai marketplace list`");
+  }
+  const choices = await loadProviderChoices();
+  const choice = choices.find((candidate) => candidate.choice === choiceNumber);
+  if (!choice) {
+    throw new Error(`Choice ${choiceNumber} was not found. Run ` + "`solai marketplace list` again.");
+  }
+  return choice;
 }
 
 async function createProviderLease(res, state, payload) {

@@ -17,9 +17,9 @@ npm run provider -- schedule --from 22:00 --to 07:00
 npm run provider -- register --endpoint https://provider.example.com:9898 --name gpu-node-1
 npm run provider -- probe https://provider.example.com:9898
 npm run provider -- refresh
-npm run provider -- list --model SOLAI-20B --max-price 4 --available
-npm run provider -- quote --model SOLAI-20B --hours 1 --max-price 4
-npm run provider -- rent --model SOLAI-20B --hours 1 --max-price 4
+npm run provider -- list
+npm run provider -- quote --choice 1 --hours 1
+npm run provider -- rent --choice 1 --hours 1
 npm run provider -- leases
 npm run provider -- lease <LEASE_ID>
 npm run provider -- run --model SOLAI-20B --lease <LEASE_ID> --prompt "Explain SOLAI in one paragraph"
@@ -38,9 +38,9 @@ solai provider schedule --from 22:00 --to 07:00
 solai provider register --endpoint https://provider.example.com:9898 --name gpu-node-1
 solai provider probe https://provider.example.com:9898
 solai provider refresh
-solai provider list --model SOLAI-20B --max-price 4 --available
-solai provider quote --model SOLAI-20B --hours 1 --max-price 4
-solai provider rent --model SOLAI-20B --hours 1 --max-price 4
+solai provider list
+solai provider quote --choice 1 --hours 1
+solai provider rent --choice 1 --hours 1
 solai provider leases
 solai provider lease <LEASE_ID>
 solai provider run --model SOLAI-20B --lease <LEASE_ID> --prompt "Explain SOLAI in one paragraph"
@@ -54,9 +54,9 @@ Marketplace operations are also exposed as a grouped SOLAI CLI surface:
 solai marketplace register --endpoint https://provider.example.com:9898 --name gpu-node-1
 solai marketplace probe https://provider.example.com:9898
 solai marketplace refresh
-solai marketplace list --model SOLAI-20B --max-price 4 --available
-solai marketplace quote --model SOLAI-20B --hours 1 --max-price 4
-solai marketplace rent --model SOLAI-20B --hours 1 --max-price 4
+solai marketplace list
+solai marketplace quote --choice 1 --hours 1
+solai marketplace rent --choice 1 --hours 1
 solai marketplace leases
 solai marketplace lease <LEASE_ID>
 solai marketplace run --model SOLAI-20B --lease <LEASE_ID> --prompt "Explain SOLAI in one paragraph"
@@ -69,9 +69,9 @@ available through slash commands:
 ```text
 /marketplace probe https://provider.example.com:9898
 /marketplace refresh
-/providers --model SOLAI-20B --max-price 4 --available
-/quote --model SOLAI-20B --hours 1 --max-price 4
-/rent --model SOLAI-20B --hours 1 --max-price 4
+/providers
+/quote --choice 1 --hours 1
+/rent --choice 1 --hours 1
 /leases
 /lease <LEASE_ID>
 /marketplace run --model SOLAI-20B --lease <LEASE_ID> --prompt "Explain SOLAI in one paragraph"

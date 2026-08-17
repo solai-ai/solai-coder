@@ -72,7 +72,7 @@ struct ListArgs {
     max_price: Option<f64>,
 
     #[arg(long)]
-    available: bool,
+    all: bool,
 
     #[arg(long)]
     json: bool,
@@ -87,7 +87,10 @@ struct RefreshArgs {
 #[derive(Debug, Parser)]
 struct QuoteArgs {
     #[arg(long)]
-    model: String,
+    choice: Option<u64>,
+
+    #[arg(long)]
+    model: Option<String>,
 
     #[arg(long)]
     hours: Option<u64>,
@@ -102,7 +105,10 @@ struct QuoteArgs {
 #[derive(Debug, Parser)]
 struct RentArgs {
     #[arg(long)]
-    model: String,
+    choice: Option<u64>,
+
+    #[arg(long)]
+    model: Option<String>,
 
     #[arg(long)]
     hours: u64,
@@ -139,7 +145,10 @@ struct ReleaseArgs {
 #[derive(Debug, Parser)]
 struct RunArgs {
     #[arg(long)]
-    model: String,
+    choice: Option<u64>,
+
+    #[arg(long)]
+    model: Option<String>,
 
     #[arg(long)]
     prompt: Option<String>,
@@ -179,7 +188,7 @@ impl SolaiMarketplaceCli {
             SolaiMarketplaceSubcommand::List(ListArgs {
                 model,
                 max_price,
-                available,
+                all,
                 json,
             }) => {
                 args.push("list".to_string());
@@ -188,8 +197,8 @@ impl SolaiMarketplaceCli {
                     args.push("--max-price".to_string());
                     args.push(max_price.to_string());
                 }
-                if available {
-                    args.push("--available".to_string());
+                if all {
+                    args.push("--all".to_string());
                 }
                 if json {
                     args.push("--json".to_string());
@@ -202,14 +211,18 @@ impl SolaiMarketplaceCli {
                 }
             }
             SolaiMarketplaceSubcommand::Quote(QuoteArgs {
+                choice,
                 model,
                 hours,
                 max_price,
                 json,
             }) => {
                 args.push("quote".to_string());
-                args.push("--model".to_string());
-                args.push(model);
+                if let Some(choice) = choice {
+                    args.push("--choice".to_string());
+                    args.push(choice.to_string());
+                }
+                push_optional_flag(&mut args, "--model", model);
                 if let Some(hours) = hours {
                     args.push("--hours".to_string());
                     args.push(hours.to_string());
@@ -223,6 +236,7 @@ impl SolaiMarketplaceCli {
                 }
             }
             SolaiMarketplaceSubcommand::Rent(RentArgs {
+                choice,
                 model,
                 hours,
                 provider,
@@ -230,8 +244,11 @@ impl SolaiMarketplaceCli {
                 json,
             }) => {
                 args.push("rent".to_string());
-                args.push("--model".to_string());
-                args.push(model);
+                if let Some(choice) = choice {
+                    args.push("--choice".to_string());
+                    args.push(choice.to_string());
+                }
+                push_optional_flag(&mut args, "--model", model);
                 args.push("--hours".to_string());
                 args.push(hours.to_string());
                 push_optional_flag(&mut args, "--provider", provider);
@@ -261,6 +278,7 @@ impl SolaiMarketplaceCli {
                 args.push(lease_id);
             }
             SolaiMarketplaceSubcommand::Run(RunArgs {
+                choice,
                 model,
                 prompt,
                 prompt_file,
@@ -269,8 +287,11 @@ impl SolaiMarketplaceCli {
                 max_price,
             }) => {
                 args.push("run".to_string());
-                args.push("--model".to_string());
-                args.push(model);
+                if let Some(choice) = choice {
+                    args.push("--choice".to_string());
+                    args.push(choice.to_string());
+                }
+                push_optional_flag(&mut args, "--model", model);
                 push_optional_flag(&mut args, "--prompt", prompt);
                 push_optional_flag(&mut args, "--prompt-file", prompt_file);
                 push_optional_flag(&mut args, "--lease", lease);

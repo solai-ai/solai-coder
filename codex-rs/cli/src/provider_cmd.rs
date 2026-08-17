@@ -108,7 +108,7 @@ struct ProviderListArgs {
     max_price: Option<f64>,
 
     #[arg(long)]
-    available: bool,
+    all: bool,
 
     #[arg(long)]
     json: bool,
@@ -123,7 +123,10 @@ struct ProviderRefreshArgs {
 #[derive(Debug, Parser)]
 struct ProviderQuoteArgs {
     #[arg(long)]
-    model: String,
+    choice: Option<u64>,
+
+    #[arg(long)]
+    model: Option<String>,
 
     #[arg(long)]
     hours: Option<u64>,
@@ -138,7 +141,10 @@ struct ProviderQuoteArgs {
 #[derive(Debug, Parser)]
 struct ProviderRentArgs {
     #[arg(long)]
-    model: String,
+    choice: Option<u64>,
+
+    #[arg(long)]
+    model: Option<String>,
 
     #[arg(long)]
     hours: u64,
@@ -175,7 +181,10 @@ struct ProviderReleaseArgs {
 #[derive(Debug, Parser)]
 struct ProviderRunArgs {
     #[arg(long)]
-    model: String,
+    choice: Option<u64>,
+
+    #[arg(long)]
+    model: Option<String>,
 
     #[arg(long)]
     prompt: Option<String>,
@@ -243,7 +252,7 @@ impl ProviderCli {
             ProviderSubcommand::List(ProviderListArgs {
                 model,
                 max_price,
-                available,
+                all,
                 json,
             }) => {
                 args.push("list".to_string());
@@ -255,8 +264,8 @@ impl ProviderCli {
                     args.push("--max-price".to_string());
                     args.push(max_price.to_string());
                 }
-                if available {
-                    args.push("--available".to_string());
+                if all {
+                    args.push("--all".to_string());
                 }
                 if json {
                     args.push("--json".to_string());
@@ -269,14 +278,21 @@ impl ProviderCli {
                 }
             }
             ProviderSubcommand::Quote(ProviderQuoteArgs {
+                choice,
                 model,
                 hours,
                 max_price,
                 json,
             }) => {
                 args.push("quote".to_string());
-                args.push("--model".to_string());
-                args.push(model);
+                if let Some(choice) = choice {
+                    args.push("--choice".to_string());
+                    args.push(choice.to_string());
+                }
+                if let Some(model) = model {
+                    args.push("--model".to_string());
+                    args.push(model);
+                }
                 if let Some(hours) = hours {
                     args.push("--hours".to_string());
                     args.push(hours.to_string());
@@ -290,6 +306,7 @@ impl ProviderCli {
                 }
             }
             ProviderSubcommand::Rent(ProviderRentArgs {
+                choice,
                 model,
                 hours,
                 provider,
@@ -297,8 +314,14 @@ impl ProviderCli {
                 json,
             }) => {
                 args.push("rent".to_string());
-                args.push("--model".to_string());
-                args.push(model);
+                if let Some(choice) = choice {
+                    args.push("--choice".to_string());
+                    args.push(choice.to_string());
+                }
+                if let Some(model) = model {
+                    args.push("--model".to_string());
+                    args.push(model);
+                }
                 args.push("--hours".to_string());
                 args.push(hours.to_string());
                 if let Some(provider) = provider {
@@ -331,6 +354,7 @@ impl ProviderCli {
                 args.push(lease_id);
             }
             ProviderSubcommand::Run(ProviderRunArgs {
+                choice,
                 model,
                 prompt,
                 prompt_file,
@@ -339,8 +363,14 @@ impl ProviderCli {
                 max_price,
             }) => {
                 args.push("run".to_string());
-                args.push("--model".to_string());
-                args.push(model);
+                if let Some(choice) = choice {
+                    args.push("--choice".to_string());
+                    args.push(choice.to_string());
+                }
+                if let Some(model) = model {
+                    args.push("--model".to_string());
+                    args.push(model);
+                }
                 if let Some(prompt) = prompt {
                     args.push("--prompt".to_string());
                     args.push(prompt);

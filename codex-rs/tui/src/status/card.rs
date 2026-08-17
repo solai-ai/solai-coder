@@ -4,6 +4,7 @@ use crate::history_cell::PlainHistoryCell;
 use crate::history_cell::plain_lines;
 use crate::history_cell::with_border_with_inner_width;
 use crate::legacy_core::config::Config;
+use crate::marketplace_lease::MarketplaceLeaseStatus;
 use crate::token_usage::TokenUsage;
 use crate::token_usage::TokenUsageInfo;
 use crate::version::CODEX_CLI_VERSION;
@@ -117,6 +118,7 @@ struct StatusHistoryCell {
     thread_name: Option<String>,
     session_id: Option<String>,
     forked_from: Option<String>,
+    marketplace_lease: Option<MarketplaceLeaseStatus>,
     token_usage: StatusTokenUsageData,
     rate_limit_state: Arc<RwLock<StatusRateLimitState>>,
 }
@@ -193,6 +195,7 @@ pub(crate) fn new_status_output_with_rate_limits(
         reasoning_effort_override,
         "<none>".to_string(),
         refreshing_rate_limits,
+        /*marketplace_lease*/ None,
     )
     .0
 }
@@ -216,6 +219,7 @@ pub(crate) fn new_status_output_with_rate_limits_handle(
     reasoning_effort_override: Option<Option<ReasoningEffort>>,
     agents_summary: String,
     refreshing_rate_limits: bool,
+    marketplace_lease: Option<&MarketplaceLeaseStatus>,
 ) -> (CompositeHistoryCell, StatusHistoryHandle) {
     let command = PlainHistoryCell::new(vec!["/status".magenta().into()]);
     let (card, handle) = StatusHistoryCell::new(
@@ -236,6 +240,7 @@ pub(crate) fn new_status_output_with_rate_limits_handle(
         reasoning_effort_override,
         agents_summary,
         refreshing_rate_limits,
+        marketplace_lease,
     );
 
     (
@@ -264,6 +269,7 @@ impl StatusHistoryCell {
         reasoning_effort_override: Option<Option<ReasoningEffort>>,
         agents_summary: String,
         refreshing_rate_limits: bool,
+        marketplace_lease: Option<&MarketplaceLeaseStatus>,
     ) -> (Self, StatusHistoryHandle) {
         let approval_policy = AskForApproval::from(config.permissions.approval_policy.value());
         let permission_profile = config.permissions.effective_permission_profile();
@@ -365,6 +371,7 @@ impl StatusHistoryCell {
                 thread_name,
                 session_id,
                 forked_from,
+                marketplace_lease: marketplace_lease.cloned(),
                 token_usage,
                 agents_summary,
                 rate_limit_state: rate_limit_state.clone(),
@@ -768,6 +775,19 @@ impl HistoryCell for StatusHistoryCell {
         if self.collaboration_mode.is_some() {
             push_label(&mut labels, &mut seen, "Collaboration mode");
         }
+        if self.marketplace_lease.is_some() {
+            for label in [
+                "SOLAI lease",
+                "Lease model",
+                "Lease provider",
+                "Lease endpoint",
+                "Lease bought",
+                "Lease expires",
+                "Lease using",
+            ] {
+                push_label(&mut labels, &mut seen, label);
+            }
+        }
         push_label(&mut labels, &mut seen, "Token usage");
         if self.token_usage.context_window.is_some() {
             push_label(&mut labels, &mut seen, "Context window");
@@ -850,6 +870,33 @@ impl HistoryCell for StatusHistoryCell {
         {
             lines.push(formatter.line("Forked from", vec![Span::from(forked_from.clone())]));
         }
+        if let Some(lease) = self.marketplace_lease.as_ref() {
+            lines.push(Line::from(Vec::<Span<'static>>::new()));
+            lines.push(formatter.line(
+                "SOLAI lease",
+                vec![
+                    Span::from(lease.id.clone()),
+                    Span::from(" (").dim(),
+                    Span::from(lease.status.clone()).dim(),
+                    Span::from(")").dim(),
+                ],
+            ));
+            lines.push(formatter.line("Lease model", vec![Span::from(lease.model.clone())]));
+            lines.push(formatter.line("Lease provider", vec![Span::from(lease.provider.clone())]));
+            lines.push(formatter.line("Lease endpoint", vec![Span::from(lease.endpoint.clone())]));
+            lines.push(formatter.line(
+                "Lease bought",
+                vec![Span::from(format_marketplace_lease_time(lease.starts_at))],
+            ));
+            lines.push(formatter.line(
+                "Lease expires",
+                vec![Span::from(format_marketplace_lease_time(lease.expires_at))],
+            ));
+            lines.push(formatter.line(
+                "Lease using",
+                vec![Span::from(if lease.using_now { "yes" } else { "no" })],
+            ));
+        }
 
         lines.push(Line::from(Vec::<Span<'static>>::new()));
         // Hide token usage only for ChatGPT subscribers
@@ -928,6 +975,13 @@ fn format_model_provider(config: &Config, runtime_base_url: Option<&str>) -> Opt
         Some(base_url) => format!("{provider_name} - {base_url}"),
         None => provider_name.to_string(),
     })
+}
+
+fn format_marketplace_lease_time(value: DateTime<chrono::Utc>) -> String {
+    value
+        .with_timezone(&Local)
+        .format("%Y-%m-%d %H:%M:%S %Z")
+        .to_string()
 }
 
 fn sanitize_base_url(raw: &str) -> Option<String> {

@@ -783,6 +783,11 @@ pub(crate) enum AppEvent {
         address: String,
     },
 
+    /// Route subsequent model requests through an active SOLAI marketplace lease.
+    UseMarketplaceLease {
+        lease_id: String,
+    },
+
     /// Open the confirmation prompt before enabling full access mode.
     OpenFullAccessConfirmation {
         preset: ApprovalPreset,

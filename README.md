@@ -71,6 +71,7 @@ Inside the interactive SOLAI Agent session, use slash commands:
 /rent --choice 1 --hours 1
 /leases
 /lease <LEASE_ID>
+/use-lease <LEASE_ID>
 /marketplace run --model SOLAI-20B --lease <LEASE_ID> --prompt "Explain SOLAI in one paragraph"
 /release <LEASE_ID>
 ```

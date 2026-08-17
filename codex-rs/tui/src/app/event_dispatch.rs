@@ -1102,6 +1102,59 @@ impl App {
                     }
                 }
             }
+            AppEvent::UseMarketplaceLease { lease_id } => {
+                self.chat_widget.add_info_message(
+                    format!("Activating SOLAI marketplace lease {lease_id}..."),
+                    /*hint*/ None,
+                );
+                match crate::marketplace_lease::load_active_marketplace_lease(&lease_id).await {
+                    Ok(lease) => {
+                        let provider_id = lease.provider_key();
+                        let base_url = lease.base_url();
+                        let mut model_provider =
+                            codex_model_provider_info::create_oss_provider_with_base_url(
+                                &base_url,
+                                codex_model_provider_info::WireApi::Responses,
+                            );
+                        model_provider.name = lease.provider_name();
+                        model_provider.http_headers = Some(
+                            [
+                                ("x-solai-lease-id".to_string(), lease.id.clone()),
+                                ("x-solai-lease-token".to_string(), lease.auth_token.clone()),
+                            ]
+                            .into_iter()
+                            .collect(),
+                        );
+
+                        self.config.model = Some(lease.model.clone());
+                        self.config.model_provider_id = provider_id.clone();
+                        self.config.model_provider = model_provider.clone();
+                        self.chat_widget
+                            .set_model_provider(provider_id, model_provider);
+                        self.chat_widget.set_model(&lease.model);
+                        self.sync_active_thread_model_setting(app_server, lease.model.clone())
+                            .await;
+                        self.sync_active_thread_service_tier_to_cached_session()
+                            .await;
+
+                        self.chat_widget.add_info_message(
+                            format!(
+                                "SOLAI lease active: {} using model {} at {}. Expires at {}.",
+                                lease.id, lease.model, base_url, lease.expires_at
+                            ),
+                            Some(
+                                "New tasks in this session will use the rented provider when the active thread accepts runtime provider changes. If a running thread keeps the old provider, start a new chat after /use-lease."
+                                    .to_string(),
+                            ),
+                        );
+                    }
+                    Err(err) => {
+                        self.chat_widget.add_error_message(format!(
+                            "Failed to activate SOLAI marketplace lease: {err}"
+                        ));
+                    }
+                }
+            }
             AppEvent::OpenFullAccessConfirmation {
                 preset,
                 return_to_permissions,

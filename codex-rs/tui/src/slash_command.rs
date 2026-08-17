@@ -21,6 +21,8 @@ pub enum SlashCommand {
     Rent,
     Leases,
     Lease,
+    #[strum(to_string = "use-lease")]
+    UseLease,
     Release,
     Ide,
     Permissions,
@@ -144,6 +146,7 @@ impl SlashCommand {
             SlashCommand::Rent => "reserve exclusive SOLAI compute by the hour",
             SlashCommand::Leases => "list SOLAI marketplace leases",
             SlashCommand::Lease => "show one SOLAI marketplace lease",
+            SlashCommand::UseLease => "use an active SOLAI lease for new tasks",
             SlashCommand::Release => "release an active SOLAI marketplace lease",
             SlashCommand::Ide => {
                 "include current selection, open files, and other context from your IDE"
@@ -210,6 +213,7 @@ impl SlashCommand {
                 | SlashCommand::Rent
                 | SlashCommand::Leases
                 | SlashCommand::Lease
+                | SlashCommand::UseLease
                 | SlashCommand::Release
         )
     }
@@ -257,6 +261,7 @@ impl SlashCommand {
             | SlashCommand::Rent
             | SlashCommand::Leases
             | SlashCommand::Lease
+            | SlashCommand::UseLease
             | SlashCommand::Release
             | SlashCommand::Clear
             | SlashCommand::Logout

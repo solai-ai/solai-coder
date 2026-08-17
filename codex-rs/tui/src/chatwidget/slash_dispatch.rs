@@ -48,6 +48,7 @@ const QUOTE_USAGE: &str =
 const RENT_USAGE: &str =
     "Usage: /rent --choice <N> --hours <HOURS> or /rent --model <MODEL> --hours <HOURS>";
 const LEASE_USAGE: &str = "Usage: /lease <LEASE_ID>";
+const USE_LEASE_USAGE: &str = "Usage: /use-lease <LEASE_ID>";
 const RELEASE_USAGE: &str = "Usage: /release <LEASE_ID>";
 
 enum CompactCommandArg {
@@ -309,6 +310,9 @@ impl ChatWidget {
             }
             SlashCommand::Lease => {
                 self.add_info_message(LEASE_USAGE.to_string(), None);
+            }
+            SlashCommand::UseLease => {
+                self.add_info_message(USE_LEASE_USAGE.to_string(), None);
             }
             SlashCommand::Release => {
                 self.add_info_message(RELEASE_USAGE.to_string(), None);
@@ -1009,6 +1013,10 @@ impl ChatWidget {
             SlashCommand::Lease if !trimmed.is_empty() => {
                 self.run_marketplace_shell_command("lease", trimmed);
             }
+            SlashCommand::UseLease if !trimmed.is_empty() => {
+                self.app_event_tx
+                    .send(AppEvent::UseMarketplaceLease { lease_id: args });
+            }
             SlashCommand::Release if !trimmed.is_empty() => {
                 self.run_marketplace_shell_command("release", trimmed);
             }
@@ -1218,6 +1226,7 @@ impl ChatWidget {
             | SlashCommand::Rent
             | SlashCommand::Leases
             | SlashCommand::Lease
+            | SlashCommand::UseLease
             | SlashCommand::Release
             | SlashCommand::Personality
             | SlashCommand::Plan

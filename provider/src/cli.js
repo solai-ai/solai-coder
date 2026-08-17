@@ -447,6 +447,7 @@ async function listMarketplaceLeases(leaseArgs) {
   const json = leaseArgs.includes("--json");
   const leases = (await loadMarketplaceLeases()).leases.map((lease) => ({
     ...publicLocalLease(lease),
+    status: leaseDisplayStatus(lease),
     activeNow: isLeaseActive(lease),
   }));
 
@@ -462,7 +463,7 @@ async function listMarketplaceLeases(leaseArgs) {
 
   console.log(`${"LEASE".padEnd(16)}  ${"STATUS".padEnd(8)}  MODEL  EXPIRES`);
   for (const lease of leases) {
-    console.log(`${lease.id.padEnd(16)}  ${(lease.activeNow ? "ACTIVE" : lease.status || "EXPIRED").padEnd(8)}  ${lease.model}  ${lease.expiresAt}`);
+    console.log(`${lease.id.padEnd(16)}  ${lease.status.padEnd(8)}  ${lease.model}  ${lease.expiresAt}`);
   }
 }
 
@@ -478,7 +479,7 @@ async function showMarketplaceLease(leaseArgs) {
     throw new Error(`Lease not found: ${leaseId}`);
   }
 
-  const output = { ...publicLocalLease(lease), activeNow: isLeaseActive(lease) };
+  const output = { ...publicLocalLease(lease), status: leaseDisplayStatus(lease), activeNow: isLeaseActive(lease) };
   if (json) {
     console.log(JSON.stringify(output, null, 2));
     return;
@@ -488,7 +489,7 @@ async function showMarketplaceLease(leaseArgs) {
   console.log(`Provider: ${output.providerId}`);
   console.log(`Endpoint: ${output.endpoint}`);
   console.log(`Model: ${output.model}`);
-  console.log(`Status: ${output.activeNow ? "ACTIVE" : output.status || "EXPIRED"}`);
+  console.log(`Status: ${output.status}`);
   console.log(`Expires: ${output.expiresAt}`);
 }
 
@@ -1300,6 +1301,16 @@ function isLeaseActive(lease) {
     && new Date(lease.expiresAt).getTime() > Date.now();
 }
 
+function leaseDisplayStatus(lease) {
+  if (isLeaseActive(lease)) {
+    return "ACTIVE";
+  }
+  if (!lease?.status || lease.status === "ACTIVE") {
+    return "EXPIRED";
+  }
+  return lease.status;
+}
+
 function leaseAllowsJob(lease, auth) {
   return isLeaseActive(lease)
     && auth?.leaseId === lease.id
@@ -1339,7 +1350,7 @@ function publicLease(lease, options = {}) {
     totalSolai: lease.totalSolai,
     startsAt: lease.startsAt,
     expiresAt: lease.expiresAt,
-    status: isLeaseActive(lease) ? "ACTIVE" : lease.status,
+    status: leaseDisplayStatus(lease),
     createdAt: lease.createdAt,
     updatedAt: lease.updatedAt,
   };

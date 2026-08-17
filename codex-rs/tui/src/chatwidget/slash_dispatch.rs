@@ -688,10 +688,28 @@ impl ChatWidget {
 
     fn run_marketplace_shell_command(&mut self, subcommand: &str, args: &str) {
         let trimmed = args.trim();
-        let command = if trimmed.is_empty() {
-            format!("solai marketplace {subcommand}")
+        let solai_bin = std::env::current_exe()
+            .ok()
+            .map(|path| path.to_string_lossy().into_owned())
+            .unwrap_or_else(|| "solai".to_string());
+        let command_parts = if trimmed.is_empty() {
+            vec![solai_bin, "marketplace".to_string(), subcommand.to_string()]
         } else {
-            format!("solai marketplace {subcommand} {trimmed}")
+            let Some(mut args) = shlex::split(trimmed) else {
+                self.add_error_message(
+                    "Failed to parse marketplace command arguments.".to_string(),
+                );
+                return;
+            };
+            let mut command_parts =
+                vec![solai_bin, "marketplace".to_string(), subcommand.to_string()];
+            command_parts.append(&mut args);
+            command_parts
+        };
+        let command = shlex::try_join(command_parts.iter().map(String::as_str));
+        let Ok(command) = command else {
+            self.add_error_message("Failed to build marketplace command.".to_string());
+            return;
         };
         self.submit_op(AppCommand::run_user_shell_command(command));
     }

@@ -10,36 +10,28 @@ SOLAI Coder is a local-first AI agent and coding environment built around the `s
 
 ## SOLAI Node
 
-SOLAI Node is the inference bridge for the SOLAI ecosystem. It connects applications
-to model providers, handles routing, jobs, telemetry, pricing, and provider discovery,
-and can be used in two ways:
+SOLAI Node is the inference bridge for the SOLAI ecosystem. It is developed as a
+private runtime and can be used in two ways:
 
 - embedded inside SOLAI Coder for the default user experience
 - installed separately for partners and external applications that only need inference
 
-This split keeps the coder workflow simple while allowing the inference layer to grow
-as an independent product.
+SOLAI Coder remains the public local-first coding experience. When Node is available,
+the Coder can administer it from inside the CLI/TUI so users do not need to operate
+the runtime manually for common local workflows.
 
 Public progress is tracked in the [SOLAI Node Docs](https://github.com/solai-ai/solai-node-docs).
 
-## SOLAI Protocol
+## Node administration
 
-The SOLAI protocol is under active development in this repository. It connects
-local agents, model providers, pricing, scheduling, signed heartbeats, telemetry,
-and provider discovery into a compute network for AI workloads.
+SOLAI Coder can expose user-facing administration for SOLAI Node:
 
-The current protocol work includes:
-
-- Provider identity with signed heartbeat payloads
-- Local compute provider mode through `solai provider`
-- Ollama-compatible inference routing
-- Provider pricing per model in SOLAI/hour
-- Availability scheduling for provider machines
-- Runtime metrics for CPU, memory, GPU, model inventory, queue size and job state
-- HTTP endpoints for health checks, metrics, heartbeats, jobs and chat completions
-- A separate `provider/` package so the compute layer can evolve alongside the CLI
-
-Provider commands:
+- local Node health and availability
+- provider status
+- model inventory
+- pricing controls
+- availability schedules
+- local metrics and monitor status
 
 ```bash
 solai provider enable
@@ -49,19 +41,8 @@ solai provider schedule --from 22:00 --to 07:00
 solai provider disable
 ```
 
-## Deployment model
-
-The current repository keeps the coder and node work together so the user-facing
-`solai` flow stays stable while the platform evolves.
-
-Recommended deployment modes:
-
-- **Embedded**: SOLAI Coder launches SOLAI Node locally and uses it through the internal SDK
-- **Standalone local**: SOLAI Node is installed on its own machine and exposed through a local API
-- **Standalone remote**: SOLAI Node runs in a server or container and serves partner applications
-
-This design allows a partner to use only the Node when they need inference without
-installing the full coder experience.
+Node remains the source of truth for provider state, inference jobs, routing, metering,
+and runtime policy.
 
 ## Install
 

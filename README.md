@@ -20,6 +20,8 @@ and can be used in two ways:
 This split keeps the coder workflow simple while allowing the inference layer to grow
 as an independent product.
 
+Public progress is tracked in [SOLAI Node Roadmap](docs/solai-node-roadmap.md).
+
 ## SOLAI Protocol
 
 The SOLAI protocol is under active development in this repository. It connects

@@ -1,4 +1,4 @@
-# SOLAI Agent
+# SOLAI Coder
 
 > 🚀 **SOLAI is currently in the Funding Phase on Pump.fun.**
 > Everyone can participate and become part of the AI + DePIN ecosystem from the beginning. 🔥
@@ -6,7 +6,19 @@
 >
 > HOLDERS of $SOLAI will be able to rent their inference power to other SOLAI Coder users and earn $SOLAI in return.
 
-SOLAI Agent is a local-first AI agent and coder built around the `solai` CLI.
+SOLAI Coder is a local-first AI agent and coding environment built around the `solai` CLI.
+
+## SOLAI Node
+
+SOLAI Node is the inference bridge for the SOLAI ecosystem. It connects applications
+to model providers, handles routing, jobs, telemetry, pricing, and provider discovery,
+and can be used in two ways:
+
+- embedded inside SOLAI Coder for the default user experience
+- installed separately for partners and external applications that only need inference
+
+This split keeps the coder workflow simple while allowing the inference layer to grow
+as an independent product.
 
 ## SOLAI Protocol
 
@@ -35,10 +47,19 @@ solai provider schedule --from 22:00 --to 07:00
 solai provider disable
 ```
 
-The protocol code currently lives in this repository with the coder CLI because
-provider registration, local execution and agent workflows are being developed
-together. As the network layer expands, the protocol can be split into dedicated
-packages or repositories without changing the user-facing `solai` command flow.
+## Deployment model
+
+The current repository keeps the coder and node work together so the user-facing
+`solai` flow stays stable while the platform evolves.
+
+Recommended deployment modes:
+
+- **Embedded**: SOLAI Coder launches SOLAI Node locally and uses it through the internal SDK
+- **Standalone local**: SOLAI Node is installed on its own machine and exposed through a local API
+- **Standalone remote**: SOLAI Node runs in a server or container and serves partner applications
+
+This design allows a partner to use only the Node when they need inference without
+installing the full coder experience.
 
 ## Install
 
@@ -126,7 +147,7 @@ port `9898` at `/metrics`; the line stays hidden until metrics are available.
 
 ## Support
 
-SOLAI Agent is the free local agent and coder layer for the SOLAI ecosystem.
+SOLAI Coder is the free local agent and coder layer for the SOLAI ecosystem.
 
 ## More
 

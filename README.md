@@ -24,25 +24,26 @@ Public progress is tracked in the [SOLAI Node Docs](https://github.com/solai-ai/
 
 ## Node administration
 
-SOLAI Coder can expose user-facing administration for SOLAI Node:
-
-- local Node health and availability
-- provider status
-- model inventory
-- pricing controls
-- availability schedules
-- local metrics and monitor status
+The `solai node` command connects Coder to a running SOLAI Node. It can check the
+runtime, register an Ollama provider, submit a chat job, and wait for the real model
+response:
 
 ```bash
-solai provider enable
-solai provider status
-solai provider price SOLAI-20B 4
-solai provider schedule --from 22:00 --to 07:00
-solai provider disable
+export SOLAI_NODE_URL=http://127.0.0.1:9876
+
+solai node health
+solai node probe OLLAMA_HOST:11434
+solai node chat --provider PROVIDER_ID --model gemma3:4b \
+  "Reply with only SOLAI_OK"
 ```
 
-Node remains the source of truth for provider state, inference jobs, routing, metering,
-and runtime policy.
+Omit `--provider` to let Node route the job automatically. Add `--json` to print
+the complete job detail, including metering. If Node authentication is enabled, set
+`SOLAI_NODE_API_KEY`; using the environment avoids exposing the key in shell history.
+
+Node remains the source of truth for provider state, inference jobs, routing,
+metering, and runtime policy. Pricing, availability schedules, and richer provider
+controls remain on the product roadmap.
 
 ## Install
 

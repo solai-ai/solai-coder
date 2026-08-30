@@ -204,6 +204,7 @@ impl NodeProvidersCli {
                 capacity,
                 active_jobs,
             } => {
+                validate_heartbeat_capacity(capacity, active_jobs)?;
                 let response: Value = client
                     .post(
                         &format!("/v1/providers/{provider_id}/heartbeat"),
@@ -308,6 +309,19 @@ pub(super) fn parse_hh_mm(value: &str) -> Result<String, String> {
     } else {
         Err("must use HH:MM in 24-hour time".to_string())
     }
+}
+
+pub(super) fn validate_heartbeat_capacity(
+    capacity: Option<u32>,
+    active_jobs: Option<u32>,
+) -> Result<(), anyhow::Error> {
+    if capacity
+        .zip(active_jobs)
+        .is_some_and(|(capacity, active_jobs)| active_jobs > capacity)
+    {
+        bail!("active jobs cannot exceed provider capacity");
+    }
+    Ok(())
 }
 
 #[derive(Serialize)]

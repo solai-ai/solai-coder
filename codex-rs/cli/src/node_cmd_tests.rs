@@ -152,3 +152,9 @@ fn heartbeat_serializes_explicit_status_changes() {
         serde_json::json!({"status": "unavailable"})
     );
 }
+
+#[test]
+fn validates_heartbeat_capacity_before_sending() {
+    assert!(providers::validate_heartbeat_capacity(Some(4), Some(4)).is_ok());
+    assert!(providers::validate_heartbeat_capacity(Some(4), Some(5)).is_err());
+}

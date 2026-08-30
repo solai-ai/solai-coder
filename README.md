@@ -72,7 +72,8 @@ Provider controls preserve the Node lifecycle rules. Deleting a provider require
 `--yes` and is still rejected by Node while active jobs reference that provider.
 Prices must be positive decimal values; schedules use 24-hour `HH:MM` times and
 can include an IANA timezone. Heartbeats can update a provider's availability,
-capacity, and active-job count.
+capacity, and active-job count. Omit `--status` to update capacity without
+changing the provider's current availability state.
 
 Node remains the source of truth for provider state, inference jobs, routing,
 metering, and runtime policy.

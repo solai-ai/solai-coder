@@ -101,9 +101,9 @@ enum ProviderCommand {
         /// Provider id.
         provider_id: String,
 
-        /// Current provider status.
-        #[arg(long, default_value = "available")]
-        status: ProviderStatusArg,
+        /// Optional provider status. Omit to preserve the current Node status.
+        #[arg(long)]
+        status: Option<ProviderStatusArg>,
 
         /// Optional total concurrent-job capacity.
         #[arg(long)]
@@ -259,7 +259,7 @@ struct UpdateProviderScheduleRequest {
 
 #[derive(Debug, Clone, clap::ValueEnum, Serialize)]
 #[serde(rename_all = "snake_case")]
-enum ProviderStatusArg {
+pub(super) enum ProviderStatusArg {
     Available,
     Unavailable,
     Disabled,
@@ -267,12 +267,13 @@ enum ProviderStatusArg {
 }
 
 #[derive(Serialize)]
-struct ProviderHeartbeatRequest {
-    status: ProviderStatusArg,
-    capacity: Option<u32>,
-    active_jobs: Option<u32>,
+pub(super) struct ProviderHeartbeatRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
-    models: Option<Vec<serde_json::Value>>,
+    pub(super) status: Option<ProviderStatusArg>,
+    pub(super) capacity: Option<u32>,
+    pub(super) active_jobs: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) models: Option<Vec<serde_json::Value>>,
 }
 
 pub(super) fn parse_positive_decimal(value: &str) -> Result<String, String> {

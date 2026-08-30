@@ -122,3 +122,18 @@ fn validates_provider_operator_inputs() {
     assert_eq!(providers::parse_hh_mm("22:00").unwrap(), "22:00");
     assert!(providers::parse_hh_mm("24:00").is_err());
 }
+
+#[test]
+fn heartbeat_omits_status_when_only_capacity_changes() {
+    let request = providers::ProviderHeartbeatRequest {
+        status: None,
+        capacity: Some(4),
+        active_jobs: Some(1),
+        models: None,
+    };
+
+    assert_eq!(
+        serde_json::to_value(request).unwrap(),
+        serde_json::json!({"capacity": 4, "active_jobs": 1})
+    );
+}

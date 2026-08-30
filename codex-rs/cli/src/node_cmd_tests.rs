@@ -99,6 +99,7 @@ fn serializes_bounded_provider_filters() {
     let query = providers::ListProvidersQuery {
         status: Some("available".to_string()),
         model: Some("gemma3:4b".to_string()),
+        has_capacity: Some(true),
         at_capacity: Some(false),
         limit: 25,
         offset: 5,
@@ -112,7 +113,9 @@ fn serializes_bounded_provider_filters() {
 
     assert_eq!(
         request.url().query(),
-        Some("status=available&model=gemma3%3A4b&at_capacity=false&limit=25&offset=5")
+        Some(
+            "status=available&model=gemma3%3A4b&has_capacity=true&at_capacity=false&limit=25&offset=5"
+        )
     );
 }
 

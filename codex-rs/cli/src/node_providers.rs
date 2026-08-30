@@ -25,6 +25,10 @@ enum ProviderCommand {
         #[arg(long)]
         model: Option<String>,
 
+        /// Only providers that have (true) or lack (false) a capacity report.
+        #[arg(long)]
+        has_capacity: Option<bool>,
+
         /// Only providers at (true) or not at (false) their reported capacity.
         #[arg(long)]
         at_capacity: Option<bool>,
@@ -135,6 +139,7 @@ impl NodeProvidersCli {
             ProviderCommand::List {
                 status,
                 model,
+                has_capacity,
                 at_capacity,
                 limit,
                 offset,
@@ -145,6 +150,7 @@ impl NodeProvidersCli {
                         &ListProvidersQuery {
                             status,
                             model,
+                            has_capacity,
                             at_capacity,
                             limit,
                             offset,
@@ -334,6 +340,7 @@ pub(super) fn validate_heartbeat_capacity(
 pub(super) struct ListProvidersQuery {
     pub(super) status: Option<String>,
     pub(super) model: Option<String>,
+    pub(super) has_capacity: Option<bool>,
     pub(super) at_capacity: Option<bool>,
     pub(super) limit: u16,
     pub(super) offset: usize,

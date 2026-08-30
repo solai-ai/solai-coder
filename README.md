@@ -48,6 +48,13 @@ solai node jobs route JOB_ID
 solai node jobs assign JOB_ID --provider PROVIDER_ID
 solai node jobs cancel JOB_ID
 solai node jobs retry JOB_ID
+solai node providers list --status available --model gemma3:4b --limit 25
+solai node providers get PROVIDER_ID
+solai node providers refresh PROVIDER_ID
+solai node providers unavailable PROVIDER_ID
+solai node providers disable PROVIDER_ID
+solai node providers enable PROVIDER_ID
+solai node providers delete PROVIDER_ID --yes
 ```
 
 Omit `--provider` to let Node route the job automatically. Add `--json` to print
@@ -58,6 +65,8 @@ maximum of 500.
 Job listing follows the same bounded limit and supports status, workload, provider,
 tenant, and model filters. Cancellation and retry are explicit lifecycle actions;
 retry creates a new job attempt instead of overwriting the original record.
+Provider controls preserve the Node lifecycle rules. Deleting a provider requires
+`--yes` and is still rejected by Node while active jobs reference that provider.
 
 Node remains the source of truth for provider state, inference jobs, routing,
 metering, and runtime policy. Pricing, availability schedules, and richer provider

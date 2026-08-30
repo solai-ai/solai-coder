@@ -92,3 +92,25 @@ fn serializes_bounded_job_filters() {
         Some("status=completed&workload=chat_complete&tenant_id=tenant-a&limit=25&offset=5")
     );
 }
+
+#[test]
+fn serializes_bounded_provider_filters() {
+    let client = NodeClient::new("http://127.0.0.1:9876".to_string(), None).unwrap();
+    let query = providers::ListProvidersQuery {
+        status: Some("available".to_string()),
+        model: Some("gemma3:4b".to_string()),
+        limit: 25,
+        offset: 5,
+    };
+    let request = client
+        .http
+        .get(client.endpoint("/v1/providers"))
+        .query(&query)
+        .build()
+        .unwrap();
+
+    assert_eq!(
+        request.url().query(),
+        Some("status=available&model=gemma3%3A4b&limit=25&offset=5")
+    );
+}

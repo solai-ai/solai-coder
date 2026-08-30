@@ -3,9 +3,16 @@ use clap::ValueEnum;
 use serde::Serialize;
 use serde_json::Value;
 
+pub(super) const DEFAULT_NODE_URL: &str = "http://127.0.0.1:9876";
+pub(super) const API_KEY_HEADER: &str = "x-solai-node-key";
+
 pub(super) fn print_json(value: &Value) -> Result<()> {
     println!("{}", serde_json::to_string_pretty(value)?);
     Ok(())
+}
+
+pub(super) fn truncate(value: &str, max_chars: usize) -> String {
+    value.chars().take(max_chars).collect()
 }
 
 #[derive(Debug, Clone, ValueEnum, Serialize)]

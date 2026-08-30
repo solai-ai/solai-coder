@@ -16,14 +16,13 @@ use serde_json::Value;
 mod admin;
 #[path = "node_jobs.rs"]
 mod jobs;
-
-const DEFAULT_NODE_URL: &str = "http://127.0.0.1:9876";
-const API_KEY_HEADER: &str = "x-solai-node-key";
+#[path = "node_providers.rs"]
+mod providers;
 
 #[derive(Debug, Parser)]
 pub struct NodeCli {
     /// SOLAI Node base URL.
-    #[arg(long, env = "SOLAI_NODE_URL", default_value = DEFAULT_NODE_URL, global = true)]
+    #[arg(long, env = "SOLAI_NODE_URL", default_value = admin::DEFAULT_NODE_URL, global = true)]
     url: String,
 
     /// SOLAI Node API key. Prefer SOLAI_NODE_API_KEY over this flag.
@@ -118,6 +117,8 @@ enum NodeCommand {
 
     /// Inspect or control asynchronous inference jobs.
     Jobs(jobs::NodeJobsCli),
+
+    Providers(providers::NodeProvidersCli),
 
     /// Discover and register a model provider.
     Probe {
@@ -217,6 +218,7 @@ impl NodeCli {
                 admin::print_json(&response)?;
             }
             NodeCommand::Jobs(jobs) => jobs.run(&client).await?,
+            NodeCommand::Providers(providers) => providers.run(&client).await?,
             NodeCommand::Probe { address } => {
                 let response: Value = client
                     .post("/v1/providers/probe", &ProbeProviderRequest { address })
@@ -389,7 +391,7 @@ impl NodeClient {
 
     fn authorize(&self, request: RequestBuilder) -> RequestBuilder {
         match self.api_key.as_ref() {
-            Some(api_key) => request.header(API_KEY_HEADER, api_key),
+            Some(api_key) => request.header(admin::API_KEY_HEADER, api_key),
             None => request,
         }
     }
@@ -408,7 +410,10 @@ impl NodeClient {
             .await
             .context("failed to read SOLAI Node response")?;
         if !status.is_success() {
-            bail!("SOLAI Node returned {status}: {}", truncate(&body, 512));
+            bail!(
+                "SOLAI Node returned {status}: {}",
+                admin::truncate(&body, 512)
+            );
         }
         serde_json::from_str(&body).context("SOLAI Node returned invalid JSON")
     }
@@ -422,10 +427,6 @@ fn assistant_content(detail: &JobDetailResponse) -> Result<&str> {
         .and_then(|message| message.get("content"))
         .and_then(Value::as_str)
         .context("completed SOLAI Node job did not contain assistant text")
-}
-
-fn truncate(value: &str, max_chars: usize) -> String {
-    value.chars().take(max_chars).collect()
 }
 
 #[derive(Serialize)]

@@ -33,6 +33,10 @@ enum ProviderCommand {
         #[arg(long)]
         at_capacity: Option<bool>,
 
+        /// Require at least this many reported free capacity slots.
+        #[arg(long)]
+        min_available_slots: Option<u32>,
+
         /// Maximum records to return.
         #[arg(long, default_value_t = 50, value_parser = clap::value_parser!(u16).range(1..=500))]
         limit: u16,
@@ -141,6 +145,7 @@ impl NodeProvidersCli {
                 model,
                 has_capacity,
                 at_capacity,
+                min_available_slots,
                 limit,
                 offset,
             } => {
@@ -152,6 +157,7 @@ impl NodeProvidersCli {
                             model,
                             has_capacity,
                             at_capacity,
+                            min_available_slots,
                             limit,
                             offset,
                         },
@@ -342,6 +348,7 @@ pub(super) struct ListProvidersQuery {
     pub(super) model: Option<String>,
     pub(super) has_capacity: Option<bool>,
     pub(super) at_capacity: Option<bool>,
+    pub(super) min_available_slots: Option<u32>,
     pub(super) limit: u16,
     pub(super) offset: usize,
 }

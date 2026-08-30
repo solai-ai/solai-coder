@@ -101,6 +101,7 @@ fn serializes_bounded_provider_filters() {
         model: Some("gemma3:4b".to_string()),
         has_capacity: Some(true),
         at_capacity: Some(false),
+        min_available_slots: Some(2),
         limit: 25,
         offset: 5,
     };
@@ -114,7 +115,7 @@ fn serializes_bounded_provider_filters() {
     assert_eq!(
         request.url().query(),
         Some(
-            "status=available&model=gemma3%3A4b&has_capacity=true&at_capacity=false&limit=25&offset=5"
+            "status=available&model=gemma3%3A4b&has_capacity=true&at_capacity=false&min_available_slots=2&limit=25&offset=5"
         )
     );
 }

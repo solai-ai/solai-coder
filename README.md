@@ -48,7 +48,7 @@ solai node jobs route JOB_ID
 solai node jobs assign JOB_ID --provider PROVIDER_ID
 solai node jobs cancel JOB_ID
 solai node jobs retry JOB_ID
-solai node providers list --status available --model gemma3:4b --min-available-slots 1 --limit 25
+solai node providers list --status available --model gemma3:4b --min-available-slots 1 --sort available-capacity --limit 25
 solai node providers get PROVIDER_ID
 solai node providers refresh PROVIDER_ID
 solai node providers unavailable PROVIDER_ID

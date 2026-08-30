@@ -14,11 +14,8 @@ use serde_json::Value;
 
 #[path = "node_admin.rs"]
 mod admin;
-
-use admin::ListEventsQuery;
-use admin::ListMeteringQuery;
-use admin::RuntimeModeArg;
-use admin::UpdateRuntimeModeRequest;
+#[path = "node_jobs.rs"]
+mod jobs;
 
 const DEFAULT_NODE_URL: &str = "http://127.0.0.1:9876";
 const API_KEY_HEADER: &str = "x-solai-node-key";
@@ -62,7 +59,7 @@ enum NodeCommand {
     /// Change whether the runtime starts queued jobs.
     Mode {
         /// New runtime mode.
-        mode: RuntimeModeArg,
+        mode: admin::RuntimeModeArg,
     },
 
     /// Inspect bounded operational events.
@@ -119,6 +116,9 @@ enum NodeCommand {
         offset: usize,
     },
 
+    /// Inspect or control asynchronous inference jobs.
+    Jobs(jobs::NodeJobsCli),
+
     /// Discover and register a model provider.
     Probe {
         /// Provider address, for example 192.168.1.20:11434.
@@ -163,9 +163,12 @@ impl NodeCli {
             NodeCommand::Runtime => client.print_get("/v1/runtime").await?,
             NodeCommand::Mode { mode } => {
                 let response: Value = client
-                    .post("/v1/runtime/mode", &UpdateRuntimeModeRequest { mode })
+                    .post(
+                        "/v1/runtime/mode",
+                        &admin::UpdateRuntimeModeRequest { mode },
+                    )
                     .await?;
-                print_json(&response)?;
+                admin::print_json(&response)?;
             }
             NodeCommand::Events {
                 kind,
@@ -177,7 +180,7 @@ impl NodeCli {
                 let response: Value = client
                     .get_with_query(
                         "/v1/events",
-                        &ListEventsQuery {
+                        &admin::ListEventsQuery {
                             kind,
                             provider_id: provider,
                             job_id: job,
@@ -186,7 +189,7 @@ impl NodeCli {
                         },
                     )
                     .await?;
-                print_json(&response)?;
+                admin::print_json(&response)?;
             }
             NodeCommand::Metering {
                 tenant,
@@ -200,7 +203,7 @@ impl NodeCli {
                 let response: Value = client
                     .get_with_query(
                         "/v1/metering",
-                        &ListMeteringQuery {
+                        &admin::ListMeteringQuery {
                             tenant_id: tenant,
                             provider_id: provider,
                             job_id: job,
@@ -211,8 +214,9 @@ impl NodeCli {
                         },
                     )
                     .await?;
-                print_json(&response)?;
+                admin::print_json(&response)?;
             }
+            NodeCommand::Jobs(jobs) => jobs.run(&client).await?,
             NodeCommand::Probe { address } => {
                 let response: Value = client
                     .post("/v1/providers/probe", &ProbeProviderRequest { address })
@@ -364,7 +368,7 @@ impl NodeClient {
 
     async fn print_get(&self, path: &str) -> Result<()> {
         let response: Value = self.get(path).await?;
-        print_json(&response)
+        admin::print_json(&response)
     }
 
     async fn post<T, B>(&self, path: &str, body: &B) -> Result<T>
@@ -422,11 +426,6 @@ fn assistant_content(detail: &JobDetailResponse) -> Result<&str> {
 
 fn truncate(value: &str, max_chars: usize) -> String {
     value.chars().take(max_chars).collect()
-}
-
-fn print_json(value: &Value) -> Result<()> {
-    println!("{}", serde_json::to_string_pretty(value)?);
-    Ok(())
 }
 
 #[derive(Serialize)]

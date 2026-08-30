@@ -1,5 +1,12 @@
+use anyhow::Result;
 use clap::ValueEnum;
 use serde::Serialize;
+use serde_json::Value;
+
+pub(super) fn print_json(value: &Value) -> Result<()> {
+    println!("{}", serde_json::to_string_pretty(value)?);
+    Ok(())
+}
 
 #[derive(Debug, Clone, ValueEnum, Serialize)]
 #[serde(rename_all = "snake_case")]

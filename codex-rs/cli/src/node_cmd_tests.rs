@@ -35,8 +35,8 @@ fn normalizes_node_base_url() {
 
 #[test]
 fn serializes_runtime_mode_for_node_contract() {
-    let request = UpdateRuntimeModeRequest {
-        mode: RuntimeModeArg::Draining,
+    let request = admin::UpdateRuntimeModeRequest {
+        mode: admin::RuntimeModeArg::Draining,
     };
 
     assert_eq!(
@@ -48,7 +48,7 @@ fn serializes_runtime_mode_for_node_contract() {
 #[test]
 fn serializes_bounded_event_filters() {
     let client = NodeClient::new("http://127.0.0.1:9876".to_string(), None).unwrap();
-    let query = ListEventsQuery {
+    let query = admin::ListEventsQuery {
         kind: Some("job_completed".to_string()),
         provider_id: Some("provider-a".to_string()),
         job_id: None,
@@ -65,5 +65,30 @@ fn serializes_bounded_event_filters() {
     assert_eq!(
         request.url().query(),
         Some("kind=job_completed&provider_id=provider-a&limit=25&offset=5")
+    );
+}
+
+#[test]
+fn serializes_bounded_job_filters() {
+    let client = NodeClient::new("http://127.0.0.1:9876".to_string(), None).unwrap();
+    let query = jobs::ListJobsQuery {
+        status: Some("completed".to_string()),
+        workload: Some("chat_complete".to_string()),
+        provider_id: None,
+        tenant_id: Some("tenant-a".to_string()),
+        model: None,
+        limit: 25,
+        offset: 5,
+    };
+    let request = client
+        .http
+        .get(client.endpoint("/v1/jobs"))
+        .query(&query)
+        .build()
+        .unwrap();
+
+    assert_eq!(
+        request.url().query(),
+        Some("status=completed&workload=chat_complete&tenant_id=tenant-a&limit=25&offset=5")
     );
 }

@@ -42,6 +42,12 @@ solai node chat --provider PROVIDER_ID --model gemma3:4b \
   "Reply with only SOLAI_OK"
 solai node events --kind job_completed --limit 25
 solai node metering --tenant solai-coder-local --model gemma3:4b --limit 25
+solai node jobs list --status completed --limit 25
+solai node jobs detail JOB_ID
+solai node jobs route JOB_ID
+solai node jobs assign JOB_ID --provider PROVIDER_ID
+solai node jobs cancel JOB_ID
+solai node jobs retry JOB_ID
 ```
 
 Omit `--provider` to let Node route the job automatically. Add `--json` to print
@@ -49,6 +55,9 @@ the complete job detail, including metering. If Node authentication is enabled, 
 `SOLAI_NODE_API_KEY`; using the environment avoids exposing the key in shell history.
 Event and metering reads default to 50 records and reject limits above the Node
 maximum of 500.
+Job listing follows the same bounded limit and supports status, workload, provider,
+tenant, and model filters. Cancellation and retry are explicit lifecycle actions;
+retry creates a new job attempt instead of overwriting the original record.
 
 Node remains the source of truth for provider state, inference jobs, routing,
 metering, and runtime policy. Pricing, availability schedules, and richer provider

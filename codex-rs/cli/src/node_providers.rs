@@ -15,7 +15,7 @@ pub(super) struct NodeProvidersCli {
 
 #[derive(Debug, clap::Subcommand)]
 enum ProviderCommand {
-    /// List bounded providers, optionally filtered by status or model.
+    /// List bounded providers, optionally filtered by status, model, or capacity.
     List {
         /// Provider status in snake_case, for example available.
         #[arg(long)]
@@ -24,6 +24,10 @@ enum ProviderCommand {
         /// Only providers exposing this model.
         #[arg(long)]
         model: Option<String>,
+
+        /// Only providers at (true) or not at (false) their reported capacity.
+        #[arg(long)]
+        at_capacity: Option<bool>,
 
         /// Maximum records to return.
         #[arg(long, default_value_t = 50, value_parser = clap::value_parser!(u16).range(1..=500))]
@@ -131,6 +135,7 @@ impl NodeProvidersCli {
             ProviderCommand::List {
                 status,
                 model,
+                at_capacity,
                 limit,
                 offset,
             } => {
@@ -140,6 +145,7 @@ impl NodeProvidersCli {
                         &ListProvidersQuery {
                             status,
                             model,
+                            at_capacity,
                             limit,
                             offset,
                         },
@@ -328,6 +334,7 @@ pub(super) fn validate_heartbeat_capacity(
 pub(super) struct ListProvidersQuery {
     pub(super) status: Option<String>,
     pub(super) model: Option<String>,
+    pub(super) at_capacity: Option<bool>,
     pub(super) limit: u16,
     pub(super) offset: usize,
 }

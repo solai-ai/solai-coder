@@ -114,3 +114,11 @@ fn serializes_bounded_provider_filters() {
         Some("status=available&model=gemma3%3A4b&limit=25&offset=5")
     );
 }
+
+#[test]
+fn validates_provider_operator_inputs() {
+    assert_eq!(providers::parse_positive_decimal("1.25").unwrap(), "1.25");
+    assert!(providers::parse_positive_decimal("0").is_err());
+    assert_eq!(providers::parse_hh_mm("22:00").unwrap(), "22:00");
+    assert!(providers::parse_hh_mm("24:00").is_err());
+}

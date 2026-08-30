@@ -55,6 +55,9 @@ solai node providers unavailable PROVIDER_ID
 solai node providers disable PROVIDER_ID
 solai node providers enable PROVIDER_ID
 solai node providers delete PROVIDER_ID --yes
+solai node providers price PROVIDER_ID --model gemma3:4b --solai-per-hour 1.25
+solai node providers schedule PROVIDER_ID --from 22:00 --to 07:00 --timezone America/Sao_Paulo
+solai node providers heartbeat PROVIDER_ID --status available --capacity 4 --active-jobs 0
 ```
 
 Omit `--provider` to let Node route the job automatically. Add `--json` to print
@@ -67,10 +70,12 @@ tenant, and model filters. Cancellation and retry are explicit lifecycle actions
 retry creates a new job attempt instead of overwriting the original record.
 Provider controls preserve the Node lifecycle rules. Deleting a provider requires
 `--yes` and is still rejected by Node while active jobs reference that provider.
+Prices must be positive decimal values; schedules use 24-hour `HH:MM` times and
+can include an IANA timezone. Heartbeats can update a provider's availability,
+capacity, and active-job count.
 
 Node remains the source of truth for provider state, inference jobs, routing,
-metering, and runtime policy. Pricing, availability schedules, and richer provider
-controls remain on the product roadmap.
+metering, and runtime policy.
 
 ## Install
 

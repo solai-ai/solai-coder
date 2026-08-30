@@ -270,7 +270,9 @@ pub(super) enum ProviderStatusArg {
 pub(super) struct ProviderHeartbeatRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) status: Option<ProviderStatusArg>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) capacity: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) active_jobs: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) models: Option<Vec<serde_json::Value>>,

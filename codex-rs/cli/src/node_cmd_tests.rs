@@ -137,3 +137,18 @@ fn heartbeat_omits_status_when_only_capacity_changes() {
         serde_json::json!({"capacity": 4, "active_jobs": 1})
     );
 }
+
+#[test]
+fn heartbeat_serializes_explicit_status_changes() {
+    let request = providers::ProviderHeartbeatRequest {
+        status: Some(providers::ProviderStatusArg::Unavailable),
+        capacity: None,
+        active_jobs: None,
+        models: None,
+    };
+
+    assert_eq!(
+        serde_json::to_value(request).unwrap(),
+        serde_json::json!({"status": "unavailable"})
+    );
+}

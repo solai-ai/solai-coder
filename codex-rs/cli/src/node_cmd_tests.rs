@@ -32,3 +32,38 @@ fn normalizes_node_base_url() {
         "http://127.0.0.1:9876/v1/health"
     );
 }
+
+#[test]
+fn serializes_runtime_mode_for_node_contract() {
+    let request = UpdateRuntimeModeRequest {
+        mode: RuntimeModeArg::Draining,
+    };
+
+    assert_eq!(
+        serde_json::to_value(request).unwrap(),
+        serde_json::json!({"mode": "draining"})
+    );
+}
+
+#[test]
+fn serializes_bounded_event_filters() {
+    let client = NodeClient::new("http://127.0.0.1:9876".to_string(), None).unwrap();
+    let query = ListEventsQuery {
+        kind: Some("job_completed".to_string()),
+        provider_id: Some("provider-a".to_string()),
+        job_id: None,
+        limit: 25,
+        offset: 5,
+    };
+    let request = client
+        .http
+        .get(client.endpoint("/v1/events"))
+        .query(&query)
+        .build()
+        .unwrap();
+
+    assert_eq!(
+        request.url().query(),
+        Some("kind=job_completed&provider_id=provider-a&limit=25&offset=5")
+    );
+}

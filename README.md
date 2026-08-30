@@ -32,14 +32,23 @@ response:
 export SOLAI_NODE_URL=http://127.0.0.1:9876
 
 solai node health
+solai node ready
+solai node metrics
+solai node runtime
+solai node mode paused
+solai node mode running
 solai node probe OLLAMA_HOST:11434
 solai node chat --provider PROVIDER_ID --model gemma3:4b \
   "Reply with only SOLAI_OK"
+solai node events --kind job_completed --limit 25
+solai node metering --tenant solai-coder-local --model gemma3:4b --limit 25
 ```
 
 Omit `--provider` to let Node route the job automatically. Add `--json` to print
 the complete job detail, including metering. If Node authentication is enabled, set
 `SOLAI_NODE_API_KEY`; using the environment avoids exposing the key in shell history.
+Event and metering reads default to 50 records and reject limits above the Node
+maximum of 500.
 
 Node remains the source of truth for provider state, inference jobs, routing,
 metering, and runtime policy. Pricing, availability schedules, and richer provider

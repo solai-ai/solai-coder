@@ -12,6 +12,14 @@ use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 
+#[path = "node_admin.rs"]
+mod admin;
+
+use admin::ListEventsQuery;
+use admin::ListMeteringQuery;
+use admin::RuntimeModeArg;
+use admin::UpdateRuntimeModeRequest;
+
 const DEFAULT_NODE_URL: &str = "http://127.0.0.1:9876";
 const API_KEY_HEADER: &str = "x-solai-node-key";
 
@@ -38,6 +46,78 @@ pub struct NodeCli {
 enum NodeCommand {
     /// Check whether SOLAI Node is reachable.
     Health,
+
+    /// Print runtime and API version information.
+    Version,
+
+    /// Check whether SOLAI Node finished loading persistent state.
+    Ready,
+
+    /// Print provider, job, and metering counters.
+    Metrics,
+
+    /// Inspect the runtime mode and active queue counts.
+    Runtime,
+
+    /// Change whether the runtime starts queued jobs.
+    Mode {
+        /// New runtime mode.
+        mode: RuntimeModeArg,
+    },
+
+    /// Inspect bounded operational events.
+    Events {
+        /// Event kind in snake_case, for example job_completed.
+        #[arg(long)]
+        kind: Option<String>,
+
+        /// Only events for this provider.
+        #[arg(long)]
+        provider: Option<String>,
+
+        /// Only events for this job id.
+        #[arg(long)]
+        job: Option<String>,
+
+        /// Maximum records to return.
+        #[arg(long, default_value_t = 50, value_parser = clap::value_parser!(u16).range(1..=500))]
+        limit: u16,
+
+        /// Records to skip before applying the limit.
+        #[arg(long, default_value_t = 0)]
+        offset: usize,
+    },
+
+    /// Inspect bounded usage and metering records.
+    Metering {
+        /// Only records for this tenant.
+        #[arg(long)]
+        tenant: Option<String>,
+
+        /// Only records for this provider.
+        #[arg(long)]
+        provider: Option<String>,
+
+        /// Only records for this job id.
+        #[arg(long)]
+        job: Option<String>,
+
+        /// Workload in snake_case, for example chat_complete.
+        #[arg(long)]
+        workload: Option<String>,
+
+        /// Only records for this model.
+        #[arg(long)]
+        model: Option<String>,
+
+        /// Maximum records to return.
+        #[arg(long, default_value_t = 50, value_parser = clap::value_parser!(u16).range(1..=500))]
+        limit: u16,
+
+        /// Records to skip before applying the limit.
+        #[arg(long, default_value_t = 0)]
+        offset: usize,
+    },
 
     /// Discover and register a model provider.
     Probe {
@@ -76,9 +156,62 @@ impl NodeCli {
     pub async fn run(self) -> Result<()> {
         let client = NodeClient::new(self.url, self.api_key)?;
         match self.command {
-            NodeCommand::Health => {
-                let health: Value = client.get("/v1/health").await?;
-                println!("{}", serde_json::to_string_pretty(&health)?);
+            NodeCommand::Health => client.print_get("/v1/health").await?,
+            NodeCommand::Version => client.print_get("/v1/version").await?,
+            NodeCommand::Ready => client.print_get("/v1/ready").await?,
+            NodeCommand::Metrics => client.print_get("/v1/metrics").await?,
+            NodeCommand::Runtime => client.print_get("/v1/runtime").await?,
+            NodeCommand::Mode { mode } => {
+                let response: Value = client
+                    .post("/v1/runtime/mode", &UpdateRuntimeModeRequest { mode })
+                    .await?;
+                print_json(&response)?;
+            }
+            NodeCommand::Events {
+                kind,
+                provider,
+                job,
+                limit,
+                offset,
+            } => {
+                let response: Value = client
+                    .get_with_query(
+                        "/v1/events",
+                        &ListEventsQuery {
+                            kind,
+                            provider_id: provider,
+                            job_id: job,
+                            limit,
+                            offset,
+                        },
+                    )
+                    .await?;
+                print_json(&response)?;
+            }
+            NodeCommand::Metering {
+                tenant,
+                provider,
+                job,
+                workload,
+                model,
+                limit,
+                offset,
+            } => {
+                let response: Value = client
+                    .get_with_query(
+                        "/v1/metering",
+                        &ListMeteringQuery {
+                            tenant_id: tenant,
+                            provider_id: provider,
+                            job_id: job,
+                            workload,
+                            model,
+                            limit,
+                            offset,
+                        },
+                    )
+                    .await?;
+                print_json(&response)?;
             }
             NodeCommand::Probe { address } => {
                 let response: Value = client
@@ -217,6 +350,23 @@ impl NodeClient {
             .await
     }
 
+    async fn get_with_query<T, Q>(&self, path: &str, query: &Q) -> Result<T>
+    where
+        T: DeserializeOwned,
+        Q: Serialize + ?Sized,
+    {
+        self.send(
+            self.authorize(self.http.get(self.endpoint(path)))
+                .query(query),
+        )
+        .await
+    }
+
+    async fn print_get(&self, path: &str) -> Result<()> {
+        let response: Value = self.get(path).await?;
+        print_json(&response)
+    }
+
     async fn post<T, B>(&self, path: &str, body: &B) -> Result<T>
     where
         T: DeserializeOwned,
@@ -272,6 +422,11 @@ fn assistant_content(detail: &JobDetailResponse) -> Result<&str> {
 
 fn truncate(value: &str, max_chars: usize) -> String {
     value.chars().take(max_chars).collect()
+}
+
+fn print_json(value: &Value) -> Result<()> {
+    println!("{}", serde_json::to_string_pretty(value)?);
+    Ok(())
 }
 
 #[derive(Serialize)]

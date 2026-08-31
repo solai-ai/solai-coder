@@ -133,6 +133,7 @@ fn validates_provider_operator_inputs() {
 fn heartbeat_omits_status_when_only_capacity_changes() {
     let request = providers::ProviderHeartbeatRequest {
         status: None,
+        clear_capacity: false,
         capacity: Some(4),
         active_jobs: Some(1),
         models: None,
@@ -148,6 +149,7 @@ fn heartbeat_omits_status_when_only_capacity_changes() {
 fn heartbeat_serializes_explicit_status_changes() {
     let request = providers::ProviderHeartbeatRequest {
         status: Some(providers::ProviderStatusArg::Unavailable),
+        clear_capacity: false,
         capacity: None,
         active_jobs: None,
         models: None,
@@ -160,7 +162,25 @@ fn heartbeat_serializes_explicit_status_changes() {
 }
 
 #[test]
+fn heartbeat_serializes_capacity_clearing() {
+    let request = providers::ProviderHeartbeatRequest {
+        status: None,
+        clear_capacity: true,
+        capacity: None,
+        active_jobs: None,
+        models: None,
+    };
+
+    assert_eq!(
+        serde_json::to_value(request).unwrap(),
+        serde_json::json!({"clear_capacity": true})
+    );
+}
+
+#[test]
 fn validates_heartbeat_capacity_before_sending() {
-    assert!(providers::validate_heartbeat_capacity(Some(4), Some(4)).is_ok());
-    assert!(providers::validate_heartbeat_capacity(Some(4), Some(5)).is_err());
+    assert!(providers::validate_heartbeat_capacity(Some(4), Some(4), false).is_ok());
+    assert!(providers::validate_heartbeat_capacity(Some(4), Some(5), false).is_err());
+    assert!(providers::validate_heartbeat_capacity(None, None, true).is_ok());
+    assert!(providers::validate_heartbeat_capacity(Some(4), None, true).is_err());
 }

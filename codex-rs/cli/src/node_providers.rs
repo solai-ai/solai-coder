@@ -128,6 +128,10 @@ enum ProviderCommand {
         /// Optional count of active jobs.
         #[arg(long)]
         active_jobs: Option<u32>,
+
+        /// Remove persisted capacity and active-job telemetry for this provider.
+        #[arg(long)]
+        clear_capacity: bool,
     },
 
     /// Delete an inactive provider record.
@@ -227,13 +231,15 @@ impl NodeProvidersCli {
                 status,
                 capacity,
                 active_jobs,
+                clear_capacity,
             } => {
-                validate_heartbeat_capacity(capacity, active_jobs)?;
+                validate_heartbeat_capacity(capacity, active_jobs, clear_capacity)?;
                 let response: Value = client
                     .post(
                         &format!("/v1/providers/{provider_id}/heartbeat"),
                         &ProviderHeartbeatRequest {
                             status,
+                            clear_capacity,
                             capacity,
                             active_jobs,
                             models: None,
@@ -295,6 +301,8 @@ pub(super) enum ProviderStatusArg {
 pub(super) struct ProviderHeartbeatRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) status: Option<ProviderStatusArg>,
+    #[serde(skip_serializing_if = "is_false")]
+    pub(super) clear_capacity: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) capacity: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -338,7 +346,11 @@ pub(super) fn parse_hh_mm(value: &str) -> Result<String, String> {
 pub(super) fn validate_heartbeat_capacity(
     capacity: Option<u32>,
     active_jobs: Option<u32>,
+    clear_capacity: bool,
 ) -> Result<(), anyhow::Error> {
+    if clear_capacity && (capacity.is_some() || active_jobs.is_some()) {
+        bail!("clear capacity cannot be combined with capacity or active jobs");
+    }
     if capacity
         .zip(active_jobs)
         .is_some_and(|(capacity, active_jobs)| active_jobs > capacity)
@@ -346,6 +358,10 @@ pub(super) fn validate_heartbeat_capacity(
         bail!("active jobs cannot exceed provider capacity");
     }
     Ok(())
+}
+
+fn is_false(value: &bool) -> bool {
+    !value
 }
 
 #[derive(Serialize)]

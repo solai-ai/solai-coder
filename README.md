@@ -58,6 +58,7 @@ solai node providers delete PROVIDER_ID --yes
 solai node providers price PROVIDER_ID --model gemma3:4b --solai-per-hour 1.25
 solai node providers schedule PROVIDER_ID --from 22:00 --to 07:00 --timezone America/Sao_Paulo
 solai node providers heartbeat PROVIDER_ID --status available --capacity 4 --active-jobs 0
+solai node providers heartbeat PROVIDER_ID --clear-capacity
 ```
 
 Omit `--provider` to let Node route the job automatically. Add `--json` to print
@@ -75,6 +76,8 @@ can include an IANA timezone. Heartbeats can update a provider's availability,
 capacity, and active-job count. Omit `--status` to update capacity without
 changing the provider's current availability state. Coder rejects an active-job
 count greater than supplied capacity before sending the request.
+Use `--clear-capacity` when the provider no longer reports trustworthy capacity
+telemetry; it removes the persisted capacity and active-job values.
 
 Node remains the source of truth for provider state, inference jobs, routing,
 metering, and runtime policy.

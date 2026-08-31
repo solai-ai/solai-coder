@@ -410,12 +410,28 @@ impl NodeClient {
             .await
             .context("failed to read SOLAI Node response")?;
         if !status.is_success() {
-            bail!(
-                "SOLAI Node returned {status}: {}",
-                admin::truncate(&body, 512)
-            );
+            bail!("{}", format_node_error(status, &body));
         }
         serde_json::from_str(&body).context("SOLAI Node returned invalid JSON")
+    }
+}
+
+fn format_node_error(status: reqwest::StatusCode, body: &str) -> String {
+    let detail = serde_json::from_str::<Value>(body)
+        .ok()
+        .and_then(|value| {
+            let error = value.get("error")?;
+            let code = error.get("code")?.as_str()?;
+            let message = error.get("message")?.as_str()?;
+            Some(format!("{code}: {message}"))
+        })
+        .unwrap_or_else(|| admin::truncate(body, 512));
+    if status == reqwest::StatusCode::UNAUTHORIZED || status == reqwest::StatusCode::FORBIDDEN {
+        format!(
+            "SOLAI Node authorization failed ({status}): {detail}. Configure SOLAI_NODE_API_KEY."
+        )
+    } else {
+        format!("SOLAI Node returned {status}: {detail}")
     }
 }
 

@@ -34,6 +34,29 @@ fn normalizes_node_base_url() {
 }
 
 #[test]
+fn formats_structured_node_errors_with_auth_guidance() {
+    let error = format_node_error(
+        reqwest::StatusCode::UNAUTHORIZED,
+        r#"{"error":{"code":"unauthorized","message":"missing API key"}}"#,
+    );
+
+    assert_eq!(
+        error,
+        "SOLAI Node authorization failed (401 Unauthorized): unauthorized: missing API key. Configure SOLAI_NODE_API_KEY."
+    );
+}
+
+#[test]
+fn formats_unstructured_node_errors_without_losing_the_body() {
+    let error = format_node_error(reqwest::StatusCode::BAD_GATEWAY, "upstream unavailable");
+
+    assert_eq!(
+        error,
+        "SOLAI Node returned 502 Bad Gateway: upstream unavailable"
+    );
+}
+
+#[test]
 fn serializes_runtime_mode_for_node_contract() {
     let request = admin::UpdateRuntimeModeRequest {
         mode: admin::RuntimeModeArg::Draining,

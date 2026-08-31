@@ -78,6 +78,9 @@ changing the provider's current availability state. Coder rejects an active-job
 count greater than supplied capacity before sending the request.
 Use `--clear-capacity` when the provider no longer reports trustworthy capacity
 telemetry; it removes the persisted capacity and active-job values.
+When Node rejects a request with a structured error, Coder prints its error code
+and message. Authorization failures also explain how to configure
+`SOLAI_NODE_API_KEY`.
 
 Node remains the source of truth for provider state, inference jobs, routing,
 metering, and runtime policy.

@@ -29,6 +29,7 @@ use crate::context::ContextualUserFragment;
 use crate::context::MultiAgentModeInstructions;
 use crate::context::NetworkRuleSaved;
 use crate::context::PermissionsInstructions;
+use crate::context::lite_permissions_instructions;
 use crate::context::PersonalitySpecInstructions;
 use crate::context::RecommendedPluginsInstructions;
 use crate::context::world_state::WorldState;
@@ -1593,6 +1594,7 @@ impl Session {
                 resolve_tool_suggest_config_from_layer_stack(&config.config_layer_stack);
             config.ollama_smart_context = next_config.ollama_smart_context;
             config.ollama_num_ctx = next_config.ollama_num_ctx;
+            config.lite_agent_context = next_config.lite_agent_context;
             let config = Arc::new(config);
             state.session_configuration.original_config_do_not_use = Arc::clone(&config);
             let new_config = notify_config_contributors
@@ -3187,8 +3189,7 @@ impl Session {
             developer_sections.push(model_switch_message);
         }
         if turn_context.config.include_permissions_instructions {
-            developer_sections.push(
-                PermissionsInstructions::from_permission_profile(
+            let permissions = PermissionsInstructions::from_permission_profile(
                     &turn_context.permission_profile,
                     turn_context.approval_policy.value(),
                     turn_context.config.approvals_reviewer,
@@ -3203,9 +3204,16 @@ impl Session {
                         .config
                         .features
                         .enabled(Feature::RequestPermissionsTool),
+                );
+            developer_sections.push(if turn_context.config.lite_agent_context {
+                lite_permissions_instructions(
+                    &turn_context.permission_profile,
+                    turn_context.approval_policy.value(),
+                    &turn_context.cwd,
                 )
-                .render(),
-            );
+            } else {
+                permissions.render()
+            });
         }
         let separate_guardian_developer_message =
             crate::guardian::is_guardian_reviewer_source(&session_source);
@@ -3258,7 +3266,11 @@ impl Session {
             if let Some(apps_instructions) =
                 AppsInstructions::from_connectors(&accessible_and_enabled_connectors)
             {
-                developer_sections.push(apps_instructions.render());
+                developer_sections.push(if turn_context.config.lite_agent_context {
+                    apps_instructions.body_lite()
+                } else {
+                    apps_instructions.render()
+                });
             }
         }
         if turn_context.config.include_skill_instructions {
@@ -3281,7 +3293,11 @@ impl Session {
                     })
                     .await;
                 }
-                developer_sections.push(skills_instructions.render());
+                developer_sections.push(if turn_context.config.lite_agent_context {
+                    skills_instructions.body_lite()
+                } else {
+                    skills_instructions.render()
+                });
             }
         }
         let loaded_plugins = self
@@ -3315,7 +3331,11 @@ impl Session {
         if let Some(plugin_instructions) =
             AvailablePluginsInstructions::from_plugins(loaded_plugins.capability_summaries())
         {
-            developer_sections.push(plugin_instructions.render());
+            developer_sections.push(if turn_context.config.lite_agent_context {
+                plugin_instructions.body_lite()
+            } else {
+                plugin_instructions.render()
+            });
         }
         let context_contributors = self.services.extensions.context_contributors().to_vec();
         for contributor in &context_contributors {

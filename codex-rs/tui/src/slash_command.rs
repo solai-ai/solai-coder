@@ -4,6 +4,9 @@ use strum_macros::EnumIter;
 use strum_macros::EnumString;
 use strum_macros::IntoStaticStr;
 
+/// Retain the implementation and legacy config while keeping the feature off.
+pub(crate) const STATUS_LINE_2_ENABLED: bool = false;
+
 /// Commands that can be invoked by starting a message with a leading slash.
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Hash, EnumString, EnumIter, AsRefStr, IntoStaticStr,
@@ -33,6 +36,8 @@ pub enum SlashCommand {
     Context,
     #[strum(to_string = "smartcontext")]
     SmartContext,
+    #[strum(to_string = "lite_agentctx", serialize = "lite-agentctx")]
+    LiteAgentContext,
     #[strum(to_string = "miniModel", serialize = "mini-model")]
     MiniModel,
     Review,
@@ -110,13 +115,12 @@ impl SlashCommand {
             SlashCommand::Raw => "toggle raw scrollback mode for copy-friendly terminal selection",
             SlashCommand::Diff => "show git diff (including untracked files)",
             SlashCommand::Mention => "mention a file",
-            SlashCommand::Skills => {
-                "use skills to improve how SolaiAgent performs specific tasks"
-            }
+            SlashCommand::Skills => "use skills to improve how SolaiAgent performs specific tasks",
             SlashCommand::Import => "import setup, this project, and recent chats from Claude Code",
             SlashCommand::Hooks => "view and manage lifecycle hooks",
             SlashCommand::Context => "set max context tokens before auto-compaction",
             SlashCommand::SmartContext => "toggle automatic Ollama context sizing",
+            SlashCommand::LiteAgentContext => "toggle compact agent environment context",
             SlashCommand::MiniModel => "set the model used for context compaction",
             SlashCommand::ResumeType => "set compaction strategy",
             SlashCommand::Status => "show current session configuration and token usage",
@@ -183,6 +187,7 @@ impl SlashCommand {
                 | SlashCommand::Usage
                 | SlashCommand::Context
                 | SlashCommand::SmartContext
+                | SlashCommand::LiteAgentContext
                 | SlashCommand::MiniModel
                 | SlashCommand::ResumeType
                 | SlashCommand::Compact
@@ -228,6 +233,7 @@ impl SlashCommand {
             | SlashCommand::Import
             | SlashCommand::Context
             | SlashCommand::SmartContext
+            | SlashCommand::LiteAgentContext
             | SlashCommand::MiniModel
             | SlashCommand::ResumeType
             | SlashCommand::Review
@@ -277,6 +283,8 @@ impl SlashCommand {
 
     fn is_visible(self) -> bool {
         match self {
+            // Keep parsing the legacy command, but do not advertise it while disabled.
+            SlashCommand::Statusline2 => STATUS_LINE_2_ENABLED,
             SlashCommand::SandboxReadRoot => cfg!(target_os = "windows"),
             SlashCommand::Copy => !cfg!(target_os = "android"),
             SlashCommand::App => cfg!(any(target_os = "macos", target_os = "windows")),

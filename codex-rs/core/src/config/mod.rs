@@ -722,6 +722,10 @@ pub struct Config {
     /// Whether to inject the `<environment_context>` user block.
     pub include_environment_context: bool,
 
+    /// Whether agent-generated environment metadata uses the compact rendering.
+    /// Safety, tools, skills, and user instructions are unaffected.
+    pub lite_agent_context: bool,
+
     /// Compact prompt override.
     pub compact_prompt: Option<String>,
 
@@ -3633,6 +3637,7 @@ impl Config {
             .and_then(|skills| skills.include_instructions)
             .unwrap_or(true);
         let include_environment_context = cfg.include_environment_context.unwrap_or(true);
+        let lite_agent_context = cfg.lite_agent_context.unwrap_or(false);
         let guardian_policy_config =
             guardian_policy_config_from_requirements(config_layer_stack.requirements_toml())
                 .or_else(|| {
@@ -3836,6 +3841,7 @@ impl Config {
             orchestrator_skills_enabled,
             orchestrator_mcp_enabled,
             include_environment_context,
+            lite_agent_context,
             // The config.toml omits "_mode" because it's a config file. However, "_mode"
             // is important in code to differentiate the mode from the store implementation.
             cli_auth_credentials_store_mode: resolve_cli_auth_credentials_store_mode(

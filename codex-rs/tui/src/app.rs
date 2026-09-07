@@ -1356,15 +1356,21 @@ See the SolaiAgent keymap documentation for supported actions and examples."
 
     fn render_chat_widget_frame(&mut self, tui: &mut tui::Tui) -> Result<Rect> {
         let terminal_width = tui.terminal.size()?.width;
-        let status_line_2 = self.config.tui_status_line_2.as_ref().and_then(|ids| {
-            let (items, _) = parse_monitor_line_items(ids.clone());
-            if items.is_empty() {
-                None
-            } else {
-                self.system_monitor
-                    .footer_line(&items, self.config.tui_status_line_2_use_colors)
-            }
-        });
+        // SOLAI keeps the implementation and legacy config readable, but the
+        // compile-time switch remains off until the feature is re-enabled.
+        let status_line_2 = crate::slash_command::STATUS_LINE_2_ENABLED
+            .then(|| {
+                self.config.tui_status_line_2.as_ref().and_then(|ids| {
+                    let (items, _) = parse_monitor_line_items(ids.clone());
+                    if items.is_empty() {
+                        None
+                    } else {
+                        self.system_monitor
+                            .footer_line(&items, self.config.tui_status_line_2_use_colors)
+                    }
+                })
+            })
+            .flatten();
         self.chat_widget.set_status_line_2(status_line_2.clone());
         self.chat_widget
             .set_status_line_2_enabled(status_line_2.is_some());

@@ -20,6 +20,11 @@ pub(crate) struct EnvironmentsState {
     network: Option<NetworkContext>,
     filesystem: Option<FileSystemContext>,
     subagents: Option<String>,
+    lite: bool,
+}
+
+fn is_false(value: &bool) -> bool {
+    !value
 }
 
 impl EnvironmentsState {
@@ -37,6 +42,7 @@ impl EnvironmentsState {
                 &turn_context.config.effective_workspace_roots(),
             )),
             subagents: None,
+            lite: turn_context.config.lite_agent_context,
         }
     }
 
@@ -62,6 +68,7 @@ impl EnvironmentsState {
             network: self.network.clone(),
             filesystem: self.filesystem.clone(),
             subagents: self.subagents.clone(),
+            lite: self.lite,
         }
     }
 }
@@ -91,6 +98,7 @@ impl WorldStateSection for EnvironmentsState {
             network: self.network.as_ref().map(NetworkContext::render),
             filesystem: self.filesystem.as_ref().map(FileSystemContext::render),
             subagents: self.subagents.clone(),
+            lite: self.lite,
         }
     }
 
@@ -107,7 +115,8 @@ impl WorldStateSection for EnvironmentsState {
         let turn_context_values_changed = current.current_date != previous.current_date
             || current.timezone != previous.timezone
             || current.network != previous.network
-            || current.filesystem != previous.filesystem;
+            || current.filesystem != previous.filesystem
+            || current.lite != previous.lite;
         let mut updates = self
             .environments
             .iter()
@@ -140,6 +149,7 @@ impl WorldStateSection for EnvironmentsState {
                 network: self.network.clone(),
                 filesystem: self.filesystem.clone(),
                 subagents: self.subagents.clone(),
+                lite: self.lite,
             }) as Box<dyn ContextualUserFragment>
         })
     }
@@ -171,6 +181,7 @@ struct RenderedEnvironments {
     network: Option<NetworkContext>,
     filesystem: Option<FileSystemContext>,
     subagents: Option<String>,
+    lite: bool,
 }
 
 enum EnvironmentUpdate {
@@ -192,6 +203,9 @@ impl ContextualUserFragment for RenderedEnvironments {
     }
 
     fn body(&self) -> String {
+        if self.lite {
+            return self.lite_body();
+        }
         let mut rendered = "\n".to_string();
         if self.legacy_single {
             if let Some(EnvironmentUpdate::Current(environment)) = self.updates.values().next() {
@@ -243,6 +257,61 @@ impl ContextualUserFragment for RenderedEnvironments {
     }
 }
 
+impl RenderedEnvironments {
+    /// Compact only presentation metadata. The same cwd, shell, permissions,
+    /// network policy, and subagent state remain visible to the model.
+    fn lite_body(&self) -> String {
+        let mut rendered = "\n".to_string();
+        if self.legacy_single {
+            if let Some(EnvironmentUpdate::Current(environment)) = self.updates.values().next() {
+                push_environment_values_lite(&mut rendered, environment);
+            }
+        } else if !self.updates.is_empty() {
+            for (id, update) in &self.updates {
+                match update {
+                    EnvironmentUpdate::Current(environment) => {
+                        rendered.push_str("  <env id=\"");
+                        push_xml_escaped_text(&mut rendered, id);
+                        rendered.push_str("\"");
+                        rendered.push_str(" cwd=\"");
+                        push_xml_escaped_text(
+                            &mut rendered,
+                            &environment.cwd.inferred_native_path_string(),
+                        );
+                        rendered.push_str("\" />\n");
+                    }
+                    EnvironmentUpdate::Unavailable => {
+                        rendered.push_str("  <env id=\"");
+                        push_xml_escaped_text(&mut rendered, id);
+                        rendered.push_str("\" unavailable=\"true\" />\n");
+                    }
+                }
+            }
+        }
+        push_optional_element(&mut rendered, "date", self.current_date.as_deref());
+        push_optional_element(&mut rendered, "tz", self.timezone.as_deref());
+        if let Some(network) = &self.network {
+            rendered.push_str("  ");
+            rendered.push_str(&network.render_lite());
+            rendered.push('\n');
+        }
+        if let Some(filesystem) = &self.filesystem {
+            rendered.push_str("  ");
+            rendered.push_str(&filesystem.render_lite());
+            rendered.push('\n');
+        }
+        if let Some(subagents) = &self.subagents {
+            rendered.push_str("  <agents>");
+            push_xml_escaped_text(
+                &mut rendered,
+                &subagents.lines().collect::<Vec<_>>().join("; "),
+            );
+            rendered.push_str("</agents>\n");
+        }
+        rendered
+    }
+}
+
 fn push_environment_values(rendered: &mut String, environment: &EnvironmentState, indent: &str) {
     rendered.push_str(indent);
     rendered.push_str("<cwd>");
@@ -257,6 +326,17 @@ fn push_environment_values(rendered: &mut String, environment: &EnvironmentState
         rendered.push_str("<shell>");
         push_xml_escaped_text(rendered, shell);
         rendered.push_str("</shell>\n");
+    }
+}
+
+fn push_environment_values_lite(rendered: &mut String, environment: &EnvironmentState) {
+    rendered.push_str("  <cwd>");
+    push_xml_escaped_text(rendered, &environment.cwd.inferred_native_path_string());
+    rendered.push_str("</cwd>\n");
+    if let Some(shell) = &environment.shell {
+        rendered.push_str("  <sh>");
+        push_xml_escaped_text(rendered, shell);
+        rendered.push_str("</sh>\n");
     }
 }
 
@@ -288,6 +368,8 @@ pub(crate) struct EnvironmentsSnapshot {
     network: Option<String>,
     filesystem: Option<String>,
     subagents: Option<String>,
+    #[serde(default, skip_serializing_if = "is_false")]
+    lite: bool,
 }
 
 #[derive(Deserialize, Serialize)]

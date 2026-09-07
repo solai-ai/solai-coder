@@ -1760,6 +1760,39 @@ impl App {
                     }
                 }
             }
+            AppEvent::PersistLiteAgentContext { enabled } => {
+                match crate::config_update::write_config_batch(
+                    app_server.request_handle(),
+                    crate::config_update::build_lite_agent_context_edits(enabled),
+                )
+                .await
+                {
+                    Ok(_) => {
+                        self.config.lite_agent_context = enabled;
+                        self.chat_widget.set_lite_agent_context(enabled);
+                        self.chat_widget.add_info_message(
+                            if enabled {
+                                "Lite agent context enabled".to_string()
+                            } else {
+                                "Lite agent context disabled".to_string()
+                            },
+                            Some(
+                                "Only agent-generated environment metadata is compacted; permissions, tools, skills, and instructions are unchanged.".to_string(),
+                            ),
+                        );
+                    }
+                    Err(err) => {
+                        let error = format_config_error(&err);
+                        tracing::error!(
+                            error = %error,
+                            "failed to persist lite agent context"
+                        );
+                        self.chat_widget.add_error_message(format!(
+                            "Failed to save lite agent context: {error}"
+                        ));
+                    }
+                }
+            }
             AppEvent::PersistAutoCompaction { enabled } => {
                 let token_limit = enabled
                     .then_some(self.config.model_context_window)

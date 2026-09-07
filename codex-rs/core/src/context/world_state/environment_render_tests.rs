@@ -53,6 +53,7 @@ fn environment_state(
         network,
         filesystem: None,
         subagents,
+        lite: false,
     }
 }
 
@@ -82,6 +83,32 @@ fn serialize_workspace_write_environment_context() {
     );
 
     assert_eq!(context.render(), expected);
+}
+
+#[test]
+fn serialize_lite_environment_context() {
+    let mut context = environment_state(
+        [environment(
+            "local",
+            PathUri::from_abs_path(&test_abs_path("/repo")),
+            fake_shell_name(),
+        )],
+        Some("2026-02-26".to_string()),
+        Some("America/Los_Angeles".to_string()),
+        /*network*/ None,
+        /*subagents*/ None,
+    );
+    context.lite = true;
+
+    assert_eq!(
+        context.render(),
+        r#"<environment_context>
+  <cwd>/repo</cwd>
+  <sh>bash</sh>
+  <date>2026-02-26</date>
+  <tz>America/Los_Angeles</tz>
+</environment_context>"#
+    );
 }
 
 #[test]

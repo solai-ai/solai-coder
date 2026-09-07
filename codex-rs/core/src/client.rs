@@ -64,8 +64,8 @@ use codex_api::build_session_headers;
 use codex_api::create_text_param_for_request;
 use codex_api::response_create_client_metadata;
 use codex_login::AuthManager;
-use codex_login::SolaiAgentAuth;
 use codex_login::RefreshTokenError;
+use codex_login::SolaiAgentAuth;
 use codex_login::UnauthorizedRecovery;
 use codex_login::default_client::build_reqwest_client;
 use codex_otel::SessionTelemetry;
@@ -147,8 +147,8 @@ use codex_model_provider::create_model_provider;
 use codex_model_provider_info::DEFAULT_WEBSOCKET_CONNECT_TIMEOUT_MS;
 use codex_model_provider_info::ModelProviderInfo;
 use codex_model_provider_info::WireApi;
-use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::error::Result;
+use codex_protocol::error::SolaiAgentErr;
 use codex_response_debug_context::extract_response_debug_context;
 use codex_response_debug_context::extract_response_debug_context_from_api_error;
 use codex_response_debug_context::telemetry_api_error_message;
@@ -934,6 +934,8 @@ impl ModelClient {
             uses_ollama_responses_compat(provider, provider_request_options.as_ref());
         if ollama_compatible_tools {
             retain_ollama_compatible_tools(&mut tools);
+        } else if is_llama_cpp_provider(provider) {
+            retain_llama_cpp_compatible_tools(&mut tools);
         }
         let compact_ollama_prompt =
             uses_compact_ollama_prompt(provider, provider_request_options.as_ref());
@@ -1637,10 +1639,7 @@ impl ModelClientSession {
             self.client
                 .prepare_response_items_for_request(&mut request.input, store);
             if uses_native_ollama_chat(&client_setup.api_provider, &request, ollama_smart_context) {
-                compact_solai_base_instructions_for_ollama(
-                    &mut request,
-                    ollama_smart_context,
-                );
+                compact_solai_base_instructions_for_ollama(&mut request, ollama_smart_context);
                 self.client
                     .apply_ollama_smart_context_to_request(&mut request, ollama_smart_context);
                 let request_session_telemetry =
@@ -3179,6 +3178,20 @@ fn is_ollama_provider(provider: &ApiProvider) -> bool {
     provider_name.contains("ollama") || base_url.contains(":11434")
 }
 
+/// llama.cpp's Responses endpoint currently accepts ordinary function tools,
+/// but skips Responses-only tool kinds such as `namespace`, `custom`, and
+/// hosted `web_search`. Keep the provider-specific filtering here so the
+/// native Ollama path remains unchanged.
+fn is_llama_cpp_provider(provider: &ApiProvider) -> bool {
+    let provider_name = provider.name.to_ascii_lowercase();
+    let base_url = provider.base_url.to_ascii_lowercase();
+    !is_ollama_provider(provider)
+        && (provider_name.contains("llama.cpp")
+            || provider_name.contains("llama-cpp")
+            || provider_name.contains("llamacpp")
+            || base_url.contains(":8080/v1"))
+}
+
 fn ollama_host_root(base_url: &str) -> String {
     base_url
         .trim_end_matches('/')
@@ -3207,6 +3220,61 @@ fn uses_compact_ollama_prompt(
 
 fn retain_ollama_compatible_tools(tools: &mut Vec<serde_json::Value>) {
     tools.retain(|tool| tool.get("type").and_then(serde_json::Value::as_str) == Some("function"));
+}
+
+fn retain_llama_cpp_compatible_tools(tools: &mut Vec<serde_json::Value>) {
+    let mut compatible = Vec::new();
+    for tool in std::mem::take(tools) {
+        match tool.get("type").and_then(serde_json::Value::as_str) {
+            Some("function") => compatible.push(tool),
+            Some("namespace") => {
+                if let Some(namespace_tools) = tool.get("tools").and_then(Value::as_array) {
+                    for nested in namespace_tools {
+                        if nested.get("type").and_then(Value::as_str) == Some("function") {
+                            let mut function = nested.clone();
+                            if let (Some(namespace), Some(name)) = (
+                                tool.get("name").and_then(Value::as_str),
+                                function.get("name").and_then(Value::as_str),
+                            ) {
+                                function["name"] = Value::String(format!("{namespace}.{name}"));
+                            }
+                            compatible.push(function);
+                        }
+                    }
+                }
+            }
+            Some("custom") => {
+                // llama.cpp does not expose Responses custom/freeform tools,
+                // but its function-call path can carry the same payload as a
+                // single string argument. The router converts `input` back to
+                // the native custom-tool payload after receiving the call.
+                if let (Some(name), Some(description)) = (
+                    tool.get("name").and_then(Value::as_str),
+                    tool.get("description").and_then(Value::as_str),
+                ) {
+                    compatible.push(json!({
+                        "type": "function",
+                        "name": name,
+                        "description": description,
+                        "strict": false,
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "input": {
+                                    "type": "string",
+                                    "description": "The complete tool input payload."
+                                }
+                            },
+                            "required": ["input"],
+                            "additionalProperties": false
+                        }
+                    }));
+                }
+            }
+            _ => {}
+        }
+    }
+    *tools = compatible;
 }
 
 fn compact_ollama_base_instructions(base_instructions: &str) -> String {

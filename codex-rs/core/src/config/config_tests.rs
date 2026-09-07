@@ -825,6 +825,8 @@ fn config_toml_deserializes_model_availability_nux() {
             alternate_screen: AltScreenMode::default(),
             status_line: None,
             status_line_use_colors: true,
+            status_line_2: None,
+            status_line_2_use_colors: true,
             terminal_title: None,
             theme: None,
             pet: None,
@@ -3660,6 +3662,8 @@ fn tui_config_missing_notifications_field_defaults_to_enabled() {
             alternate_screen: AltScreenMode::Auto,
             status_line: None,
             status_line_use_colors: true,
+            status_line_2: None,
+            status_line_2_use_colors: true,
             terminal_title: None,
             theme: None,
             pet: None,
@@ -8437,7 +8441,7 @@ env_key = "OPENAI_API_KEY"
 wire_api = "responses"
 request_max_retries = 4            # retry failed HTTP requests
 stream_max_retries = 10            # retry dropped SSE streams
-stream_idle_timeout_ms = 300000    # 5m idle timeout
+stream_idle_timeout_ms = 3600000    # 60m idle timeout
 websocket_connect_timeout_ms = 15000
 
 [profiles.o3]

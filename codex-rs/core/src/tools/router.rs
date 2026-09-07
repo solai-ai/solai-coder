@@ -119,6 +119,27 @@ impl ToolRouter {
                 call_id,
                 ..
             } => {
+                // llama.cpp flattens Responses namespaces into ordinary
+                // function names. Recover the registry namespace from the
+                // `namespace.tool` spelling before dispatching.
+                let (namespace, name) = match (namespace, name.split_once('.')) {
+                    (None, Some((namespace, name))) => {
+                        (Some(namespace.to_string()), name.to_string())
+                    }
+                    (namespace, _) => (namespace, name),
+                };
+                if matches!(name.as_str(), "apply_patch" | "exec")
+                    && let Ok(value) = serde_json::from_str::<serde_json::Value>(&arguments)
+                    && let Some(input) = value.get("input").and_then(serde_json::Value::as_str)
+                {
+                    return Ok(Some(ToolCall {
+                        tool_name: ToolName::new(namespace, name),
+                        call_id,
+                        payload: ToolPayload::Custom {
+                            input: input.to_string(),
+                        },
+                    }));
+                }
                 let tool_name = ToolName::new(namespace, name);
                 Ok(Some(ToolCall {
                     tool_name,

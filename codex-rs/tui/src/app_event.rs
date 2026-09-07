@@ -747,6 +747,11 @@ pub(crate) enum AppEvent {
         enabled: bool,
     },
 
+    /// Persist compact rendering of agent-generated environment context.
+    PersistLiteAgentContext {
+        enabled: bool,
+    },
+
     /// Persist whether automatic context compaction is enabled.
     PersistAutoCompaction {
         enabled: bool,

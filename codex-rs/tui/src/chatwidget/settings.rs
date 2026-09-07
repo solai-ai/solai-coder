@@ -270,6 +270,10 @@ impl ChatWidget {
         self.refresh_status_surfaces();
     }
 
+    pub(crate) fn set_lite_agent_context(&mut self, enabled: bool) {
+        self.config.lite_agent_context = enabled;
+    }
+
     /// Set the model provider in the widget's config copy.
     pub(crate) fn set_model_provider(
         &mut self,

@@ -15,6 +15,12 @@ impl AppsInstructions {
             .any(|connector| connector.is_accessible && connector.is_enabled)
             .then_some(Self)
     }
+
+    pub(crate) fn body_lite(&self) -> String {
+        format!(
+            "\n## Apps\nUse enabled app tools from `{CODEX_APPS_MCP_SERVER_NAME}` when relevant. App mentions use `[$app-name](app://{{connector_id}})`.\n"
+        )
+    }
 }
 
 impl ContextualUserFragment for AppsInstructions {

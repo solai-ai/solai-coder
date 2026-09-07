@@ -250,6 +250,10 @@ pub struct ConfigToml {
     /// Whether to inject the `<environment_context>` user block.
     pub include_environment_context: Option<bool>,
 
+    /// Render the agent-generated environment context in its compact form.
+    /// This does not remove permissions or project instructions.
+    pub lite_agent_context: Option<bool>,
+
     /// Optional path to a file containing model instructions that will override
     /// the built-in instructions for the selected model. Users are STRONGLY
     /// DISCOURAGED from using this field, as deviating from the instructions

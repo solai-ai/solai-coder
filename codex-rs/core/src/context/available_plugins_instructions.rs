@@ -19,6 +19,11 @@ impl AvailablePluginsInstructions {
             plugins: plugins.to_vec(),
         })
     }
+
+    pub(crate) fn body_lite(&self) -> String {
+        "\n## Plugins\nPlugins expose skills, MCP tools, or apps. Use their listed capability when relevant.\n"
+            .to_string()
+    }
 }
 
 impl ContextualUserFragment for AvailablePluginsInstructions {

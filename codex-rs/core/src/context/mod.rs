@@ -63,6 +63,7 @@ pub(crate) use model_switch_instructions::ModelSwitchInstructions;
 pub(crate) use multi_agent_mode_instructions::MultiAgentModeInstructions;
 pub(crate) use network_rule_saved::NetworkRuleSaved;
 pub use permissions_instructions::PermissionsInstructions;
+pub(crate) use permissions_instructions::lite_permissions_instructions;
 pub(crate) use personality_spec_instructions::PersonalitySpecInstructions;
 pub(crate) use plugin_instructions::PluginInstructions;
 pub(crate) use realtime_end_instructions::RealtimeEndInstructions;

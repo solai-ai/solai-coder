@@ -1,5 +1,6 @@
 use super::HandleOutputCtx;
 use super::TurnItemContributorPolicy;
+use super::align_tool_output_with_call;
 use super::completed_item_defers_mailbox_delivery_to_next_turn;
 use super::finalize_non_tool_response_item;
 use super::handle_non_tool_response_item;
@@ -25,6 +26,7 @@ use codex_protocol::models::LocalShellAction;
 use codex_protocol::models::LocalShellExecAction;
 use codex_protocol::models::LocalShellStatus;
 use codex_protocol::models::MessagePhase;
+use codex_protocol::models::ResponseInputItem;
 use codex_protocol::models::ResponseItem;
 use codex_utils_absolute_path::test_support::PathExt;
 use pretty_assertions::assert_eq;
@@ -67,6 +69,52 @@ fn ollama_text_tool_call_is_converted_to_function_call() {
             internal_chat_message_metadata_passthrough: None,
         }
     );
+}
+
+#[test]
+fn adapted_custom_tool_output_matches_function_call_wire_type() {
+    let call = ResponseItem::FunctionCall {
+        id: None,
+        name: "exec".to_string(),
+        namespace: None,
+        arguments: r#"{"input":"text(true)"}"#.to_string(),
+        call_id: "call-compat".to_string(),
+        internal_chat_message_metadata_passthrough: None,
+    };
+    let output = ResponseInputItem::CustomToolCallOutput {
+        call_id: "call-compat".to_string(),
+        name: None,
+        output: FunctionCallOutputPayload::from_text("ok".to_string()),
+    };
+
+    assert!(matches!(
+        align_tool_output_with_call(&call, output),
+        ResponseInputItem::FunctionCallOutput { call_id, .. }
+            if call_id == "call-compat"
+    ));
+}
+
+#[test]
+fn native_custom_tool_output_keeps_custom_wire_type() {
+    let call = ResponseItem::CustomToolCall {
+        id: None,
+        status: Some("completed".to_string()),
+        call_id: "call-native".to_string(),
+        name: "exec".to_string(),
+        input: "text(true)".to_string(),
+        internal_chat_message_metadata_passthrough: None,
+    };
+    let output = ResponseInputItem::CustomToolCallOutput {
+        call_id: "call-native".to_string(),
+        name: None,
+        output: FunctionCallOutputPayload::from_text("ok".to_string()),
+    };
+
+    assert!(matches!(
+        align_tool_output_with_call(&call, output),
+        ResponseInputItem::CustomToolCallOutput { call_id, .. }
+            if call_id == "call-native"
+    ));
 }
 
 #[test]

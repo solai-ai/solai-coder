@@ -395,6 +395,9 @@ impl ChatWidget {
             SlashCommand::SmartContext => {
                 self.add_error_message(SMART_CONTEXT_USAGE.to_string());
             }
+            SlashCommand::LiteAgentContext => {
+                self.add_error_message("Usage: /lite-agentctx <on|off>".to_string());
+            }
             SlashCommand::MiniModel => {
                 self.add_error_message(MINI_MODEL_USAGE.to_string());
             }
@@ -486,7 +489,14 @@ impl ChatWidget {
                 self.open_status_line_setup();
             }
             SlashCommand::Statusline2 => {
-                self.open_status_line_2_setup();
+                if crate::slash_command::STATUS_LINE_2_ENABLED {
+                    self.open_status_line_2_setup();
+                } else {
+                    self.add_info_message(
+                        "The second status line is disabled in SOLAI.".to_string(),
+                        None,
+                    );
+                }
             }
             SlashCommand::Theme => {
                 self.open_theme_picker();
@@ -763,6 +773,12 @@ impl ChatWidget {
                         .send(AppEvent::PersistOllamaSmartContext { enabled });
                 }
                 None => self.add_error_message(SMART_CONTEXT_USAGE.to_string()),
+            },
+            SlashCommand::LiteAgentContext => match parse_bool_arg(trimmed) {
+                Some(enabled) => self
+                    .app_event_tx
+                    .send(AppEvent::PersistLiteAgentContext { enabled }),
+                None => self.add_error_message("Usage: /lite-agentctx <on|off>".to_string()),
             },
             SlashCommand::MiniModel => {
                 let model = trimmed.trim();
@@ -1124,6 +1140,7 @@ impl ChatWidget {
             | SlashCommand::DebugConfig
             | SlashCommand::Context
             | SlashCommand::SmartContext
+            | SlashCommand::LiteAgentContext
             | SlashCommand::MiniModel
             | SlashCommand::ResumeType
             | SlashCommand::Ps

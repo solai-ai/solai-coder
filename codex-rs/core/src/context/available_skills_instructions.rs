@@ -20,6 +20,14 @@ impl AvailableSkillsInstructions {
             skill_lines,
         }
     }
+
+    pub fn body_lite(&self) -> String {
+        let mut lines = vec!["## Skills".to_string()];
+        lines.extend(self.skill_root_lines.iter().cloned());
+        lines.extend(self.skill_lines.iter().cloned());
+        lines.push("Use a relevant skill when applicable; read its SKILL.md before acting.".to_string());
+        format!("\n{}\n", lines.join("\n"))
+    }
 }
 
 impl From<AvailableSkills> for AvailableSkillsInstructions {

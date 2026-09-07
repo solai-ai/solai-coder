@@ -70,6 +70,41 @@ impl FileSystemContext {
         rendered.push_str("</filesystem>");
         rendered
     }
+
+    pub(super) fn render_lite(&self) -> String {
+        let roots = self.workspace_roots.join(",");
+        let policy = match &self.permission_profile {
+            FileSystemPermissionProfileContext::Managed(ManagedFileSystemContext::Unrestricted) => {
+                "full".to_string()
+            }
+            FileSystemPermissionProfileContext::Disabled => "full".to_string(),
+            FileSystemPermissionProfileContext::External => "external".to_string(),
+            FileSystemPermissionProfileContext::Managed(ManagedFileSystemContext::Restricted {
+                entries,
+                glob_scan_max_depth,
+            }) => {
+                let mut policy = entries
+                    .iter()
+                    .map(|entry| {
+                        format!("{}:{}", entry.access, render_file_system_entry_lite(entry))
+                    })
+                    .collect::<Vec<_>>()
+                    .join(";");
+                if let Some(depth) = glob_scan_max_depth {
+                    if !policy.is_empty() {
+                        policy.push(';');
+                    }
+                    policy.push_str(&format!("scan-depth:{depth}"));
+                }
+                policy
+            }
+        };
+        let mut rendered = "<fs>".to_string();
+        push_text_element(&mut rendered, "roots", &roots);
+        push_text_element(&mut rendered, "policy", &policy);
+        rendered.push_str("</fs>");
+        rendered
+    }
 }
 
 impl From<ManagedFileSystemPermissions> for ManagedFileSystemContext {
@@ -164,6 +199,14 @@ fn render_file_system_entry(rendered: &mut String, entry: &FileSystemSandboxEntr
     rendered.push_str("</entry>");
 }
 
+fn render_file_system_entry_lite(entry: &FileSystemSandboxEntry) -> String {
+    match &entry.path {
+        FileSystemPath::Path { path } => path.to_string_lossy().into_owned(),
+        FileSystemPath::GlobPattern { pattern } => format!("glob:{pattern}"),
+        FileSystemPath::Special { value } => render_special_path(value),
+    }
+}
+
 fn render_special_path(value: &FileSystemSpecialPath) -> String {
     match value {
         FileSystemSpecialPath::Root => ":root".to_string(),
@@ -229,6 +272,18 @@ impl NetworkContext {
         Self::push_rendered_domain_element(&mut rendered, "allowed", &self.allowed_domains);
         Self::push_rendered_domain_element(&mut rendered, "denied", &self.denied_domains);
         rendered.push_str("</network>");
+        rendered
+    }
+
+    pub(super) fn render_lite(&self) -> String {
+        let mut rendered = "<net>".to_string();
+        if !self.allowed_domains.is_empty() {
+            push_text_element(&mut rendered, "allow", &self.allowed_domains.join(","));
+        }
+        if !self.denied_domains.is_empty() {
+            push_text_element(&mut rendered, "deny", &self.denied_domains.join(","));
+        }
+        rendered.push_str("</net>");
         rendered
     }
 

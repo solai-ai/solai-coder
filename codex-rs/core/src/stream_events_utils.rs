@@ -20,8 +20,8 @@ use crate::tools::parallel::ToolCallRuntime;
 use crate::tools::router::ToolRouter;
 use codex_memories_read::citations::parse_memory_citation;
 use codex_memories_read::citations::thread_ids_from_memory_citation;
-use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::error::Result;
+use codex_protocol::error::SolaiAgentErr;
 use codex_protocol::memory_citation::MemoryCitation;
 use codex_protocol::models::FunctionCallOutputBody;
 use codex_protocol::models::FunctionCallOutputPayload;
@@ -405,6 +405,34 @@ pub(crate) struct HandleOutputCtx {
     pub cancellation_token: CancellationToken,
 }
 
+/// Keep the output item on the same wire protocol as the call emitted by the
+/// provider. Some compatibility adapters expose a freeform/custom tool as an
+/// ordinary function while still using a custom payload internally for tool
+/// dispatch. The dispatch payload must not determine the history item type:
+/// mixing `FunctionCall` with `CustomToolCallOutput` creates an orphan pair.
+fn align_tool_output_with_call(
+    call_item: &ResponseItem,
+    output: ResponseInputItem,
+) -> ResponseInputItem {
+    match (call_item, output) {
+        (
+            ResponseItem::FunctionCall { .. },
+            ResponseInputItem::CustomToolCallOutput {
+                call_id, output, ..
+            },
+        ) => ResponseInputItem::FunctionCallOutput { call_id, output },
+        (
+            ResponseItem::CustomToolCall { .. },
+            ResponseInputItem::FunctionCallOutput { call_id, output },
+        ) => ResponseInputItem::CustomToolCallOutput {
+            call_id,
+            name: None,
+            output,
+        },
+        (_, output) => output,
+    }
+}
+
 pub(crate) async fn apply_turn_item_contributors(
     sess: &Session,
     turn_store: &ExtensionData,
@@ -517,11 +545,14 @@ pub(crate) async fn handle_output_item_done(
                 .await;
 
             let cancellation_token = ctx.cancellation_token.child_token();
-            let tool_future: InFlightFuture<'static> = Box::pin(
-                ctx.tool_runtime
-                    .clone()
-                    .handle_tool_call(call, cancellation_token),
-            );
+            let call_item = item.clone();
+            let tool_runtime = ctx.tool_runtime.clone();
+            let tool_future: InFlightFuture<'static> = Box::pin(async move {
+                tool_runtime
+                    .handle_tool_call(call, cancellation_token)
+                    .await
+                    .map(|output| align_tool_output_with_call(&call_item, output))
+            });
 
             output.needs_follow_up = true;
             output.tool_future = Some(tool_future);

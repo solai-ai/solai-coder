@@ -1276,7 +1276,7 @@ jobs:
           root_tarball="dist/npm/solai-${VERSION}.tgz"
           # Keep this list in sync with CODEX_PLATFORM_PACKAGES in
           # the npm package builder. The root wrapper advances
-          # solai@latest as soon as it publishes, so every platform
+          # @solaiecosystem/solai@latest as soon as it publishes, so every platform
           # package it aliases must already exist in the registry first.
           platform_tarballs=(
             "dist/npm/solai-linux-x64-${VERSION}.tgz"
@@ -1367,7 +1367,7 @@ jobs:
             exit "${publish_status}"
           done
 
-          npm dist-tag add "solai@${VERSION}" latest
+          npm dist-tag add "@solaiecosystem/solai@${VERSION}" latest
           if [[ -n "${NPM_TAG}" ]]; then
-            npm dist-tag add "solai@${VERSION}" "${NPM_TAG}"
+            npm dist-tag add "@solaiecosystem/solai@${VERSION}" "${NPM_TAG}"
           fi

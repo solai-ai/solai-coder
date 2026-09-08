@@ -733,6 +733,9 @@
         "include_permissions_instructions": {
           "type": "boolean"
         },
+        "lite_agent_context": {
+          "type": "boolean"
+        },
         "model": {
           "type": "string"
         },
@@ -3253,6 +3256,19 @@
           },
           "type": "array"
         },
+        "status_line_2": {
+          "default": null,
+          "description": "Ordered list of monitor status line item identifiers.\n\nWhen set, the TUI renders the selected items as a second status line. When unset, the second line is hidden.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "status_line_2_use_colors": {
+          "default": true,
+          "description": "Color monitor status line items with semantic colors. Defaults to `true`.",
+          "type": "boolean"
+        },
         "status_line_use_colors": {
           "default": true,
           "description": "Color status line items with colors derived from the active syntax theme. Defaults to `true`.",
@@ -5174,6 +5190,10 @@
     "instructions": {
       "description": "System instructions.",
       "type": "string"
+    },
+    "lite_agent_context": {
+      "description": "Render the agent-generated environment context in its compact form. This does not remove permissions or project instructions.",
+      "type": "boolean"
     },
     "log_dir": {
       "allOf": [

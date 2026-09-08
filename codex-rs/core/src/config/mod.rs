@@ -124,6 +124,7 @@ use std::io::ErrorKind;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::Duration;
 
 use crate::config::permissions::BUILT_IN_READ_ONLY_PROFILE;
 use crate::config::permissions::BUILT_IN_WORKSPACE_PROFILE;
@@ -178,6 +179,8 @@ pub(crate) use resolved_permission_profile::PermissionProfileState;
 
 const DEFAULT_IGNORE_LARGE_UNTRACKED_DIRS: i64 = 200;
 const DEFAULT_IGNORE_LARGE_UNTRACKED_FILES: i64 = 10 * 1024 * 1024;
+const SOLAI_AGENT_SEARCH_MCP_SERVER_NAME: &str = "solai-agent-search";
+const DEFAULT_SOLAI_AGENT_SEARCH_MCP_URL: &str = "http://127.0.0.1:8000/mcp";
 
 /// Compatibility-only config retained so legacy `ghost_snapshot` settings
 /// continue to load even though snapshots are no longer produced.
@@ -1586,6 +1589,12 @@ impl Config {
                 server.clone(),
             ));
         }
+        if let Some(search_server) = solai_agent_search_mcp_server() {
+            catalog.register(McpServerRegistration::from_config(
+                SOLAI_AGENT_SEARCH_MCP_SERVER_NAME.to_string(),
+                search_server,
+            ));
+        }
 
         McpConfig {
             chatgpt_base_url: self.chatgpt_base_url.clone(),
@@ -2927,6 +2936,51 @@ fn validate_multi_agent_v2_tool_namespace(namespace: Option<&str>) -> std::io::R
     }
 
     Ok(())
+}
+
+pub(crate) fn solai_agent_search_mcp_server_from_settings(
+    disabled: bool,
+    url: Option<&str>,
+) -> Option<McpServerConfig> {
+    if disabled {
+        return None;
+    }
+
+    let url = url
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or(DEFAULT_SOLAI_AGENT_SEARCH_MCP_URL)
+        .to_string();
+
+    Some(McpServerConfig {
+        auth: Default::default(),
+        transport: codex_config::types::McpServerTransportConfig::StreamableHttp {
+            url,
+            bearer_token_env_var: None,
+            http_headers: None,
+            env_http_headers: None,
+        },
+        environment_id: codex_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
+        enabled: true,
+        required: false,
+        supports_parallel_tool_calls: false,
+        disabled_reason: None,
+        startup_timeout_sec: Some(Duration::from_secs(30)),
+        tool_timeout_sec: None,
+        default_tools_approval_mode: None,
+        enabled_tools: None,
+        disabled_tools: None,
+        scopes: None,
+        oauth: None,
+        oauth_resource: None,
+        tools: HashMap::new(),
+    })
+}
+
+fn solai_agent_search_mcp_server() -> Option<McpServerConfig> {
+    solai_agent_search_mcp_server_from_settings(
+        std::env::var_os("SOLAI_AGENT_SEARCH_MCP_DISABLED").is_some(),
+        std::env::var("SOLAI_AGENT_SEARCH_MCP_URL").ok().as_deref(),
+    )
 }
 
 impl Config {

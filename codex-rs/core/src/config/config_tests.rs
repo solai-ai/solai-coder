@@ -173,6 +173,46 @@ fn http_mcp(url: &str) -> McpServerConfig {
     }
 }
 
+#[test]
+fn solai_agent_search_mcp_server_uses_default_url_when_enabled() {
+    let server = super::solai_agent_search_mcp_server_from_settings(false, None);
+
+    assert_eq!(
+        server,
+        Some(McpServerConfig {
+            auth: Default::default(),
+            transport: McpServerTransportConfig::StreamableHttp {
+                url: "http://127.0.0.1:8000/mcp".to_string(),
+                bearer_token_env_var: None,
+                http_headers: None,
+                env_http_headers: None,
+            },
+            environment_id: codex_config::DEFAULT_MCP_SERVER_ENVIRONMENT_ID.to_string(),
+            enabled: true,
+            required: false,
+            supports_parallel_tool_calls: false,
+            disabled_reason: None,
+            startup_timeout_sec: Some(Duration::from_secs(30)),
+            tool_timeout_sec: None,
+            default_tools_approval_mode: None,
+            enabled_tools: None,
+            disabled_tools: None,
+            scopes: None,
+            oauth: None,
+            oauth_resource: None,
+            tools: HashMap::new(),
+        })
+    );
+}
+
+#[test]
+fn solai_agent_search_mcp_server_can_be_disabled() {
+    assert_eq!(
+        super::solai_agent_search_mcp_server_from_settings(true, Some("https://example.com/mcp")),
+        None
+    );
+}
+
 async fn derive_legacy_sandbox_policy_for_test(
     cfg: &ConfigToml,
     sandbox_mode_override: Option<SandboxMode>,

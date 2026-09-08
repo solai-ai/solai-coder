@@ -138,6 +138,24 @@ SOLAI Agent keeps session history explicit and bounded.
 - `/clear` starts a fresh chat
 - `/compact` trims history when the conversation gets long
 
+## Web search
+
+SOLAI Agent can use a local, credential-free web search backend in both normal and
+lite context modes. The search server is exposed as a compact MCP endpoint and
+is enabled when `SOLAI_AGENT_SEARCH_MCP_URL` points to a running instance.
+
+Example:
+
+```bash
+export SOLAI_AGENT_SEARCH_MCP_URL=http://127.0.0.1:8000/mcp
+```
+
+If you do not want the built-in search server to participate in a session, set
+`SOLAI_AGENT_SEARCH_MCP_DISABLED=1`.
+
+In `/lite-agentctx` the search instructions are shorter, but the tool itself
+remains available in the normal context as well.
+
 ## Monitor status line
 
 Use `/statusline2` to configure a second footer line with monitor data from the local model host.

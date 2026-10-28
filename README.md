@@ -1,8 +1,8 @@
 # SOLAI Coder
 
-> 🚀 **SOLAI is currently in the Funding Phase on Pump.fun.**
+> 🚀 **SOLAI is available on Algorex (SOLAI/USDT).**
 > Everyone can participate and become part of the AI + DePIN ecosystem from the beginning. 🔥
-> Buy $SOLAI: https://pump.fun/coin/Hy9XZ4Ae4oKtXYfuFzWkoNV18teCTpvWWu5PFD9Bpump
+> Buy $SOLAI: https://algorex.net/trade/SOLAI-USDT
 >
 > HOLDERS of $SOLAI will be able to rent their inference power to other SOLAI Coder users and earn $SOLAI in return.
 

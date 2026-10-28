@@ -2,10 +2,10 @@
   "name": "@solaiecosystem/solai",
   "version": "1.0.14",
   "description": "SOLAI Agent is a local-first AI agent and coder that runs locally on your computer.",
-  "homepage": "https://pump.fun/coin/Hy9XZ4Ae4oKtXYfuFzWkoNV18teCTpvWWu5PFD9Bpump",
+  "homepage": "https://algorex.net/trade/SOLAI-USDT",
   "funding": {
     "type": "individual",
-    "url": "https://pump.fun/coin/Hy9XZ4Ae4oKtXYfuFzWkoNV18teCTpvWWu5PFD9Bpump"
+    "url": "https://algorex.net/trade/SOLAI-USDT"
   },
   "keywords": [
     "solai",
@@ -13,7 +13,7 @@
     "coder",
     "agent",
     "depin",
-    "pump.fun"
+    "algorex"
   ],
   "license": "Apache-2.0",
   "bin": {
